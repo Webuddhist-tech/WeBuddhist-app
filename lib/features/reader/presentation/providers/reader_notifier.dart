@@ -125,8 +125,12 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     );
     WidgetsBinding.instance.addObserver(this);
     _session.start();
-    Future<void>(_initialize);
+    Future<void>(_initialize).whenComplete(_firstLoad.complete);
   }
+
+  /// Settles once the first page is in or failed. A window fetched at the
+  /// same time waits for it, so the first page cannot land over it.
+  final Completer<void> _firstLoad = Completer<void>();
 
   /// Reload primary content when the user picks a different version of the
   /// main text in Reader Settings. Other primary-slot fields (language,
@@ -431,7 +435,15 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   /// near the top, the previous page is merged in first so the widget gets
   /// it at a stable index; a collapsed reader never shows it, so it is not
   /// fetched. Throws when the page itself cannot be fetched.
-  Future<_ContentWindow> _fetchWindow({String? segmentId}) async {
+  ///
+  /// [around] fetches the page before [segmentId] alongside its own, for
+  /// any reader: a jump lands with verses above the target to hold it below
+  /// them, in the time of one fetch.
+  Future<_ContentWindow> _fetchWindow({
+    String? segmentId,
+    bool around = false,
+  }) async {
+    if (around && segmentId != null) return _fetchAround(segmentId);
     final response = await _fetchContent(
       segmentId: segmentId,
       direction: 'next',
@@ -475,6 +487,38 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     );
   }
 
+  /// The pages before and at [segmentId], fetched together. A failed page
+  /// before leaves the page at the verse alone.
+  Future<_ContentWindow> _fetchAround(String segmentId) async {
+    final before = _fetchContent(
+      segmentId: segmentId,
+      direction: 'previous',
+    ).then<ReaderResponse?>((r) => r).catchError((Object e) {
+      _logger.debug('Page before $segmentId failed, skipping: $e');
+      return null;
+    });
+    final response = await _fetchContent(
+      segmentId: segmentId,
+      direction: 'next',
+    );
+    var content = _flattener.flatten(response.content.sections);
+    var hasPreviousPage = response.currentSegmentPosition > 1;
+    final previous = hasPreviousPage ? await before : null;
+    if (previous != null && !_isDisposed) {
+      content = _merger.merge(
+        content,
+        previous.content.sections,
+        PaginationDirection.previous,
+      );
+      hasPreviousPage = previous.currentSegmentPosition > 1;
+    }
+    return _ContentWindow(
+      response: response,
+      content: content,
+      hasPreviousPage: hasPreviousPage,
+    );
+  }
+
   /// Replaces the loaded window with the page around [segmentId], for a live
   /// position outside what pagination has fetched, and returns this
   /// version's id for it. Null when the text does not have that segment (or
@@ -498,10 +542,14 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       if (_isDisposed || target == null) return null;
       final alreadyLoaded = _localSegmentId(state.content, target);
       if (alreadyLoaded != null) return alreadyLoaded;
-      final window = await _fetchWindow(segmentId: target);
+      final window = await _fetchWindow(segmentId: target, around: true);
       if (_isDisposed) return null;
       final local = _localSegmentId(window.content, target);
       if (local == null) return null;
+      // Asked for while the first page loads (a live verse found before
+      // the text was), fetched alongside it, and shown after it.
+      await _firstLoad.future;
+      if (_isDisposed) return null;
       _showWindow(window);
       return local;
     } catch (e) {
@@ -528,6 +576,9 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   void _showWindow(_ContentWindow window) {
     final response = window.response;
     state = state.copyWith(
+      // Also when the first page failed: the window is the text loaded.
+      status: ReaderStatus.loaded,
+      textDetail: state.textDetail ?? response.textDetail,
       content: window.content,
       currentSegmentPosition: response.currentSegmentPosition,
       totalSegments: response.totalSegments,

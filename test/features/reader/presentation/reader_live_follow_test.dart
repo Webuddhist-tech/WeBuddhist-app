@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/core/widgets/slide_away_header.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_fonts_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_content_part.dart';
@@ -149,12 +151,14 @@ ReaderResponse _titledPage(TextDetailsParams params) {
 }
 
 /// A reader following event ev1's live recitation over a socket the test
-/// feeds by hand, its live verse at [verse]. [bars] records each time focus
-/// mode hides (true) or shows (false) the reader's bars.
+/// feeds by hand, its live verse at [verse], then each of [then] in turn.
+/// [bars] records each time focus mode hides (true) or shows (false) the
+/// reader's bars.
 Future<RecitationLiveNotifier> _pumpLiveReader(
   WidgetTester tester, {
   int verse = 5,
   int round = 1,
+  List<int> then = const [],
   List<bool>? bars,
   ReaderResponse Function(TextDetailsParams params) page = _page,
   List<ReturnJump> jumps = const [],
@@ -178,6 +182,7 @@ Future<RecitationLiveNotifier> _pumpLiveReader(
           (ref, params) async => Right<Failure, ReaderResponse>(page(params)),
         ),
         recitationLiveProvider.overrideWith((ref, id) => live),
+        readerPendingFontsProvider.overrideWithValue(() async {}),
         editionReturnJumpsProvider.overrideWith((ref, id) async => jumps),
       ],
       child: MaterialApp(
@@ -197,6 +202,10 @@ Future<RecitationLiveNotifier> _pumpLiveReader(
   channel.incoming.add(_sessionInfo);
   channel.incoming.add(_position(verse, round: round));
   await _settle(tester);
+  for (final next in then) {
+    channel.incoming.add(_position(next, round: round));
+    await _settle(tester);
+  }
   return live;
 }
 
@@ -234,15 +243,21 @@ const _pageSize = 20;
 /// Verses per text in a paged plan; ids are `<text>-<number>`.
 const _planTotals = {'A': 80, 'B': 20, 'C': 20, 'D': 20};
 
-/// A page of [_pageSize] verses from the anchor, like the library serves.
+/// A page of [_pageSize] verses from the anchor, like the library serves;
+/// going `previous`, the verses before it.
 ReaderResponse _planPage(TextDetailsParams params) {
   final textId = params.textId;
   final total = _planTotals[textId]!;
-  final first =
+  final anchor =
       params.segmentId == null
           ? 1
           : int.parse(params.segmentId!.split('-').last);
-  final last = (first + _pageSize - 1).clamp(1, total);
+  final previous = params.direction == 'previous';
+  final last =
+      previous
+          ? (anchor - 1).clamp(0, total)
+          : (anchor + _pageSize - 1).clamp(1, total);
+  final first = previous ? (last - _pageSize + 1).clamp(1, total) : anchor;
   return ReaderResponse(
     textDetail: TextDetail(
       id: textId,
@@ -287,7 +302,9 @@ ReaderResponse _planPage(TextDetailsParams params) {
 /// a text with its picked verses, or null for the whole text. The live verse
 /// is [verse] of [text], then each of [then] in turn. A text in
 /// [pageDelays] serves its pages after that delay instead of [pageDelay].
-/// Returns the live notifier and every page fetched.
+/// Without [connect] the room never sends anything. [onFrame] runs after
+/// every frame pumped. [bars] records focus mode as [_pumpLiveReader]'s.
+/// [fonts] stands in for loading the fonts the page's lines ask for. Returns the live notifier and every page fetched.
 Future<(RecitationLiveNotifier, List<TextDetailsParams>)> _pumpLivePlan(
   WidgetTester tester,
   Map<String, List<String>?> picks, {
@@ -298,6 +315,10 @@ Future<(RecitationLiveNotifier, List<TextDetailsParams>)> _pumpLivePlan(
   ValueNotifier<double>? progress,
   Duration pageDelay = Duration.zero,
   Map<String, Duration> pageDelays = const {},
+  bool connect = true,
+  void Function()? onFrame,
+  List<bool>? bars,
+  Future<void> Function()? fonts,
 }) async {
   final channel = _FakeChannel();
   final live = RecitationLiveNotifier(
@@ -340,6 +361,7 @@ Future<(RecitationLiveNotifier, List<TextDetailsParams>)> _pumpLivePlan(
           return Right<Failure, ReaderResponse>(_planPage(params));
         }),
         recitationLiveProvider.overrideWith((ref, id) => live),
+        readerPendingFontsProvider.overrideWithValue(fonts ?? () async {}),
       ],
       child: MaterialApp(
         locale: const Locale('en'),
@@ -357,21 +379,46 @@ Future<(RecitationLiveNotifier, List<TextDetailsParams>)> _pumpLivePlan(
                 ),
             ],
             progress: progress,
+            onScrollDirectionChanged: bars?.add,
           ),
         ),
       ),
     ),
   );
-  await _settle(tester);
+  await _settle(tester, onFrame: onFrame);
+  if (!connect) return (live, fetches);
   channel.incoming.add(_sessionInfo);
   channel.incoming.add(_position(verse, text: text));
-  await _settle(tester);
+  await _settle(tester, onFrame: onFrame);
   for (final position in then) {
     channel.incoming.add(position);
-    await _settle(tester);
+    await _settle(tester, onFrame: onFrame);
   }
   return (live, fetches);
 }
+
+/// Where the line holding [text] shows: its middle as a fraction of the
+/// list's height. Null while no list shows, -1 when the list shows without
+/// that line on screen.
+double? _shownAt(WidgetTester tester, String text) {
+  final list = find.byType(ScrollablePositionedList);
+  if (list.evaluate().isEmpty) return null;
+  final shown = tester.widget<AnimatedOpacity>(
+    find.ancestor(of: list, matching: find.byType(AnimatedOpacity)).first,
+  );
+  if (shown.opacity == 0) return null;
+  final line = find.textContaining(text);
+  if (line.evaluate().isEmpty) return -1;
+  final area = tester.getRect(list);
+  final middle = tester.getRect(line.first).center.dy;
+  if (middle < area.top || middle > area.bottom) return -1;
+  return (middle - area.top) / area.height;
+}
+
+int _listRows(WidgetTester tester) =>
+    tester
+        .widget<ScrollablePositionedList>(find.byType(ScrollablePositionedList))
+        .itemCount;
 
 /// The first source's verse numbers as loaded, in list order.
 List<int> _loadedVerses(WidgetTester tester) {
@@ -387,9 +434,10 @@ List<int> _loadedVerses(WidgetTester tester) {
   ];
 }
 
-Future<void> _settle(WidgetTester tester) async {
+Future<void> _settle(WidgetTester tester, {void Function()? onFrame}) async {
   for (var i = 0; i < 12; i++) {
     await tester.pump(const Duration(milliseconds: 150));
+    onFrame?.call();
   }
 }
 
@@ -612,28 +660,28 @@ void main() {
 
   group('loading toward a far live verse', () {
     testWidgets('stops between pages once the reader pauses', (tester) async {
-      // A plan task, so live walks page by page; each page takes a while
-      // and verse 75 is four pages away.
-      final (live, fetches) = await _pumpLivePlan(
+      // A plan task's text on the page already walks to a verse further
+      // on page by page; each page takes a while and verse 75 is three
+      // pages past those loaded.
+      final (live, _) = await _pumpLivePlan(
         tester,
         {
           'A': null,
           'B': ['B-1', 'B-2'],
         },
-        verse: 75,
+        verse: 5,
+        then: [_position(75)],
         pageDelay: const Duration(seconds: 1),
       );
       expect(_loadedVerses(tester), isNot(contains(75)));
 
       live.pauseFollowing();
-      final asked = fetches.length;
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(seconds: 1));
       }
 
-      // At most the page already asked for lands; nothing more is fetched
-      // toward the old verse, and pausing is not being out of sync.
-      expect(fetches.length, lessThanOrEqualTo(asked));
+      // At most the page already asked for lands; the old verse is never
+      // reached, and pausing is not being out of sync.
       expect(_loadedVerses(tester), isNot(contains(75)));
       expect(live.state.outOfSync, isFalse);
       await tester.pumpWidget(const SizedBox.shrink());
@@ -641,26 +689,29 @@ void main() {
   });
 
   group('a live verse past the loaded ones on a plan task', () {
-    testWidgets('a whole text loads every verse up to it, in order', (
+    testWidgets('a whole text opens at it, the page before it with it', (
       tester,
     ) async {
       // Two texts, so the page is collapsed; text A is whole.
-      final (live, _) = await _pumpLivePlan(tester, {
+      final (live, fetches) = await _pumpLivePlan(tester, {
         'A': null,
         'B': ['B-1', 'B-2'],
       }, verse: 65);
 
-      // Page by page up to the live verse's, with nothing skipped; the rest
-      // loads as the reader nears the end.
+      // Its first page, then the pages before and at verse 65 together:
+      // no page in between, and nothing skipped around the verse.
       final loaded = _loadedVerses(tester);
-      expect(loaded, [for (var n = 1; n <= loaded.length; n++) n]);
-      expect(loaded, contains(65));
+      expect(loaded, [for (var n = 45; n <= 80; n++) n]);
+      expect(
+        fetches.where((p) => p.textId == 'A' && p.segmentId != null),
+        hasLength(2),
+      );
       expect(live.state.outOfSync, isFalse);
       expect(find.textContaining('A verse 65.'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
-    testWidgets('picked verses before it load first and stay in order', (
+    testWidgets('picked verses before it come in above, in order', (
       tester,
     ) async {
       final picked = [for (var n = 1; n <= 77; n += 4) 'A-$n'];
@@ -668,13 +719,74 @@ void main() {
         'A': picked,
       }, verse: 61);
 
+      expect(_loadedVerses(tester), contains(61));
+      expect(live.state.outOfSync, isFalse);
+      expect(find.textContaining('A verse 61.'), findsOneWidget);
+
+      // Paused and scrolled up, the earlier ones load as pages above.
+      live.pauseFollowing();
+      for (var i = 0; i < 6; i++) {
+        await tester.drag(
+          find.byType(ScrollablePositionedList),
+          const Offset(0, 400),
+        );
+        await _settle(tester);
+      }
       final loaded = _loadedVerses(tester);
       for (var n = 1; n <= 61; n += 4) {
         expect(loaded, contains(n), reason: 'picked verse A-$n');
       }
       expect(loaded, [...loaded]..sort());
-      expect(live.state.outOfSync, isFalse);
-      expect(find.textContaining('A verse 61.'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('pages above come in without moving it, a finger on it or not', (
+      tester,
+    ) async {
+      final (live, fetches) = await _pumpLivePlan(
+        tester,
+        {'A': null, 'B': null},
+        verse: 65,
+        pageDelay: const Duration(milliseconds: 800),
+      );
+      live.pauseFollowing();
+      await _settle(tester);
+
+      // A finger brings the start of what is loaded, verse 45, into view
+      // and stays on the list: the page before is fetched and lands under
+      // it.
+      final list = find.byType(ScrollablePositionedList);
+      final area = tester.getRect(list);
+      final line = find.textContaining('A verse 46.');
+      final asked = fetches.length;
+      final gesture = await tester.startGesture(area.center);
+      for (var step = 0; step < 30; step++) {
+        if (line.evaluate().isNotEmpty &&
+            tester.getRect(line).top > area.top + 60) {
+          break;
+        }
+        await gesture.moveBy(const Offset(0, 150));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      // Once the pill the scroll up brought back has slid in.
+      await tester.pump(const Duration(milliseconds: 400));
+      final top = tester.getRect(line).top;
+      Future<void> holdsStill(String when) async {
+        for (var frame = 0; frame < 30; frame++) {
+          await tester.pump(const Duration(milliseconds: 50));
+          expect(
+            tester.getRect(line).top,
+            closeTo(top, 1),
+            reason: '$when, frame $frame',
+          );
+        }
+      }
+
+      await holdsStill('finger down');
+      expect(fetches.length, greaterThan(asked));
+      await gesture.up();
+      await holdsStill('finger up');
+      expect(_loadedVerses(tester), contains(30));
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
@@ -687,8 +799,8 @@ void main() {
       }, verse: 999);
 
       expect(live.state.outOfSync, isTrue);
-      // Text A ran out, and asks for nothing more.
-      expect(_loadedVerses(tester), [for (var n = 1; n <= 80; n++) n]);
+      // Asked for once, at the verse; nothing more is fetched for it.
+      expect(_loadedVerses(tester), [for (var n = 1; n <= 20; n++) n]);
       final pages = fetches.length;
       await _settle(tester);
       expect(fetches.length, pages);
@@ -716,12 +828,11 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
-    testWidgets('the text before the live one stays put while following', (
+    testWidgets('the text before the live one waits above it until paused', (
       tester,
     ) async {
-      // The live verse opens text B, so the end of text A shows just above
-      // it. A page more of A would land above the live verse and push it
-      // off screen.
+      // The live verse opens text B. Text A's first page is in, but drawn
+      // it would land above the live verse, and a page more of it too.
       final (live, fetches) = await _pumpLivePlan(
         tester,
         {'A': null, 'B': null},
@@ -731,10 +842,27 @@ void main() {
       );
       await _settle(tester);
 
-      expect(find.textContaining('A verse 20.'), findsOneWidget);
+      expect(find.textContaining('A verse 20.'), findsNothing);
       expect(fetches.where((p) => p.textId == 'A'), hasLength(1));
       expect(live.state.isFollowing, isTrue);
       expect(find.textContaining('B verse 2.'), findsOneWidget);
+
+      // Paused, A comes in above, and no frame shows B moved for it.
+      final verse = find.textContaining('B verse 1.');
+      final top = tester.getRect(verse).top;
+      final rows = _listRows(tester);
+      live.pauseFollowing();
+      for (var frame = 0; frame < 20; frame++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(tester.getRect(verse).top, closeTo(top, 1), reason: '$frame');
+      }
+      expect(_listRows(tester), greaterThan(rows));
+      await tester.drag(
+        find.byType(ScrollablePositionedList),
+        const Offset(0, 300),
+      );
+      await _settle(tester);
+      expect(find.textContaining('A verse 20.'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
@@ -810,6 +938,127 @@ void main() {
     });
   });
 
+  group('opening on the live verse', () {
+    testWidgets('no list shows until the verse, then it is in its place', (
+      tester,
+    ) async {
+      // Live is in the task's third text; the texts before it load too.
+      final shown = <double?>[];
+      await _pumpLivePlan(
+        tester,
+        {'A': null, 'B': null, 'C': null},
+        verse: 10,
+        text: 'C',
+        pageDelay: const Duration(milliseconds: 300),
+        onFrame: () => shown.add(_shownAt(tester, 'C verse 10.')),
+      );
+      await _settle(
+        tester,
+        onFrame: () => shown.add(_shownAt(tester, 'C verse 10.')),
+      );
+
+      // Every frame that shows the list shows the live verse ⅔ down.
+      final visible = shown.whereType<double>().toList();
+      expect(visible, isNotEmpty);
+      expect(shown.last, isNotNull);
+      for (final at in visible) {
+        expect(at, closeTo(liveHoldFraction, 0.1));
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('a text\'s first page and its page at the verse load together', (
+      tester,
+    ) async {
+      // Live opens text A, third on the page, at verse 65, three pages in;
+      // each of A's pages takes a second.
+      await _pumpLivePlan(
+        tester,
+        {'B': null, 'C': null, 'A': null},
+        verse: 65,
+        pageDelays: const {'A': Duration(seconds: 1)},
+      );
+
+      // In place within 1.8 s of the position: the time of one page.
+      expect(_shownAt(tester, 'A verse 65.'), closeTo(liveHoldFraction, 0.1));
+      await _settle(tester);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('the verse waits for its fonts before it shows', (
+      tester,
+    ) async {
+      // Its lines are measured once in the font they stay in, or a font
+      // landing later would resize them under the person.
+      final fonts = Completer<void>();
+      await _pumpLivePlan(
+        tester,
+        {'A': null, 'B': null},
+        verse: 30,
+        fonts: () => fonts.future,
+      );
+      expect(_shownAt(tester, 'A verse 30.'), isNull);
+
+      fonts.complete();
+      await _settle(tester);
+      expect(_shownAt(tester, 'A verse 30.'), closeTo(liveHoldFraction, 0.1));
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('a room that sends nothing shows the page after a while', (
+      tester,
+    ) async {
+      final bars = <bool>[];
+      await _pumpLivePlan(
+        tester,
+        {'A': null, 'B': null},
+        verse: 1,
+        connect: false,
+        bars: bars,
+      );
+      expect(find.byType(ScrollablePositionedList), findsNothing);
+
+      await tester.pump(liveOpenHoldLimit);
+      await _settle(tester);
+      expect(find.textContaining('A verse 1.'), findsOneWidget);
+      // Put away for the wait, and back for the normal page.
+      expect(bars, [true, false]);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('the bars are away before the verse shows, and stay away', (
+      tester,
+    ) async {
+      // Following puts them away, and the header leaving resizes the text
+      // area: done behind the loading circle, nothing moves once shown.
+      final bars = <bool>[];
+      List<bool>? barsWhenShown;
+      bool? pillWhenShown;
+      await _pumpLivePlan(
+        tester,
+        {'A': null, 'B': null},
+        verse: 30,
+        bars: bars,
+        onFrame: () {
+          if (barsWhenShown != null ||
+              _shownAt(tester, 'A verse 30.') == null) {
+            return;
+          }
+          barsWhenShown = [...bars];
+          pillWhenShown =
+              tester
+                  .widget<SlideAwayHeader>(find.byType(SlideAwayHeader))
+                  .visible;
+        },
+      );
+
+      expect(barsWhenShown, [true]);
+      expect(pillWhenShown, isFalse);
+      expect(bars, [true]);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  });
+
   group('leaving live', () {
     testWidgets('any scroll by the person pauses following', (tester) async {
       final live = await _pumpLiveReader(tester);
@@ -848,12 +1097,18 @@ void main() {
       tester,
     ) async {
       final bars = <bool>[];
-      final live = await _pumpLiveReader(tester, verse: 12, bars: bars);
+      final live = await _pumpLiveReader(
+        tester,
+        verse: 12,
+        then: [13],
+        bars: bars,
+      );
       expect(live.state.isFollowing, isTrue);
-      // Following the room down the page hid them.
+      // Opened on the live verse, then following the room down the page
+      // hid them.
       expect(bars.last, isTrue);
 
-      await tester.tap(find.textContaining('Verse 12.').first);
+      await tester.tap(find.textContaining('Verse 13.').first);
       await _settle(tester);
 
       expect(live.state.followMode, RecitationLiveFollowMode.paused);

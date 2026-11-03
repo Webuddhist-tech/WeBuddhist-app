@@ -47,6 +47,16 @@ class ReaderFocusMode {
     return false;
   }
 
+  /// Puts the bars away whatever the page did, as following a live room
+  /// does. Returns true when they were showing.
+  bool hide() {
+    _down = 0;
+    _up = 0;
+    if (!_barsVisible) return false;
+    _barsVisible = false;
+    return true;
+  }
+
   /// Brings the bars back whatever the page did. Returns true when they were
   /// hidden.
   bool show() {

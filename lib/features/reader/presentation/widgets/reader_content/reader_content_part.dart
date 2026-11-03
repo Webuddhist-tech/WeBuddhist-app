@@ -94,9 +94,16 @@ class ReaderContentPart extends ConsumerStatefulWidget {
 }
 
 class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
-  final ItemScrollController _itemScrollController = ItemScrollController();
+  /// Replaced, with the list, each time the list is drawn afresh at an entry
+  /// ([_restartListAt]): a controller drives one list at a time.
+  ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
+
+  /// Counts the lists drawn afresh; keys the list so a new one starts at
+  /// [_listStart] rather than where the last one stood.
+  int _listGeneration = 0;
+  LiveScrollTarget _listStart = (index: 0, alignment: 0);
   final _logger = AppLogger('ReaderContent');
 
   Timer? _debounceTimer;
@@ -168,6 +175,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   // build (and on every scroll) would be wasted work and would also defeat
   // Riverpod's family caching.
   final Map<int, String?> _secondaryInitialSegmentId = {};
+
+  /// Per source, what keeps its layout settings and its translation loading
+  /// from the live verse until build watches them ([_startTranslationAt]).
+  final Map<int, List<ProviderSubscription<Object?>>> _earlyLoads = {};
   final Set<int> _hasComputedSecondaryInitial = {};
   final Set<int> _secondarySyncScheduled = {};
 
@@ -201,6 +212,50 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// Counts the live scrolls, so only the latest one hands the page back.
   int _liveScroll = 0;
   bool _liveInitialized = false;
+
+  /// Opened following a live room: the page waits, drawing no list, until
+  /// the live verse is in and its translation line with it, so the first
+  /// list drawn is already at the verse. After [liveOpenHoldLimit] the page
+  /// shows as it is.
+  bool _liveHold = false;
+  bool _liveHoldExpired = false;
+  Timer? _liveHoldTimer;
+
+  /// Past [liveOpenTranslationLimit]: a live verse found in time waits no
+  /// longer for its translation, and shows without it.
+  bool _translationWaitOver = false;
+  Timer? _translationWaitTimer;
+
+  /// The bars have slid away for the hold, so the text area is its final
+  /// size and the verse can be measured in it.
+  bool _barsAway = false;
+
+  /// The list's first frame, drawn at the live verse but not shown until
+  /// the verse is measured and put in its place ([_finishReveal]).
+  bool _revealing = false;
+
+  /// The fonts the hidden first frame's lines asked for have loaded
+  /// ([_awaitRevealFonts]).
+  bool _revealFontsIn = false;
+
+  /// While following live, the started sources before this one are not
+  /// drawn: their rows would land above the live verse and move it. They
+  /// are drawn once following stops and the list is still
+  /// ([_releaseHeldSources]), in the same frame as the list keeps its place.
+  int _drawnFrom = 0;
+
+  /// Per source, the first verse number drawn: a text opened at the live
+  /// verse loads the verses before it as pages above, and those are held
+  /// back like [_drawnFrom]'s until the list is still.
+  final Map<int, int> _heldFrom = {};
+  Timer? _releaseTimer;
+
+  /// From mount, for the time each stage of opening on a live verse takes.
+  final Stopwatch _openWatch = Stopwatch()..start();
+
+  /// The held sources were just let in: the list keeps its place even
+  /// though the person touched it a moment ago, as it is still now.
+  bool _releasingHeld = false;
 
   /// Set once the page has shown; after that a font arriving only reflows
   /// it, so the list and its scroll position stay.
@@ -237,6 +292,32 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     super.initState();
     _itemPositionsListener.itemPositions.addListener(_onScrollPositionChanged);
 
+    final liveEventId = _liveEventId;
+    if (_isLiveRecitation &&
+        liveEventId != null &&
+        ref.read(recitationLiveProvider(liveEventId)).isFollowing) {
+      _liveHold = true;
+      _liveHoldTimer = Timer(liveOpenHoldLimit, () {
+        if (mounted && _liveHold) setState(() => _liveHoldExpired = true);
+      });
+      _translationWaitTimer = Timer(liveOpenTranslationLimit, () {
+        if (mounted && _liveHold) setState(() => _translationWaitOver = true);
+      });
+      // Following puts the bars and the pill away, the header resizing the
+      // text area as it goes: done now, behind the loading circle, so the
+      // verse is measured in the page as it then stays.
+      _pillVisible = false;
+      _focusMode.hide();
+      _preloadLatinFonts();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        widget.onScrollDirectionChanged?.call(true);
+        Timer(ReaderConstants.focusModeDuration * 1.5, () {
+          if (mounted && _liveHold) setState(() => _barsAway = true);
+        });
+      });
+    }
+
     // Expose scroll controller to parent
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onScrollControllerReady?.call(_scrollToSegment);
@@ -250,18 +331,28 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       _onScrollPositionChanged,
     );
     _debounceTimer?.cancel();
+    _liveHoldTimer?.cancel();
+    _translationWaitTimer?.cancel();
+    _releaseTimer?.cancel();
+    for (final loads in _earlyLoads.values) {
+      for (final subscription in loads) {
+        subscription.close();
+      }
+    }
     _sections.dispose();
     _currentSectionKey.dispose();
     super.dispose();
   }
 
   void _onScrollPositionChanged() {
+    if (_revealing) _finishReveal();
     _debounceTimer?.cancel();
     _debounceTimer = Timer(ReaderConstants.scrollDebounce, () {
       _checkPaginationThresholds();
       _reportFurthestSegment();
       _followScroll();
       _keepLiveVerseInView();
+      _releaseHeldSources();
     });
 
     _updateCurrentSection();
@@ -398,19 +489,31 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   _SourceView _readView(int index) => _viewOf(index, watch: false);
 
   /// The items of source [index] from [state]: its task verses under the
-  /// headings that enclose them, or the whole loaded text.
+  /// headings that enclose them, or the whole loaded text; from the verse
+  /// [_heldFrom] names on.
   List<FlattenedItem> _itemsOf(int index, ReaderState state) {
     final content = state.content;
     if (content == null) return const [];
     final active = _activeSegmentIdsOf(index, state);
-    if (active.isEmpty) return content.items;
-    return collapsedReaderItems(content, active.toSet());
+    final items =
+        active.isEmpty
+            ? content.items
+            : collapsedReaderItems(content, active.toSet());
+    final heldFrom = _heldFrom[index];
+    return heldFrom == null ? items : itemsFromVerse(items, heldFrom);
   }
 
   List<_Entry> _currentEntries() =>
-      _layoutFor([
-        for (var i = 0; i < _startedCount; i++) _readView(i),
-      ]).entries;
+      _layoutFor(
+        _drawnViews([for (var i = 0; i < _startedCount; i++) _readView(i)]),
+      ).entries;
+
+  /// The started sources the list draws: all of them, or while following
+  /// live, those from the live verse's on (see [_drawnFrom]).
+  List<_SourceView> _drawnViews(List<_SourceView> views) =>
+      _drawnFrom == 0 || _drawnFrom >= views.length
+          ? views
+          : views.sublist(_drawnFrom);
 
   /// The list as last drawn, which the item positions index into; read on
   /// every scroll pause, so not laid out again.
@@ -468,7 +571,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
     for (final view in views) {
       final items = view.items;
-      if (view.index > 0) {
+      if (view.index > views.first.index) {
         if (items.isEmpty && !view.state.isError) continue;
         add(_Entry.divider(view.index), -1);
       }
@@ -559,7 +662,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       // Where each heading and verse of this source sits in the list.
       final headerEntry = <String, int>{};
       final verseEntry = <int, int>{};
-      if (views.length > 1 &&
+      // By the task's texts, not those started: a title added once the next
+      // text starts would land above the reading position.
+      if (widget.sources.length > 1 &&
           items.isNotEmpty &&
           !view.translationHeadings &&
           !_startsWithTitle(items)) {
@@ -790,9 +895,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
   Future<void> _openSectionsSheet() async {
     HapticFeedback.lightImpact();
-    // Every text takes part in the navigator: start those not loaded yet.
-    if (_startedCount < widget.sources.length) {
-      setState(() => _startedCount = widget.sources.length);
+    // Every text takes part in the navigator: start those not loaded yet,
+    // and draw those held back above the live verse.
+    if (_startedCount < widget.sources.length || _drawnFrom > 0) {
+      setState(() {
+        _startedCount = widget.sources.length;
+        if (_drawnFrom > 0) {
+          _drawnFrom = 0;
+          _releasingHeld = true;
+        }
+      });
     }
     final picked = await showReaderSheet<ReaderPageSection>(
       context,
@@ -912,6 +1024,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final totalItems = _drawnEntries().length;
 
     if (_isCollapsed) {
+      _loadBackward(firstVisibleIndex);
       _loadForward(firstVisibleIndex, lastVisibleIndex, totalItems);
       return;
     }
@@ -1004,6 +1117,55 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         _startedCount < widget.sources.length &&
         lastVisibleIndex >= totalItems - ReaderConstants.nextLoadThreshold) {
       setState(() => _startedCount++);
+    }
+  }
+
+  /// A drawn source opened further in than its first verse (at the live
+  /// verse) fetches the page before its loaded ones once its first row
+  /// nears the top of the screen; never while following, which stays on the
+  /// live verse. The rows it brings are held back ([_heldFrom]) and let in
+  /// once the list is still, so the page does not move under the person.
+  void _loadBackward(int firstVisibleIndex) {
+    if (_isFollowingLive || _liveHold) return;
+    final entries = _drawnEntries();
+    for (var index = _drawnFrom; index < _startedCount; index++) {
+      final params = widget.sources[index];
+      final state = ref.read(readerNotifierProvider(params));
+      final content = state.content;
+      if (state.status != ReaderStatus.loaded ||
+          content == null ||
+          state.isLoadingPrevious ||
+          _heldFrom.containsKey(index) ||
+          !earlierSegmentMissing(
+            content,
+            _activeSegmentIdsOf(index, state),
+            hasPreviousPage: state.hasPreviousPage,
+            skipped: _skippedSegmentIds[index] ?? const {},
+          )) {
+        continue;
+      }
+      final start = entries.indexWhere((e) => e.source == index);
+      if (start < 0 ||
+          firstVisibleIndex > start + ReaderConstants.previousLoadThreshold) {
+        continue;
+      }
+      final first = content.items
+          .map((item) => item.segment?.segmentNumber)
+          .whereType<int>()
+          .firstOrNull;
+      if (first == null) continue;
+      _heldFrom[index] = first;
+      _logger.debug('Loading source $index backward from verse $first');
+      ref.read(readerNotifierProvider(params).notifier).loadPreviousPage().then((
+        added,
+      ) {
+        if (!mounted) return;
+        if (added <= 0) {
+          _heldFrom.remove(index);
+          return;
+        }
+        _releaseHeldSources();
+      });
     }
   }
 
@@ -1195,22 +1357,27 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     });
   }
 
-  /// On a plan task's page, puts the entry at the top of the screen back in
-  /// place once [after] is laid out, when rows were added or removed above
-  /// it in [before]: a text loading its first page above the live verse, or
-  /// above the section the sheet jumped to. Left alone while the person or a
-  /// scroll of the app's is moving the list. A single text keeps its place
-  /// over an earlier page itself ([_adjustScrollAfterPreviousLoad]).
+  /// On a plan task's page, keeps the entry at the top of the screen in
+  /// place when rows were added or removed above it between [before] and
+  /// [after]: texts held back above the live verse let in, a text loading
+  /// its first page above the section the sheet jumped to, a title or
+  /// heading arriving. While following live, the live verse is the entry
+  /// kept. Left alone while the person or a scroll of the app's is moving
+  /// the list. A single text keeps its place over an earlier page itself
+  /// ([_adjustScrollAfterPreviousLoad]).
   ///
-  /// Texts often land a frame or two apart. Until the list has laid the
-  /// entry out back in place, its item positions still describe the list
-  /// before the jump, so the entry is kept ([_keptTop]) and each further
-  /// change moves the jump along with it.
+  /// The list is drawn afresh at the entry in this same frame, so the rows
+  /// never show pushed along. Until the new list has laid out, its item
+  /// positions still describe the old one, so the entry is kept
+  /// ([_keptTop]) and each further change moves it along.
   void _keepTopEntry(_PageLayout? before, _PageLayout after) {
+    final releasing = _releasingHeld;
+    _releasingHeld = false;
     if (!_isCollapsed ||
         before == null ||
         _isProgrammaticScroll ||
-        _recentUserGesture ||
+        _isUserScrolling ||
+        (_recentUserGesture && !releasing) ||
         !_itemScrollController.isAttached) {
       _keptTop = null;
       return;
@@ -1221,10 +1388,38 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       // A jump not laid out yet: the positions still describe the list
       // before it, and putting their top entry back would undo the jump.
       if (_pendingAppJumps > 0) return;
+      final positions = _itemPositionsListener.itemPositions.value;
       ItemPosition? top;
-      for (final position in _itemPositionsListener.itemPositions.value) {
-        if (position.itemTrailingEdge <= 0) continue;
-        if (top == null || position.index < top.index) top = position;
+      final live = _isFollowingLive ? _lastLiveVerse : null;
+      final liveEntry =
+          live == null
+              ? null
+              : _entryIndexForSegment(before.entries, live.$2, source: live.$1);
+      if (liveEntry != null) {
+        top = positions.where((p) => p.index == liveEntry).firstOrNull;
+      }
+      if (top == null) {
+        // The first row on screen that moved. A text's title and a heading
+        // stay put when pages land under them, so they are passed over; a
+        // verse that stayed has the rows land below it, which moves
+        // nothing on screen above it.
+        final visible =
+            positions.where((p) => p.itemTrailingEdge > 0).toList()
+              ..sort((a, b) => a.index.compareTo(b.index));
+        for (final position in visible) {
+          if (position.index >= before.entries.length) break;
+          if (movedTopEntry(
+                before.entries,
+                after.entries,
+                position.index,
+                _entryKey,
+              ) !=
+              null) {
+            top = position;
+            break;
+          }
+          if (before.entries[position.index].item?.isSegment ?? false) break;
+        }
       }
       if (top == null) return;
       final found = movedTopEntry(
@@ -1253,18 +1448,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     }
     _keptTop = kept;
     final jump = ++_keptTopJumps;
-    final alignment = kept.alignment;
+    _restartListAt((index: moved, alignment: kept.alignment));
+    // Laid out by the end of this frame; from the next the positions are
+    // the new list's.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // A finger that came down since then holds the list itself.
-      if (!mounted ||
-          jump != _keptTopJumps ||
-          _isProgrammaticScroll ||
-          _isUserScrolling ||
-          !_itemScrollController.isAttached) {
-        return;
-      }
-      _appJump(index: moved, alignment: alignment);
-      // Laid out by the next frame; from then the positions are right.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (jump == _keptTopJumps) _keptTop = null;
       });
@@ -1281,6 +1468,14 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     WidgetsBinding.instance
       ..addPostFrameCallback((_) => _pendingAppJumps--)
       ..ensureVisualUpdate();
+  }
+
+  /// Has this build draw a new list, with [start] where its first frame
+  /// stands. Called from build, so no rebuild is asked for.
+  void _restartListAt(LiveScrollTarget start) {
+    _listGeneration++;
+    _listStart = start;
+    _itemScrollController = ItemScrollController();
   }
 
   /// What an entry is across rebuilds of the list, wherever it sits.
@@ -1438,7 +1633,17 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     RecitationLiveState? previous,
     RecitationLiveState next,
   ) {
-    if (!mounted || next.position == null) return;
+    if (!mounted) return;
+    final lostSync = next.outOfSync && previous?.outOfSync != true;
+    if (!next.isFollowing || lostSync) {
+      // Nothing to wait for: the page shows as it is, its bars back.
+      if (_liveHold) {
+        setState(() => _liveHold = false);
+        _barsBack();
+      }
+      if (!next.isFollowing) _releaseHeldSources();
+    }
+    if (next.position == null) return;
     final positionChanged = previous?.position != next.position;
     final followRequested = previous?.followRequest != next.followRequest;
     if (followRequested) {
@@ -1548,6 +1753,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   }) async {
     final position = live.position;
     if (!mounted || position == null) return;
+    if (_liveHold) _logOpen('live position known');
     final eventId = _liveEventId!;
     final liveNotifier = ref.read(recitationLiveProvider(eventId).notifier);
 
@@ -1621,9 +1827,33 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         return;
       }
     }
+    final (liveSource, liveId) = located;
+    if (!_liveHold && _isHeldBack(liveSource, liveId)) {
+      // The room went back to rows held above: they are drawn first.
+      setState(() {
+        if (liveSource < _drawnFrom) _drawnFrom = liveSource;
+        _heldFrom.remove(liveSource);
+      });
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted || generation != _liveGeneration) return;
+    }
     liveNotifier.setOutOfSync(
       !_scrollToLiveSegment(located.$1, located.$2, position.roundNumber),
     );
+  }
+
+  /// Whether line [segmentId] of [source] is loaded but held back above the
+  /// reading position ([_drawnFrom], [_heldFrom]).
+  bool _isHeldBack(int source, String segmentId) {
+    if (source < _drawnFrom) return true;
+    final heldFrom = _heldFrom[source];
+    if (heldFrom == null) return false;
+    final content =
+        ref.read(readerNotifierProvider(widget.sources[source])).content;
+    final index = content?.getSegmentIndex(segmentId);
+    final number =
+        index == null ? null : content!.items[index].segment?.segmentNumber;
+    return number != null && number < heldFrom;
   }
 
   /// Whether the reader still follows the live room (not paused or off).
@@ -1634,10 +1864,11 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   }
 
   /// Brings [position] into a loaded text and returns where it landed. A
-  /// collapsed page follows it only within a source's own verses, loading
-  /// forward to them and starting the source that names the operator's text;
-  /// a whole text loads the page around it. Gives up, returning null, as
-  /// soon as [wanted] says the position is no longer the one to follow.
+  /// collapsed page follows it only within a source's own verses, starting
+  /// the source that names the operator's text; a source with nothing drawn
+  /// yet opens at the verse, one already drawn loads forward to it. A whole
+  /// text loads the page around it. Gives up, returning null, as soon as
+  /// [wanted] says the position is no longer the one to follow.
   Future<(int, String)?> _loadLive(
     RecitationLivePosition position, {
     required bool Function() wanted,
@@ -1646,10 +1877,14 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       final notifier = ref.read(
         readerNotifierProvider(widget.sources.first).notifier,
       );
-      final jumpedTo = await notifier.jumpToSegment(
+      final local = await notifier.resolveSegment(
         position.segmentId,
         sourceTextId: position.textId,
       );
+      if (!mounted || local == null) return null;
+      if (_liveHold) _startTranslationAt(0, local);
+      _logOpen('fetching the text at the live verse');
+      final jumpedTo = await notifier.jumpToSegment(local);
       if (!mounted || jumpedTo == null) return null;
       _rememberLiveAlias(position.segmentId, jumpedTo);
       return (0, jumpedTo);
@@ -1658,20 +1893,30 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     for (var i = 0; i < widget.sources.length; i++) {
       final params = widget.sources[i];
       if (i < _startedCount) {
-        final found = await _liveVerseIn(i, position, wanted: wanted);
+        final found = await _liveVerseIn(
+          i,
+          position,
+          wanted: wanted,
+          atVerse: _liveHold || i < _drawnFrom,
+        );
         if (!mounted || !wanted()) return null;
         if (found != null) return found;
         continue;
       }
       // Only a source naming the operator's text is worth starting early.
       if (params.textId != position.textId) continue;
-      // It loads, and walks to the verse, on its own: starting it starts
-      // every text before it too, and their first pages would hold up its
-      // own. They start once the verse is in, and land above it.
+      // It loads on its own: starting it starts every text before it too,
+      // and their first pages would hold up its own. They start once the
+      // verse is in, and land above it. Its first page and its page at the
+      // verse are fetched together.
       final held = ref.listenManual(readerNotifierProvider(params), (_, __) {});
       try {
-        if (await _awaitLoaded(params) == null || !mounted) return null;
-        final found = await _liveVerseIn(i, position, wanted: wanted);
+        final found = await _liveVerseIn(
+          i,
+          position,
+          wanted: wanted,
+          atVerse: true,
+        );
         if (!mounted || !wanted()) return null;
         if (found == null) continue;
         // Texts started while it loaded (the sections sheet, reading on)
@@ -1688,12 +1933,72 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return null;
   }
 
-  /// [position]'s verse in source [index] and its local id, loading the
-  /// source forward to it; null when the source does not hold it.
+  /// Has source [index]'s translation, when one shows, start at [local],
+  /// alongside the page at that verse rather than after it. A text not
+  /// drawn yet has its first-visit layout applied meanwhile too (the hold's
+  /// page mounts its setup), since that is what names the translation's
+  /// version. Kept loading ([_earlyLoads]) until build watches the source.
+  void _startTranslationAt(int index, String local) {
+    if (_hasComputedSecondaryInitial.contains(index)) return;
+    _hasComputedSecondaryInitial.add(index);
+    _secondaryInitialSegmentId[index] = local;
+    final params = widget.sources[index];
+    final loads = _earlyLoads[index] = [];
+    var started = false;
+    loads.add(
+      ref.listenManual<ReaderDualLayoutSettings>(
+        readerDualSettingsProvider(params.settingsScope),
+        (_, dual) {
+          final versionId = dual.secondary.versionId;
+          if (started || !dual.secondaryEnabled || versionId == null) return;
+          started = true;
+          _logOpen('fetching source $index\'s translation at the live verse');
+          loads.add(
+            ref.listenManual(
+              secondaryReaderProvider(
+                SecondaryReaderKey(
+                  textId: dual.primary.versionId ?? params.textId,
+                  versionId: versionId,
+                  initialSegmentId: local,
+                ),
+              ),
+              (_, __) {},
+            ),
+          );
+        },
+        fireImmediately: true,
+      ),
+    );
+    if (_liveHold && index >= _startedCount) setState(() {});
+  }
+
+  /// Lets go of [_startTranslationAt]'s loads for the sources build now
+  /// watches itself, after the frame that does.
+  void _releaseEarlyLoads() {
+    final watched = [
+      for (final index in _earlyLoads.keys)
+        if (index < _startedCount) index,
+    ];
+    if (watched.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final index in watched) {
+        for (final subscription in _earlyLoads.remove(index) ?? const []) {
+          subscription.close();
+        }
+      }
+    });
+  }
+
+  /// [position]'s verse in source [index] and its local id; null when the
+  /// source does not hold it. A source drawn already loads forward to it;
+  /// one with nothing drawn yet ([atVerse]) opens at it, its translation
+  /// with it, and loads the verses before it later, as pages above
+  /// ([_loadBackward]).
   Future<(int, String)?> _liveVerseIn(
     int index,
     RecitationLivePosition position, {
     required bool Function() wanted,
+    bool atVerse = false,
   }) async {
     final params = widget.sources[index];
     final notifier = ref.read(readerNotifierProvider(params).notifier);
@@ -1710,8 +2015,15 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final active = _activeSegmentIdsOf(index, state);
     if (active.isNotEmpty && !active.contains(local)) return null;
     if (state.content?.containsSegment(local) != true) {
-      final arrived = await _loadForwardTo(index, local, wanted: wanted);
-      if (!mounted || !arrived) return null;
+      if (atVerse) {
+        if (_liveHold) _startTranslationAt(index, local);
+        _logOpen('fetching source $index at the live verse');
+        final jumped = await notifier.jumpToSegment(local);
+        if (!mounted || jumped == null || !wanted()) return null;
+      } else {
+        final arrived = await _loadForwardTo(index, local, wanted: wanted);
+        if (!mounted || !arrived) return null;
+      }
       state = ref.read(readerNotifierProvider(params));
     }
     final content = state.content;
@@ -1789,24 +2101,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     setState(() => _liveAliases[segmentId] = localId);
   }
 
-  /// [params]'s state once its first page is in; null when it failed.
-  Future<ReaderState?> _awaitLoaded(ReaderParams params) async {
-    bool settled(ReaderState s) => s.status == ReaderStatus.loaded || s.isError;
-    var state = ref.read(readerNotifierProvider(params));
-    if (!settled(state)) {
-      try {
-        state = await ref
-            .read(readerNotifierProvider(params).notifier)
-            .stream
-            .firstWhere(settled)
-            .timeout(const Duration(seconds: 30));
-      } catch (e) {
-        _logger.debug('Source ${params.textId} did not load for live: $e');
-        return null;
-      }
-    }
-    return state.isError ? null : state;
-  }
 
   /// Scrolls to the rendered line [segmentId] of [source], read in [round];
   /// false when it is not on this page (a verse outside the task's).
@@ -1824,9 +2118,11 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     bool instant = false,
     bool heading = false,
   }) {
-    final layout = _layoutFor([
-      for (var i = 0; i < _startedCount; i++) _readView(i),
-    ]);
+    // Nothing is drawn yet: the texts before the live one stay out.
+    if (_liveHold) _drawnFrom = source;
+    final layout = _layoutFor(
+      _drawnViews([for (var i = 0; i < _startedCount; i++) _readView(i)]),
+    );
     final index = _entryIndexForSegment(
       layout.entries,
       segmentId,
@@ -1866,6 +2162,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     _lastLiveVerse = (source, segmentId);
     _lastLiveRound = round;
     _lastLiveSection = section?.key;
+    if (_liveHold) {
+      // Build draws the list at the verse once its translation is in too.
+      _logOpen('live verse located');
+      _startTranslationAt(source, segmentId);
+      setState(() {});
+      return true;
+    }
     if (!_itemScrollController.isAttached) return true;
 
     final LiveScrollTarget? target;
@@ -1985,6 +2288,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   void _keepLiveVerseInView() {
     final last = _lastLiveVerse;
     if (last == null ||
+        _revealing ||
         _liveAfterSectionJump ||
         _isProgrammaticScroll ||
         _recentUserGesture ||
@@ -2015,6 +2319,114 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       settling: true,
       instant: true,
     );
+  }
+
+  /// The list's first frame, drawn at the live verse by its top, has laid
+  /// out: the verse is measured, put in its place ⅔ down, and the page
+  /// shown, all before its next frame.
+  void _finishReveal() {
+    if (!_revealing || !_revealFontsIn || !mounted) return;
+    final positions = _itemPositionsListener.itemPositions.value;
+    final last = _lastLiveVerse;
+    final index =
+        last == null
+            ? null
+            : _entryIndexForSegment(_drawnEntries(), last.$2, source: last.$1);
+    ItemPosition? at(int row) =>
+        positions.where((p) => p.index == row).firstOrNull;
+    final verse = index == null ? null : at(index);
+    if (index != null && verse != null && _itemScrollController.isAttached) {
+      final start = at(0);
+      final target = liveScrollTarget(
+        index: index,
+        heightFraction: verse.itemTrailingEdge - verse.itemLeadingEdge,
+        distanceFromStart:
+            start == null ? null : verse.itemLeadingEdge - start.itemLeadingEdge,
+      );
+      if (target != null) {
+        _appJump(index: target.index, alignment: target.alignment);
+      }
+    }
+    _logOpen('shown');
+    setState(() => _revealing = false);
+  }
+
+  /// Starts loading the fonts a live page's Latin lines are set in (a
+  /// translation, a transliterated original, their headings) while it
+  /// waits: asked for only by the hidden first frame, they would load
+  /// after everything else ([_awaitRevealFonts]).
+  void _preloadLatinFonts() {
+    final fonts = ref.read(readerFontsProvider);
+    for (final line in ReaderFontLine.values) {
+      fonts.fontFor(line, ReaderScript.latin).family();
+    }
+    ReaderFonts.latinHeading.family(weight: ReaderFonts.headingWeight);
+  }
+
+  /// Waits, after the hidden first frame, for the fonts its lines asked
+  /// for: the default ones load when first used and the page is not waited
+  /// for them otherwise ([_waitingForPickedFonts]), so the verse would be
+  /// measured in a fallback and grow or shrink once they land. Then the
+  /// next layout measures it, or a timer should none come.
+  Future<void> _awaitRevealFonts() async {
+    await ref.read(readerPendingFontsProvider)();
+    if (!mounted || !_revealing) return;
+    _logOpen('fonts in');
+    setState(() => _revealFontsIn = true);
+    Timer(const Duration(milliseconds: 300), _finishReveal);
+  }
+
+  /// The bars and the pill the hold put away, back: the page opened without
+  /// the live verse, and reads like the normal reader.
+  void _barsBack() {
+    if (!mounted || !_focusMode.show()) return;
+    widget.onScrollDirectionChanged?.call(false);
+    setState(() => _pillVisible = true);
+  }
+
+  /// Logs how far into opening on a live verse [stage] came, timed from
+  /// mount, to see on a device where the wait goes.
+  void _logOpen(String stage) {
+    if (!_isLiveRecitation) return;
+    _logger.info('Live open: $stage at ${_openWatch.elapsedMilliseconds} ms');
+  }
+
+  /// Draws the rows held back above the reading position, the sources
+  /// before the live one ([_drawnFrom]) and earlier pages ([_heldFrom]),
+  /// once the page no longer follows live and the list is still, keeping
+  /// the reading position in that same frame ([_keepTopEntry]).
+  void _releaseHeldSources() {
+    _releaseTimer?.cancel();
+    if (!mounted ||
+        (_drawnFrom == 0 && _heldFrom.isEmpty) ||
+        _isFollowingLive) {
+      return;
+    }
+    if (_isUserScrolling || _isProgrammaticScroll || _revealing) {
+      _releaseTimer = Timer(
+        const Duration(milliseconds: 400),
+        _releaseHeldSources,
+      );
+      return;
+    }
+    // A page still on its way stays held; it lets itself in on arrival.
+    final loading = {
+      for (final index in _heldFrom.keys)
+        if (ref
+            .read(readerNotifierProvider(widget.sources[index]))
+            .isLoadingPrevious)
+          index,
+    };
+    if (_drawnFrom == 0 && _heldFrom.keys.every(loading.contains)) return;
+    setState(() {
+      _drawnFrom = 0;
+      _heldFrom.removeWhere((index, _) => !loading.contains(index));
+      _releasingHeld = true;
+    });
+    // Near the top still, the next page above comes in the same way.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _checkPaginationThresholds();
+    });
   }
 
   /// Whether the page follows the live recitation right now.
@@ -2212,7 +2624,12 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final effectivePrimaryTextId =
         dualSettings.primary.versionId ?? params.textId;
     SecondaryReaderState? secondaryState;
-    if (secondaryActive) {
+    // Opening on a live verse, a translation waits to start at that verse
+    // ([_startTranslationAt]): its key ignores where it starts, so one
+    // started before would stay at the text's first page.
+    final translationWaits =
+        _liveHold && !_hasComputedSecondaryInitial.contains(index);
+    if (secondaryActive && !translationWaits) {
       // The key's identity ignores the anchor; a read leaves it uncomputed.
       final secondary = secondaryReaderProvider(
         SecondaryReaderKey(
@@ -2392,21 +2809,20 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     }
 
     final views = [for (var i = 0; i < _startedCount; i++) _watchView(i)];
+    _releaseEarlyLoads();
     final first = views.first;
     _scheduleInitialScroll(first.state);
 
-    final content = first.state.content;
-    if (content == null || content.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (!_pageShown && _waitingForPickedFonts(views)) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    _pageShown = true;
-
     // First live evaluation once content is on screen: lands a late joiner
-    // on the live line, or pauses if they opened a different text.
-    if (_isLiveRecitation && liveEventId != null && !_liveInitialized) {
+    // on the live line, or pauses if they opened a different text. Opening
+    // on a live verse, it does not wait for the first text, which may not
+    // be the live one.
+    final content = first.state.content;
+    final hasContent = content != null && content.isNotEmpty;
+    if (_isLiveRecitation &&
+        liveEventId != null &&
+        !_liveInitialized &&
+        (hasContent || _liveHold)) {
       _liveInitialized = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -2419,7 +2835,40 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       });
     }
 
-    final layout = _layoutFor(views);
+    // The first text drawn: while following live, maybe not the first.
+    final holding = _holdWaiting;
+    final drawnFirst =
+        views[_drawnFrom < views.length ? _drawnFrom : 0].state.content;
+    if (!holding && (drawnFirst == null || drawnFirst.isEmpty)) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (!_pageShown && _waitingForPickedFonts(views)) {
+      return holding
+          ? _holdingPage(views)
+          : const Center(child: CircularProgressIndicator());
+    }
+    if (!holding) _pageShown = true;
+
+    final layout = _layoutFor(_drawnViews(views));
+    if (_liveHold) {
+      final start = _liveHoldStart(layout, views);
+      if (start == null && _holdWaiting) return _holdingPage(views);
+      _liveHold = false;
+      _pageShown = true;
+      _liveHoldTimer?.cancel();
+      _translationWaitTimer?.cancel();
+      _logOpen(start == null ? 'gave up waiting' : 'drawing at the live verse');
+      if (start == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _barsBack());
+      } else {
+        // Drawn at the verse but hidden, to be measured once the fonts its
+        // lines asked for are in.
+        _restartListAt(start);
+        _revealing = true;
+        _revealFontsIn = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _awaitRevealFonts());
+      }
+    }
     _keepTopEntry(_layout, layout);
     _layout = layout;
     final entries = layout.entries;
@@ -2448,7 +2897,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     }
     // Something to move between: more than one section on the page.
     final pillSections = _pillSections(layout);
-    final sectionCount = pillSections.length + pending;
+    // Texts held back above the live verse count as not loaded yet.
+    final sectionCount = pillSections.length + pending + _drawnFrom;
     final showPill = pillSections.isNotEmpty && sectionCount > 1;
     // Each counted heading's place, for its overline, as the pill counts.
     _sectionPlaces = {
@@ -2477,7 +2927,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             ? _liveRoundOn(layout, livePosition, liveSegmentId)
             : null;
 
-    return Column(
+    final page = Column(
       children: [
         if (showPill)
           SlideAwayHeader(
@@ -2540,31 +2990,122 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                 }
                 return false;
               },
+              // Keyed by generation, so a list drawn afresh starts at
+              // [_listStart] and not at the place the last one stored.
               child: ScrollablePositionedList.builder(
+                key: PageStorageKey(('reader-list', _listGeneration)),
                 itemScrollController: _itemScrollController,
                 itemPositionsListener: _itemPositionsListener,
-                itemCount: entries.length,
+                initialScrollIndex: _listStart.index,
+                initialAlignment: _listStart.alignment,
+                // Loading next, a page or the next source's first one, as
+                // the list's last row: below it, its coming and going would
+                // resize the list and move every verse on screen.
+                itemCount: entries.length + (isLoadingTail ? 1 : 0),
                 padding: EdgeInsets.only(
                   top: ReaderConstants.contentTopPadding,
                   bottom: widget.bottomPadding,
                 ),
                 itemBuilder:
                     (context, index) =>
-                        _buildEntry(entries[index], views, liveSegmentId),
+                        index < entries.length
+                            ? _buildEntry(entries[index], views, liveSegmentId)
+                            : const SegmentSkeletonList(
+                              count: 1,
+                              linesPerSegment: 2,
+                            ),
               ),
             ),
           ),
         ),
-        // Loading next indicator: a page, or the next source's first one
-        if (isLoadingTail)
-          const SegmentSkeletonList(count: 1, linesPerSegment: 2),
         // One per distinct text: two sources naming the same verses of a
         // text share a reader, and would share a key.
         for (final params in {for (final view in views) view.params})
           _ReaderSourceSetup(key: ValueKey(params), params: params),
       ],
     );
+    // Always wrapped the same way, so the list survives the reveal.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        AnimatedOpacity(
+          opacity: _revealing ? 0 : 1,
+          duration:
+              _revealing ? Duration.zero : const Duration(milliseconds: 200),
+          child: page,
+        ),
+        if (_revealing) const Center(child: CircularProgressIndicator()),
+      ],
+    );
   }
+
+  /// Where the list first draws on a page opened following live: the live
+  /// verse, by its top ⅔ down until it is measured. Null while the verse is
+  /// not in yet, or its translation line is still on its way; once the wait
+  /// has run out, the verse is shown without it.
+  LiveScrollTarget? _liveHoldStart(
+    _PageLayout layout,
+    List<_SourceView> views,
+  ) {
+    final verse = _lastLiveVerse;
+    if (verse == null || (!_barsAway && !_liveHoldExpired)) return null;
+    final (source, segmentId) = verse;
+    final index = _entryIndexForSegment(
+      layout.entries,
+      segmentId,
+      source: source,
+    );
+    if (index == null) return null;
+    final secondary = views[source].secondaryState;
+    final number = layout.entries[index].item?.segment?.segmentNumber;
+    // The translation's headings sit in the verse they open at: until it
+    // has the verses drawn above the live one, a heading opening earlier
+    // shows in the live verse and leaves it later, moving the page.
+    final firstDrawn = [
+      for (final entry in layout.entries)
+        if (entry.source == source) entry.item?.segment?.segmentNumber,
+    ].whereType<int>().firstOrNull;
+    final loaded = secondary?.loadedSegments ?? const [];
+    final coversAbove =
+        secondary != null &&
+        (secondary.errorMessage != null ||
+            secondary.pagingFailed ||
+            (loaded.isNotEmpty &&
+                (!secondary.hasPreviousPage ||
+                    firstDrawn == null ||
+                    loaded.first.segmentNumber <= firstDrawn)));
+    if (!_translationWaitOver &&
+        views[source].secondaryActive &&
+        number != null &&
+        (secondary == null || secondary.isPending(number) || !coversAbove)) {
+      return null;
+    }
+    return liveScrollTarget(index: index);
+  }
+
+  /// Whether the page still waits: for the live verse until
+  /// [liveOpenHoldLimit], and once it is found, for its translation until
+  /// [liveOpenTranslationLimit], since one landing after the verse shows
+  /// grows it and moves the page.
+  bool get _holdWaiting =>
+      _liveHold &&
+      (!_liveHoldExpired ||
+          (_lastLiveVerse != null && !_translationWaitOver));
+
+  /// The page while it waits for the live verse: the loading circle, and
+  /// each text's first-visit layout applied meanwhile, the live text's too
+  /// before it is drawn.
+  Widget _holdingPage(List<_SourceView> views) => Stack(
+    fit: StackFit.expand,
+    children: [
+      const Center(child: CircularProgressIndicator()),
+      for (final params in {
+        for (final view in views) view.params,
+        for (final index in _earlyLoads.keys) widget.sources[index],
+      })
+        _ReaderSourceSetup(key: ValueKey(params), params: params),
+    ],
+  );
 
   Widget _buildEntry(
     _Entry entry,

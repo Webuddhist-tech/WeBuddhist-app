@@ -2,6 +2,15 @@
 /// height from the top: the verse's middle sits here.
 const double liveHoldFraction = 2 / 3;
 
+/// How long a page opened following live waits for the live verse before
+/// it shows as it is.
+const Duration liveOpenHoldLimit = Duration(seconds: 5);
+
+/// How long such a page, its live verse found, waits for that verse's
+/// translation before it shows without it: one landing later grows the
+/// verse and moves the page.
+const Duration liveOpenTranslationLimit = Duration(seconds: 8);
+
 /// Where to scroll for the live verse: the list row and the fraction of the
 /// text area its top edge lands at.
 typedef LiveScrollTarget = ({int index, double alignment});
