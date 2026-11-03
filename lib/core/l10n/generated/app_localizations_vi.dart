@@ -984,7 +984,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String routine_block_default_title(String title, int count) {
-    return '$title +$count more';
+    return '$title +$count mục khác';
   }
 
   @override
