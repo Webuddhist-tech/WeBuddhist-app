@@ -993,6 +993,11 @@ class AppLocalizationsNe extends AppLocalizations {
   String get routine_title => 'मेरा अभ्यासहरू';
 
   @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count more';
+  }
+
+  @override
   String get bookmarks => 'बुकमार्कहरू';
 
   @override
