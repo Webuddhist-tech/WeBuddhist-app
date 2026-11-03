@@ -48,10 +48,8 @@ class GroupSearchState {
 }
 
 class GroupSearchNotifier extends StateNotifier<GroupSearchState> {
-  GroupSearchNotifier({
-    required this.repository,
-    required this.language,
-  }) : super(const GroupSearchState());
+  GroupSearchNotifier({required this.repository, required this.language})
+    : super(const GroupSearchState());
 
   final ConnectRepository repository;
   final String language;

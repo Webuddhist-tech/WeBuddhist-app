@@ -704,6 +704,10 @@ class AppLocalizationsVi extends AppLocalizations {
       'Chưa có bình luận nào. Hãy bắt đầu cuộc trò chuyện';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'Chụm hoặc chạm hai lần để thu phóng · vuốt để xem ảnh tiếp theo';
+
+  @override
   String get connect_online => 'Trực tuyến';
 
   @override

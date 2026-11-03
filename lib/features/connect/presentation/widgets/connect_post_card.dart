@@ -7,18 +7,20 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
-import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_like_actions.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_action_menu.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_expandable_caption.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_action_bar.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_header.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_detail_drawer.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_link_card.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_media_grid.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_media_viewer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -55,9 +57,12 @@ class ConnectPostCard extends ConsumerStatefulWidget {
 }
 
 class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
-  static const _collapsedCaptionLines = 4;
+  static const _collapsedCaptionLines = 2;
 
   final ConnectOptimisticLikeState _likeState = ConnectOptimisticLikeState();
+
+  /// Bumped on every like change so an open photo viewer redraws its footer.
+  final ValueNotifier<int> _likeChanges = ValueNotifier(0);
   bool _captionExpanded = false;
 
   bool get _isLiked => _likeState.isLiked(widget.post.likedByMe);
@@ -72,6 +77,12 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
     super.didUpdateWidget(oldWidget);
     // Feed cards have no keys, so a reorder can hand this state another post.
     if (widget.post.id != oldWidget.post.id) _captionExpanded = false;
+  }
+
+  @override
+  void dispose() {
+    _likeChanges.dispose();
+    super.dispose();
   }
 
   @override
@@ -111,13 +122,11 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
                 ConnectFeedCardLayout.horizontalPadding,
                 0,
               ),
-              child: Text(
-                caption,
-                maxLines: _captionExpanded ? null : _collapsedCaptionLines,
-                overflow:
-                    _captionExpanded
-                        ? TextOverflow.visible
-                        : TextOverflow.ellipsis,
+              child: ConnectExpandableCaption(
+                text: caption,
+                expanded: _captionExpanded,
+                onToggle: _toggleCaption,
+                maxLines: _collapsedCaptionLines,
                 strutStyle:
                     hasTibetanCaption
                         ? AppFontConfig.tibetanStrutStyle(
@@ -139,11 +148,11 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
                   links.isNotEmpty
                       ? ConnectFeedCardLayout.bodyToMediaSpacing
                       : ConnectFeedCardLayout.actionBarTopSpacing,
-              child: _PostMediaGallery(
-                postId: post.id,
+              child: ConnectPostMediaGrid(
                 media: imageMedia,
                 isDark: isDark,
-                onDoubleTapLike: _toggleLike,
+                onTapImage: (index) => _openMediaViewer(imageMedia, index),
+                onDoubleTap: _toggleLike,
               ),
             ),
           ],
@@ -241,17 +250,41 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
     );
   }
 
-  Future<void> _toggleLike() async {
+  void _openMediaViewer(List<ConnectPostMedia> media, int index) {
+    ConnectPostMediaViewer.show(
+      context,
+      media: media,
+      initialIndex: index,
+      title: widget.post.groupName,
+      listenable: _likeChanges,
+      actionsBuilder:
+          (_) => ConnectPostMediaViewerActions(
+            isLiked: _isLiked,
+            likeCount: _likeCount,
+            isLoading: _likeState.isSubmitting,
+            onLike: () => _toggleLike(fromViewer: true),
+            onShare: () => _sharePost(widget.post),
+          ),
+    );
+  }
+
+  void _setLikeState(VoidCallback fn) {
+    setState(fn);
+    _likeChanges.value++;
+  }
+
+  /// [fromViewer] puts the login sheet above the full-screen photo viewer.
+  Future<void> _toggleLike({bool fromViewer = false}) async {
     if (_likeState.isSubmitting) return;
 
     final authState = ref.read(authProvider);
     if (authState.isGuest || !authState.isLoggedIn) {
-      LoginDrawer.show(context, ref);
+      LoginDrawer.show(context, ref, useRootNavigator: fromViewer);
       return;
     }
 
     final wasLiked = _isLiked;
-    setState(() => _likeState.beginToggle(wasLiked));
+    _setLikeState(() => _likeState.beginToggle(wasLiked));
 
     final result = await ref
         .read(connectPostLikeActionsProvider)
@@ -266,10 +299,8 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
     if (!mounted) return;
 
     if (!result.isSuccess) {
-      setState(() => _likeState.revert(wasLiked));
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      _setLikeState(() => _likeState.revert(wasLiked));
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             wasLiked
@@ -281,7 +312,7 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
       return;
     }
 
-    setState(
+    _setLikeState(
       () => _likeState.commitSuccess(
         serverLikeCount: widget.post.likeCount,
         serverLikedByMe: widget.post.likedByMe,
@@ -316,200 +347,5 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
         groupId: post.groupId,
       );
     }
-  }
-}
-
-class _PostMediaGallery extends StatefulWidget {
-  const _PostMediaGallery({
-    required this.postId,
-    required this.media,
-    required this.isDark,
-    required this.onDoubleTapLike,
-  });
-
-  final String postId;
-  final List<ConnectPostMedia> media;
-  final bool isDark;
-  final VoidCallback onDoubleTapLike;
-
-  @override
-  State<_PostMediaGallery> createState() => _PostMediaGalleryState();
-}
-
-class _PostMediaGalleryState extends State<_PostMediaGallery> {
-  late PageController _controller;
-  late int _page;
-
-  /// Per-post slot; the default PageView slot is shared by every card under
-  /// the feed's PageStorageKey, so carousels restored each other's page.
-  String get _storageId => 'connect_post_gallery:${widget.postId}';
-
-  int get _savedPage {
-    final saved = PageStorage.maybeOf(
-      context,
-    )?.readState(context, identifier: _storageId);
-    return saved is int ? saved.clamp(0, widget.media.length - 1) : 0;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _page = _savedPage;
-    _controller = PageController(initialPage: _page, keepPage: false);
-  }
-
-  @override
-  void didUpdateWidget(_PostMediaGallery oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.postId == oldWidget.postId &&
-        widget.media.length == oldWidget.media.length) {
-      return;
-    }
-    _page = _savedPage;
-    if (_controller.hasClients) {
-      _controller.jumpToPage(_page);
-      return;
-    }
-    // Not attached (single-image post): a fresh controller sets the start page.
-    _controller.dispose();
-    _controller = PageController(initialPage: _page, keepPage: false);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onPageChanged(int index) {
-    PageStorage.maybeOf(
-      context,
-    )?.writeState(context, index, identifier: _storageId);
-    setState(() => _page = index);
-  }
-
-  /// Carousel frame follows the first image, kept between portrait 4:5 and
-  /// landscape 1.91:1 so one tall photo cannot take over the feed.
-  double get _aspectRatio {
-    final first = widget.media.first;
-    final width = first.width;
-    final height = first.height;
-    if (width == null || height == null || width <= 0 || height <= 0) {
-      return 1;
-    }
-    return (width / height).clamp(0.8, 1.91).toDouble();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final media = widget.media;
-    if (media.length == 1) {
-      return _PostMediaTile(
-        media: media.first,
-        isDark: widget.isDark,
-        onDoubleTapLike: widget.onDoubleTapLike,
-      );
-    }
-
-    final errorWidget = ColoredBox(
-      color: widget.isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-      child: Icon(
-        AppAssets.photoLibrary,
-        color: widget.isDark ? AppColors.grey500 : AppColors.grey600,
-      ),
-    );
-
-    return AspectRatio(
-      aspectRatio: _aspectRatio,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          PageView.builder(
-            controller: _controller,
-            itemCount: media.length,
-            onPageChanged: _onPageChanged,
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                onDoubleTap: widget.onDoubleTapLike,
-                child: CachedNetworkImageWidget(
-                  imageUrl: media[index].url,
-                  fit: BoxFit.cover,
-                  errorWidget: errorWidget,
-                ),
-              );
-            },
-          ),
-          Positioned(
-            top: 12,
-            right: 12,
-            child: IgnorePointer(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '${_page + 1}/${media.length}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PostMediaTile extends StatelessWidget {
-  const _PostMediaTile({
-    required this.media,
-    required this.isDark,
-    required this.onDoubleTapLike,
-  });
-
-  final ConnectPostMedia media;
-  final bool isDark;
-  final VoidCallback onDoubleTapLike;
-
-  @override
-  Widget build(BuildContext context) {
-    final errorWidget = ColoredBox(
-      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-      child: Icon(
-        AppAssets.photoLibrary,
-        color: isDark ? AppColors.grey500 : AppColors.grey600,
-      ),
-    );
-
-    final width = media.width;
-    final height = media.height;
-    final Widget image;
-    if (width != null && height != null && width > 0 && height > 0) {
-      image = ClipRect(
-        child: AspectRatio(
-          aspectRatio: width / height,
-          child: CachedNetworkImageWidget(
-            imageUrl: media.url,
-            fit: BoxFit.cover,
-            errorWidget: errorWidget,
-          ),
-        ),
-      );
-    } else {
-      image = CachedNetworkImageWidget(
-        imageUrl: media.url,
-        width: double.infinity,
-        fit: BoxFit.fitWidth,
-        errorWidget: errorWidget,
-      );
-    }
-
-    return GestureDetector(onDoubleTap: onDoubleTapLike, child: image);
   }
 }

@@ -63,10 +63,7 @@ class ConnectPostComment {
   bool get isReply =>
       parentCommentId != null && parentCommentId!.trim().isNotEmpty;
 
-  ConnectPostComment copyWith({
-    int? likeCount,
-    bool? likedByMe,
-  }) {
+  ConnectPostComment copyWith({int? likeCount, bool? likedByMe}) {
     return ConnectPostComment(
       id: id,
       postId: postId,

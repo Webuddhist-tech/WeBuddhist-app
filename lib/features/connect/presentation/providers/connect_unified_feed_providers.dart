@@ -71,7 +71,8 @@ class UnifiedConnectFeedState {
   }
 }
 
-class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> {
+class UnifiedConnectFeedNotifier
+    extends StateNotifier<UnifiedConnectFeedState> {
   UnifiedConnectFeedNotifier({
     required this.ref,
     required this.includeUnfollowed,
@@ -261,12 +262,14 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
   }
 
   Future<void> _loadMoreFeed(int epoch, int feedEpoch) async {
-    final result = await ref.read(connectRepositoryProvider).getConnectFeeds(
-      includeUnfollowed: includeUnfollowed,
-      language: language,
-      skip: state.feedSkip,
-      limit: _limit,
-    );
+    final result = await ref
+        .read(connectRepositoryProvider)
+        .getConnectFeeds(
+          includeUnfollowed: includeUnfollowed,
+          language: language,
+          skip: state.feedSkip,
+          limit: _limit,
+        );
 
     // Page one was replaced meanwhile; this page belongs to the old list.
     if (!mounted || epoch != _pageEpoch || feedEpoch != _feedEpoch) return;
@@ -301,10 +304,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
 
     result.fold(
       (failure) {
-        state = state.copyWith(
-          error: failure.message,
-          practicesHasMore: false,
-        );
+        state = state.copyWith(error: failure.message, practicesHasMore: false);
       },
       (page) {
         state = state.copyWith(
@@ -337,14 +337,13 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
         window: () => math.max(_limit, state.feedSkip),
         fetch:
             (skip, limit) async => (await ref
-                    .read(connectRepositoryProvider)
-                    .getConnectFeeds(
-                      includeUnfollowed: includeUnfollowed,
-                      language: language,
-                      skip: skip,
-                      limit: limit,
-                    ))
-                .map((page) => (page.items, page.total)),
+                .read(connectRepositoryProvider)
+                .getConnectFeeds(
+                  includeUnfollowed: includeUnfollowed,
+                  language: language,
+                  skip: skip,
+                  limit: limit,
+                )).map((page) => (page.items, page.total)),
         idOf: (item) => item.dedupeKey,
         isCurrent: () => mounted && generation == _loadGeneration,
         pageLimit: _windowLimit,

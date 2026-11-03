@@ -47,7 +47,8 @@ class ConnectFeedCardHeader extends StatelessWidget {
     final timeLabel = ConnectRelativeTime.format(context, timestamp);
     final trimmedSubtitle = subtitle?.trim();
     final secondLine = [
-      if (trimmedSubtitle != null && trimmedSubtitle.isNotEmpty) trimmedSubtitle,
+      if (trimmedSubtitle != null && trimmedSubtitle.isNotEmpty)
+        trimmedSubtitle,
       if (stackTimestamp && timeLabel.isNotEmpty) timeLabel,
     ].join(' · ');
 
@@ -65,11 +66,7 @@ class ConnectFeedCardHeader extends StatelessWidget {
               : null,
       child:
           groupAvatarUrl == null || groupAvatarUrl!.isEmpty
-              ? Icon(
-                AppAssets.usersThree,
-                size: 18,
-                color: secondaryColor,
-              )
+              ? Icon(AppAssets.usersThree, size: 18, color: secondaryColor)
               : null,
     );
 

@@ -291,6 +291,7 @@
     }
   },
   "connect_post_comments_empty": "还没有留言。开始讨论吧",
+  "connect_post_media_viewer_hint": "双指缩放或点两下放大 · 滑动查看下一张",
   "connect_online": "在线",
   "connect_ended": "已结束",
   "connect_ended_on": "已于 {date} 结束",

@@ -97,8 +97,7 @@ class _FollowedGroupTile extends StatelessWidget {
       fontSize: FollowedGroupsRow._titleFontSize,
       color: subtitleColor,
       fontWeight: FontWeight.w500,
-      height:
-          hasTibetanTitle ? AppFontConfig.tibetanCompactLineHeight : null,
+      height: hasTibetanTitle ? AppFontConfig.tibetanCompactLineHeight : null,
       leadingDistribution:
           hasTibetanTitle ? AppFontConfig.tibetanLeadingDistribution : null,
     );
@@ -204,14 +203,12 @@ class _AllGroupsTile extends StatelessWidget {
         isDark ? AppColors.surfaceDark : AppColors.surfaceWhite;
     final borderColor = isDark ? AppColors.cardBorderDark : AppColors.grey300;
     final label = context.l10n.connect_all_groups;
-    final hasTibetanLabel =
-        context.isTibetanLocale || _containsTibetan(label);
+    final hasTibetanLabel = context.isTibetanLocale || _containsTibetan(label);
     final titleStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
       fontSize: FollowedGroupsRow._titleFontSize,
       color: subtitleColor,
       fontWeight: FontWeight.w500,
-      height:
-          hasTibetanLabel ? AppFontConfig.tibetanCompactLineHeight : null,
+      height: hasTibetanLabel ? AppFontConfig.tibetanCompactLineHeight : null,
       leadingDistribution:
           hasTibetanLabel ? AppFontConfig.tibetanLeadingDistribution : null,
     );

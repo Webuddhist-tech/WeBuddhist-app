@@ -14,7 +14,9 @@ class ConnectFeedCardLayout {
   static const double actionBarTopSpacing = 2;
 
   static Color listGapColor(bool isDark) =>
-      isDark ? AppColors.scaffoldBackgroundDark : AppColors.scaffoldBackgroundLight;
+      isDark
+          ? AppColors.scaffoldBackgroundDark
+          : AppColors.scaffoldBackgroundLight;
 }
 
 /// Full-bleed media block with only vertical spacing below.

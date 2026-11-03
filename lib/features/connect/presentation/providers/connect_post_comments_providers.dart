@@ -143,7 +143,10 @@ class ConnectPostCommentsNotifier
         },
         fail:
             (failure) =>
-                state = state.copyWith(isLoading: false, error: failure.message),
+                state = state.copyWith(
+                  isLoading: false,
+                  error: failure.message,
+                ),
       );
     } finally {
       _firstPageInFlight = false;
@@ -162,11 +165,9 @@ class ConnectPostCommentsNotifier
     state = state.copyWith(isLoadingMore: true, clearError: true);
     final epoch = _pageEpoch;
 
-    final result = await ref.read(connectRepositoryProvider).getPostComments(
-      postId: postId,
-      skip: state.skip,
-      limit: _limit,
-    );
+    final result = await ref
+        .read(connectRepositoryProvider)
+        .getPostComments(postId: postId, skip: state.skip, limit: _limit);
 
     if (!mounted) return;
     // Page one was replaced meanwhile; this page belongs to the old list.
@@ -211,9 +212,12 @@ class ConnectPostCommentsNotifier
         window: () => math.max(_limit, state.skip),
         fetch:
             (skip, limit) async => (await ref
-                    .read(connectRepositoryProvider)
-                    .getPostComments(postId: postId, skip: skip, limit: limit))
-                .map((page) => (page.comments, page.total)),
+                .read(connectRepositoryProvider)
+                .getPostComments(
+                  postId: postId,
+                  skip: skip,
+                  limit: limit,
+                )).map((page) => (page.comments, page.total)),
         idOf: (comment) => comment.id,
         isCurrent: () => mounted && generation == _loadGeneration,
         pageLimit: _windowLimit,

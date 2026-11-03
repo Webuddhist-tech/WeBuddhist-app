@@ -1,14 +1,12 @@
 /// Upper bound used when clamping like counts after optimistic decrements.
 const int connectLikeCountMax = 1 << 31;
 
-int clampConnectLikeCount(int count) =>
-    count.clamp(0, connectLikeCountMax);
+int clampConnectLikeCount(int count) => count.clamp(0, connectLikeCountMax);
 
 bool resolveOptimisticIsLiked({
   required bool serverLikedByMe,
   required bool? likedOverride,
-}) =>
-    likedOverride ?? serverLikedByMe;
+}) => likedOverride ?? serverLikedByMe;
 
 int resolveOptimisticLikeCount({
   required int serverLikeCount,
@@ -28,8 +26,7 @@ int resolveOptimisticLikeCount({
 int nextLikeCountAfterToggle({
   required int currentCount,
   required bool wasLiked,
-}) =>
-    wasLiked ? clampConnectLikeCount(currentCount - 1) : currentCount + 1;
+}) => wasLiked ? clampConnectLikeCount(currentCount - 1) : currentCount + 1;
 
 /// Local optimistic UI state shared by post and comment like buttons.
 class ConnectOptimisticLikeState {
@@ -45,13 +42,12 @@ class ConnectOptimisticLikeState {
   int likeCount({
     required int serverLikeCount,
     required bool serverLikedByMe,
-  }) =>
-      resolveOptimisticLikeCount(
-        serverLikeCount: serverLikeCount,
-        serverLikedByMe: serverLikedByMe,
-        likedOverride: likedOverride,
-        likeCountOverride: likeCountOverride,
-      );
+  }) => resolveOptimisticLikeCount(
+    serverLikeCount: serverLikeCount,
+    serverLikedByMe: serverLikedByMe,
+    likedOverride: likedOverride,
+    likeCountOverride: likeCountOverride,
+  );
 
   void beginToggle(bool wasLiked) {
     isSubmitting = true;

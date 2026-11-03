@@ -95,7 +95,8 @@ class _ConnectMyDiscoverTabState extends State<ConnectMyDiscoverTab> {
       onRefresh: onRefresh ?? () async {},
       child: NotificationListener<ScrollNotification>(
         onNotification:
-            (notification) => _handleScrollNotification(notification, onLoadMore),
+            (notification) =>
+                _handleScrollNotification(notification, onLoadMore),
         child: builder(context, _switchToDiscover, _buildScrollHeader()),
       ),
     );

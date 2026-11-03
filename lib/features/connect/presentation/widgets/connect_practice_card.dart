@@ -194,10 +194,8 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                                 onImage: true,
                                 onTap:
                                     widget.onSeriesJoinTap ??
-                                    () => _onPracticeWithUsTap(
-                                      practice,
-                                      series,
-                                    ),
+                                    () =>
+                                        _onPracticeWithUsTap(practice, series),
                               )
                               : null,
                       trailing:
