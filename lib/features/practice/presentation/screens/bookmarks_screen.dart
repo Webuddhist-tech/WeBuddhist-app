@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show SemanticsRole;
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -20,63 +21,80 @@ class BookmarksScreen extends ConsumerStatefulWidget {
 }
 
 class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+    with TickerProviderStateMixin {
+  late TabController _tabController;
 
-  List<String> _tabLabels(BuildContext context) => [
-    context.l10n.search_all,
-    context.l10n.home_shortcut_plans,
-    context.l10n.home_chants,
-    context.l10n.bookmark_mala,
-    context.l10n.bookmark_group_accumulation,
-    context.l10n.bookmark_timers,
-    context.l10n.bookmark_texts,
-  ];
-  static const _tabs = [
-    BookmarkTab.all,
-    BookmarkTab.plans,
-    BookmarkTab.chants,
-    BookmarkTab.mala,
-    BookmarkTab.groupAccumulation,
-    BookmarkTab.timers,
-    BookmarkTab.texts,
-  ];
+  /// Tabs currently shown; only types that hold bookmarks (plus `all`), see
+  /// [BookmarksState.visibleTabs].
+  late List<BookmarkTab> _tabs;
 
-  List<(String, String)> _emptyMessages(BuildContext context) => [
-    (
+  String _tabLabel(BuildContext context, BookmarkTab tab) => switch (tab) {
+    BookmarkTab.all => context.l10n.search_all,
+    BookmarkTab.plans => context.l10n.home_shortcut_plans,
+    BookmarkTab.chants => context.l10n.home_chants,
+    BookmarkTab.mala => context.l10n.bookmark_mala,
+    BookmarkTab.groupAccumulation => context.l10n.bookmark_group_accumulation,
+    BookmarkTab.timers => context.l10n.bookmark_timers,
+    BookmarkTab.texts => context.l10n.bookmark_texts,
+  };
+
+  (String, String) _emptyMessage(
+    BuildContext context,
+    BookmarkTab tab,
+  ) => switch (tab) {
+    BookmarkTab.all => (
       context.l10n.bookmarks_empty_all_title,
       context.l10n.bookmarks_empty_all_subtitle,
     ),
-    (
+    BookmarkTab.plans => (
       context.l10n.bookmarks_empty_plans_title,
       context.l10n.bookmarks_empty_plans_subtitle,
     ),
-    (
+    BookmarkTab.chants => (
       context.l10n.bookmarks_empty_chant_collections_title,
       context.l10n.bookmarks_empty_chant_collections_subtitle,
     ),
-    (
+    BookmarkTab.mala => (
       context.l10n.bookmarks_empty_malas_title,
       context.l10n.bookmarks_empty_malas_subtitle,
     ),
-    (
+    BookmarkTab.groupAccumulation => (
       context.l10n.bookmarks_empty_group_accumulations_title,
       context.l10n.bookmarks_empty_group_accumulations_subtitle,
     ),
-    (
+    BookmarkTab.timers => (
       context.l10n.bookmarks_empty_timers_title,
       context.l10n.bookmarks_empty_timers_subtitle,
     ),
-    (
+    BookmarkTab.texts => (
       context.l10n.bookmarks_empty_texts_title,
       context.l10n.bookmarks_empty_texts_subtitle,
     ),
-  ];
+  };
 
   @override
   void initState() {
     super.initState();
+    _tabs = ref.read(bookmarksProvider).visibleTabs;
     _tabController = TabController(length: _tabs.length, vsync: this);
+  }
+
+  /// Rebuilds the controller when the visible tabs change (bookmarks loaded,
+  /// or the last one of a type removed). The selected tab is kept when it is
+  /// still shown; otherwise selection falls back to `all`.
+  void _syncTabs(List<BookmarkTab> visible) {
+    if (listEquals(visible, _tabs)) return;
+    final selected = _tabs[_tabController.index];
+    final old = _tabController;
+    _tabs = visible;
+    _tabController = TabController(
+      length: visible.length,
+      initialIndex: visible.indexOf(selected).clamp(0, visible.length - 1),
+      vsync: this,
+    );
+    // The pills and TabBarView still listen to the old controller until they
+    // rebuild with the new one, so dispose it only after this frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
   }
 
   @override
@@ -180,7 +198,7 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final state = ref.watch(bookmarksProvider);
-    final emptyMessages = _emptyMessages(context);
+    _syncTabs(state.visibleTabs);
 
     return Scaffold(
       appBar: AppBar(
@@ -213,7 +231,9 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
                       listenable: _tabController,
                       builder:
                           (context, _) => _BookmarkFilterPills(
-                            labels: _tabLabels(context),
+                            labels: [
+                              for (final tab in _tabs) _tabLabel(context, tab),
+                            ],
                             selectedIndex: _tabController.index,
                             isDark: isDark,
                             onSelected: _tabController.animateTo,
@@ -229,7 +249,7 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
                       (i) => _BookmarkTabView(
                         state: state,
                         tab: _tabs[i],
-                        emptyMessage: emptyMessages[i],
+                        emptyMessage: _emptyMessage(context, _tabs[i]),
                         isDark: isDark,
                         onRefresh:
                             () =>

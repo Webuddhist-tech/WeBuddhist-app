@@ -221,6 +221,10 @@ class PrayerRequestTile extends StatelessWidget {
         isDark: isDark,
         onTap: isOwn ? onShowSupporters : null,
       );
+    } else if (request.isCompleted) {
+      // Accomplished before anyone prayed. The check is enough; "Be the
+      // first to pray" would invite a prayer the request no longer takes.
+      supporters = const SizedBox.shrink();
     } else {
       supporters = Text(
         isOwn

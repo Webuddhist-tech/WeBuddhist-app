@@ -453,6 +453,17 @@
   "common_ok": "OK",
   "comingSoonHeadline": "Coming soon",
   "routine_title": "My practices",
+  "routine_block_default_title": "{title} +{count} more",
+  "@routine_block_default_title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "bookmarks": "Bookmarks",
   "routine_empty_title": "Practices",
   "routine_edit": "Edit",
@@ -647,6 +658,10 @@
   "person_name_min_length": "Must be at least 1 character",
   "person_name_max_length": "Must be 50 characters or less",
   "person_name_invalid_chars": "Only letters, spaces, hyphens, and apostrophes are allowed",
+  "onboarding_profile_title": "What should we call you?",
+  "onboarding_profile_subtitle": "This is how others will see you in the community",
+  "onboarding_profile_note": "You can change this anytime in Settings.",
+  "onboarding_profile_display_name_required": "Enter a display name",
   "about_title": "About",
   "about_connect_with_us": "Connect with us...",
   "about_description": "We help Buddhists do less harm, more good, and know their own mind better by learning, practicing and connecting daily.",

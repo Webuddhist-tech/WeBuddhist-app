@@ -301,6 +301,13 @@ class BookmarksState {
 
   List<BookmarkDTO> forTab(BookmarkTab tab) =>
       bookmarks.where(tab.matches).toList();
+
+  /// The tabs worth showing: `all` always, every other tab only when it holds
+  /// at least one bookmark, so empty types don't clutter the filters.
+  List<BookmarkTab> get visibleTabs => [
+    for (final tab in BookmarkTab.values)
+      if (tab == BookmarkTab.all || bookmarks.any(tab.matches)) tab,
+  ];
 }
 
 class BookmarksNotifier extends StateNotifier<BookmarksState> {

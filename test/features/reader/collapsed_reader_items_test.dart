@@ -79,6 +79,45 @@ void main() {
     });
   });
 
+  group('sourceMayLoadForward', () {
+    bool near(int end, {int source = 1, int? liveSource}) =>
+        sourceMayLoadForward(
+          source: source,
+          end: end,
+          firstVisibleIndex: 40,
+          lastVisibleIndex: 46,
+          threshold: 3,
+          liveSource: liveSource,
+        );
+
+    test('an earlier source that ends above the screen waits', () {
+      // A long first text (0-30), the live verse in the second text.
+      expect(near(30), isFalse);
+      expect(near(39), isFalse);
+    });
+
+    test('a source ending on screen or just below it fetches', () {
+      expect(near(40), isTrue);
+      expect(near(46), isTrue);
+      expect(near(49), isTrue);
+    });
+
+    test('a source ending further below waits', () {
+      expect(near(50), isFalse);
+    });
+
+    test('a source that draws nothing yet fetches', () {
+      expect(near(-1), isTrue);
+    });
+
+    test('while live is followed, sources before its text wait', () {
+      // The first text ends on screen, just above the live verse's text.
+      expect(near(44, source: 0, liveSource: 1), isFalse);
+      expect(near(44, source: 1, liveSource: 1), isTrue);
+      expect(near(44, source: 2, liveSource: 1), isTrue);
+    });
+  });
+
   group('collapsedTranslationHeadings', () {
     test("places the translation's enclosing headings above the first verse "
         'that needs them', () {

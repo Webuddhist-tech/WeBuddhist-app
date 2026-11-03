@@ -18,6 +18,8 @@ class UsernameFormField extends StatelessWidget {
     required this.onSuggestionTap,
     required this.isDark,
     this.validationMessage,
+    this.placeholderStyle,
+    this.enabled = true,
   });
 
   final TextEditingController controller;
@@ -31,6 +33,14 @@ class UsernameFormField extends StatelessWidget {
 
   /// Shown below the field when [usernameState] is [UsernameState.invalid].
   final String? validationMessage;
+
+  /// When set, "Username" is a placeholder in this style that disappears on
+  /// typing, as on the onboarding step, instead of a floating label.
+  final TextStyle? placeholderStyle;
+
+  /// False while the username is being saved: the field and the suggestions
+  /// ignore input, so the value on screen is the one being saved.
+  final bool enabled;
 
   InputBorder get _inputBorder => OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
@@ -64,20 +74,24 @@ class UsernameFormField extends StatelessWidget {
       children: [
         TextField(
           controller: controller,
+          enabled: enabled,
           onChanged: onChanged,
           decoration: InputDecoration(
-            labelText: l10n.username_label,
+            labelText: placeholderStyle == null ? l10n.username_label : null,
             labelStyle: TextStyle(color: AppColors.grey500),
+            hintText: placeholderStyle == null ? null : l10n.username_label,
+            hintStyle: placeholderStyle,
             filled: true,
             fillColor:
                 isDark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite,
             border: _inputBorder,
             enabledBorder: isError ? _errorBorder : _inputBorder,
+            disabledBorder: _inputBorder,
             focusedBorder: isError ? _errorBorder : _focusedBorder,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+            contentPadding:
+                placeholderStyle == null
+                    ? const EdgeInsets.symmetric(horizontal: 16, vertical: 14)
+                    : const EdgeInsets.fromLTRB(20, 14, 16, 14),
             suffixIcon: _buildStatusIcon(),
           ),
         ),
@@ -153,7 +167,10 @@ class UsernameFormField extends StatelessWidget {
                   ),
                   for (int i = 0; i < usernameSuggestions.length; i++) ...[
                     GestureDetector(
-                      onTap: () => onSuggestionTap(usernameSuggestions[i]),
+                      onTap:
+                          enabled
+                              ? () => onSuggestionTap(usernameSuggestions[i])
+                              : null,
                       child: Text(
                         usernameSuggestions[i],
                         style: TextStyle(

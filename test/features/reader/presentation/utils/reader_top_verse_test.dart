@@ -57,4 +57,24 @@ void main() {
       expect(readerTopVerseEntry(const [], every), isNull);
     });
   });
+
+  group('movedTopEntry', () {
+    String key(String entry) => entry;
+
+    test('rows added above the top entry move it down by as many', () {
+      expect(
+        movedTopEntry(['a', 'b', 'c'], ['x', 'y', 'a', 'b', 'c'], 1, key),
+        3,
+      );
+    });
+
+    test('rows added below it leave it where it is', () {
+      expect(movedTopEntry(['a', 'b'], ['a', 'b', 'c', 'd'], 1, key), isNull);
+    });
+
+    test('an entry no longer in the list is not followed', () {
+      expect(movedTopEntry(['a', 'b'], ['x', 'y'], 1, key), isNull);
+      expect(movedTopEntry(['a'], ['a'], 3, key), isNull);
+    });
+  });
 }

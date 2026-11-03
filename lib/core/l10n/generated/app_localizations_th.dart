@@ -971,6 +971,11 @@ class AppLocalizationsTh extends AppLocalizations {
   String get routine_title => 'การปฏิบัติของฉัน';
 
   @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +อีก $count รายการ';
+  }
+
+  @override
   String get bookmarks => 'บุ๊กมาร์ก';
 
   @override
@@ -1370,6 +1375,18 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get person_name_invalid_chars =>
       'ใช้ได้เฉพาะตัวอักษร ช่องว่าง ขีดกลาง และอะพอสทรอฟี';
+
+  @override
+  String get onboarding_profile_title => 'เราควรเรียกคุณว่าอะไร';
+
+  @override
+  String get onboarding_profile_subtitle => 'คนอื่นในชุมชนจะเห็นคุณแบบนี้';
+
+  @override
+  String get onboarding_profile_note => 'เปลี่ยนได้ทุกเมื่อในการตั้งค่า';
+
+  @override
+  String get onboarding_profile_display_name_required => 'กรอกชื่อที่แสดง';
 
   @override
   String get about_title => 'เกี่ยวกับ';

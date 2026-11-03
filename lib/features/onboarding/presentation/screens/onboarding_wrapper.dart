@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/features/onboarding/application/onboarding_provider.dart';
+import 'package:flutter_pecha/features/onboarding/presentation/providers/onboarding_steps_provider.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_1.dart';
+import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_profile.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_tradition.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_5.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_language.dart';
@@ -10,11 +12,9 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Wrapper for onboarding screens with Riverpod state management.
-/// Page order:
-///   0 – Welcome
-///   1 – Language selection
-///   2 – Tradition selection
-///   3 – Finish / "You're all set"
+/// Page order comes from [onboardingStepsProvider]:
+///   Welcome → (Profile, phone accounts only) → Language → Tradition →
+///   Finish / "You're all set"
 class OnboardingWrapper extends ConsumerStatefulWidget {
   const OnboardingWrapper({super.key});
 
@@ -25,18 +25,38 @@ class OnboardingWrapper extends ConsumerStatefulWidget {
 class _OnboardingWrapperState extends ConsumerState<OnboardingWrapper> {
   final PageController _pageController = PageController();
 
+  /// Fixed for the life of the flow so pages never shift under the user.
+  late final List<OnboardingStep> _steps;
+
+  /// The steps with a progress bar: all but Welcome and Finish.
+  late final List<OnboardingStep> _progressSteps;
+
   @override
   void initState() {
     super.initState();
+    _steps = ref.read(onboardingStepsProvider);
+    _progressSteps =
+        _steps
+            .where(
+              (s) => s != OnboardingStep.welcome && s != OnboardingStep.finish,
+            )
+            .toList();
     final analytics = ref.read(onboardingAnalyticsProvider);
     analytics.onboardingStarted();
-    analytics.stepViewed(stepIndex: ref.read(onboardingProvider).currentPage);
+    _trackStepViewed(ref.read(onboardingProvider).currentPage);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  void _trackStepViewed(int page) {
+    if (page < 0 || page >= _steps.length) return;
+    ref
+        .read(onboardingAnalyticsProvider)
+        .stepViewed(step: _steps[page], stepIndex: page);
   }
 
   /// Advances only while [page] is still the current page, so a double tap
@@ -59,6 +79,34 @@ class _OnboardingWrapperState extends ConsumerState<OnboardingWrapper> {
     if (mounted) context.go(AppRoutes.home);
   }
 
+  Widget _buildPage(int page) {
+    final step = _steps[page];
+    final progressIndex = _progressSteps.indexOf(step);
+    final progressCount = _progressSteps.length;
+    return switch (step) {
+      OnboardingStep.welcome => OnboardingScreen1(onNext: _nextFrom(page)),
+      OnboardingStep.profile => OnboardingScreenProfile(
+        onNext: _nextFrom(page),
+        stepIndex: progressIndex,
+        stepCount: progressCount,
+      ),
+      OnboardingStep.language => OnboardingScreenLanguage(
+        onNext: _nextFrom(page),
+        stepIndex: progressIndex,
+        stepCount: progressCount,
+      ),
+      OnboardingStep.tradition => OnboardingScreenTradition(
+        onNext: _nextFrom(page),
+        onBack: _previousFrom(page),
+        stepIndex: progressIndex,
+        stepCount: progressCount,
+      ),
+      OnboardingStep.finish => OnboardingScreen5(
+        onComplete: _completeOnboarding,
+      ),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentPage = ref.watch(
@@ -69,9 +117,7 @@ class _OnboardingWrapperState extends ConsumerState<OnboardingWrapper> {
       previous,
       next,
     ) {
-      if (previous != next) {
-        ref.read(onboardingAnalyticsProvider).stepViewed(stepIndex: next);
-      }
+      if (previous != next) _trackStepViewed(next);
       if (_pageController.hasClients && previous != next) {
         _pageController.animateToPage(
           next,
@@ -97,13 +143,7 @@ class _OnboardingWrapperState extends ConsumerState<OnboardingWrapper> {
               }
             },
             children: [
-              OnboardingScreen1(onNext: _nextFrom(0)),
-              OnboardingScreenLanguage(onNext: _nextFrom(1)),
-              OnboardingScreenTradition(
-                onNext: _nextFrom(2),
-                onBack: _previousFrom(2),
-              ),
-              OnboardingScreen5(onComplete: _completeOnboarding),
+              for (var page = 0; page < _steps.length; page++) _buildPage(page),
             ],
           ),
         ],

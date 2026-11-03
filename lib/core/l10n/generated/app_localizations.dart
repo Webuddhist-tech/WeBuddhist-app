@@ -1823,6 +1823,12 @@ abstract class AppLocalizations {
   /// **'My practices'**
   String get routine_title;
 
+  /// No description provided for @routine_block_default_title.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} +{count} more'**
+  String routine_block_default_title(String title, int count);
+
   /// No description provided for @bookmarks.
   ///
   /// In en, this message translates to:
@@ -2530,6 +2536,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only letters, spaces, hyphens, and apostrophes are allowed'**
   String get person_name_invalid_chars;
+
+  /// No description provided for @onboarding_profile_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What should we call you?'**
+  String get onboarding_profile_title;
+
+  /// No description provided for @onboarding_profile_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This is how others will see you in the community'**
+  String get onboarding_profile_subtitle;
+
+  /// No description provided for @onboarding_profile_note.
+  ///
+  /// In en, this message translates to:
+  /// **'You can change this anytime in Settings.'**
+  String get onboarding_profile_note;
+
+  /// No description provided for @onboarding_profile_display_name_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a display name'**
+  String get onboarding_profile_display_name_required;
 
   /// No description provided for @about_title.
   ///

@@ -1895,6 +1895,15 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String routine_block_default_title(String title, int count) =>
+      TolgeeBridge.format(
+        localeName,
+        'routine_block_default_title',
+        <String, Object>{'title': title, 'count': count},
+        () => _fallback.routine_block_default_title(title, count),
+      );
+
+  @override
   String get bookmarks =>
       TolgeeBridge.get(localeName, 'bookmarks', () => _fallback.bookmarks);
 
@@ -2667,6 +2676,34 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'person_name_invalid_chars',
     () => _fallback.person_name_invalid_chars,
+  );
+
+  @override
+  String get onboarding_profile_title => TolgeeBridge.get(
+    localeName,
+    'onboarding_profile_title',
+    () => _fallback.onboarding_profile_title,
+  );
+
+  @override
+  String get onboarding_profile_subtitle => TolgeeBridge.get(
+    localeName,
+    'onboarding_profile_subtitle',
+    () => _fallback.onboarding_profile_subtitle,
+  );
+
+  @override
+  String get onboarding_profile_note => TolgeeBridge.get(
+    localeName,
+    'onboarding_profile_note',
+    () => _fallback.onboarding_profile_note,
+  );
+
+  @override
+  String get onboarding_profile_display_name_required => TolgeeBridge.get(
+    localeName,
+    'onboarding_profile_display_name_required',
+    () => _fallback.onboarding_profile_display_name_required,
   );
 
   @override

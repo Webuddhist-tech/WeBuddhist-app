@@ -975,6 +975,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routine_title => 'My practices';
 
   @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count more';
+  }
+
+  @override
   String get bookmarks => 'Bookmarks';
 
   @override
@@ -1376,6 +1381,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get person_name_invalid_chars =>
       'Only letters, spaces, hyphens, and apostrophes are allowed';
+
+  @override
+  String get onboarding_profile_title => 'What should we call you?';
+
+  @override
+  String get onboarding_profile_subtitle =>
+      'This is how others will see you in the community';
+
+  @override
+  String get onboarding_profile_note =>
+      'You can change this anytime in Settings.';
+
+  @override
+  String get onboarding_profile_display_name_required => 'Enter a display name';
 
   @override
   String get about_title => 'About';

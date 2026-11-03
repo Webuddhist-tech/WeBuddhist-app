@@ -104,18 +104,25 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
     }
   }
 
+  void _applyAmbientSound(AmbientSoundSelection selection) {
+    if (!mounted) return;
+    setState(() {
+      _ambientSoundId = selection.id;
+      _ambientSoundName = selection.name;
+    });
+  }
+
   Future<void> _pickAmbientSound() async {
     final selection = await AmbientSoundSheet.show(
       context,
       selectedId: _ambientSoundId,
       selectedName: _ambientSoundNameFrom(ref.read(ambientSoundByIdProvider)),
+      onChanged: _applyAmbientSound,
     );
-    if (selection != null && mounted) {
-      setState(() {
-        _ambientSoundId = selection.id;
-        _ambientSoundName = selection.name;
-      });
-    }
+    // The X still returns the choice. A swipe or tap outside returns null and
+    // leaves whatever was already applied — including a tap made while the
+    // sheet was open, or the sound that was selected before it opened.
+    if (selection != null) _applyAmbientSound(selection);
   }
 
   /// The name tracks the duration, but an untouched duration keeps the stored

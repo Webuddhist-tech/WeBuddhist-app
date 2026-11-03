@@ -986,6 +986,11 @@ class AppLocalizationsMn extends AppLocalizations {
   String get routine_title => 'Миний дадлагууд';
 
   @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count бусад';
+  }
+
+  @override
   String get bookmarks => 'Хавчуурга';
 
   @override
@@ -1392,6 +1397,21 @@ class AppLocalizationsMn extends AppLocalizations {
   @override
   String get person_name_invalid_chars =>
       'Зөвхөн үсэг, зай, зурааст (-) ба апостроф (\') зөвшөөрнө';
+
+  @override
+  String get onboarding_profile_title => 'Таныг хэн гэж дуудах вэ?';
+
+  @override
+  String get onboarding_profile_subtitle =>
+      'Нийгэмлэгийн бусад гишүүд таныг ингэж харна';
+
+  @override
+  String get onboarding_profile_note =>
+      'Та үүнийг хүссэн үедээ Тохиргоо хэсэгт өөрчилж болно.';
+
+  @override
+  String get onboarding_profile_display_name_required =>
+      'Харагдах нэрээ оруулна уу';
 
   @override
   String get about_title => 'Тухай';

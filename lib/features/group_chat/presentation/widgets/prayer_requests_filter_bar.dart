@@ -60,13 +60,14 @@ class PrayerRequestsFilterBar extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    Text(
-                      l10n.event_prayer_request_count(total),
-                      strutStyle: context.tibetanStrutStyle(13, compact: true),
-                      style: TextStyle(fontSize: 13, color: muted),
-                    ),
+                    if (total > 0)
+                      Text(
+                        l10n.event_prayer_request_count(total),
+                        strutStyle: context.tibetanStrutStyle(13, compact: true),
+                        style: TextStyle(fontSize: 13, color: muted),
+                      ),
                     if (intention != null) ...[
-                      const SizedBox(width: 8),
+                      if (total > 0) const SizedBox(width: 8),
                       _IntentionChip(
                         intention: intention,
                         isDark: isDark,

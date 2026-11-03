@@ -11,85 +11,120 @@ class StorageKeys {
   // ========== AUTHENTICATION ==========
   /// User data JSON
   static const String userData = 'user_data';
+
   /// Guest mode flag
   static const String isGuestMode = 'is_guest_mode';
 
   // ========== AUTH TOKENS (Secure Storage) ==========
   /// Access token for API calls
   static const String accessToken = 'access_token';
+
   /// Refresh token for getting new access tokens
   static const String refreshToken = 'refresh_token';
+
   /// ID token from Auth0
   static const String idToken = 'id_token';
+
   /// User ID
   static const String userId = 'user_id';
 
   // ========== ONBOARDING ==========
   /// Onboarding preferences JSON
   static const String onboardingPreferences = 'onboarding_preferences';
+
   /// ID of the currently logged-in user, written before the router fires
   /// so feature code can resolve the active account.
   static const String currentUserId = 'current_user_id';
+
   /// Current onboarding step
   static const String onboardingStep = 'onboarding_step';
+
   /// Onboarding data JSON
   static const String onboardingData = 'onboarding_data';
+
+  /// JSON of what the onboarding profile step already saved for the signed-in
+  /// account (`userId`, `username`, `displayName`), so a relaunch mid-save
+  /// restores the fields and does not claim the username again.
+  static const String onboardingProfileSaved = 'onboarding_profile_saved';
 
   // ========== USER PREFERENCES ==========
   /// Theme mode preference (light/dark/system)
   static const String themeMode = 'theme_mode';
+
   /// Reader page background (a ReaderBackground name, e.g. ricePaper)
   static const String readerBackground = 'reader_background';
+
   /// App UI language/locale preference (bounded to bundled ARB translations)
   static const String preferredLanguage = 'locale';
+
   /// Content language code sent to backend APIs. May be a language the app has
   /// no UI translation for; the UI then falls back to English.
   static const String contentLanguage = 'content_language';
+
   /// Chant list language picked on the all-recitations screen. Independent of
   /// [contentLanguage] and kept across restarts.
   static const String chantListLanguage = 'chant_list_language';
+
   /// The reader's old single font size; read once to pick the first size
   /// steps below.
   static const String fontSize = 'font_size';
+
   /// Reader size step (1-7) of the original line
   static const String readerOriginalStep = 'reader_original_step';
+
   /// Reader size step (1-7) of the translation line
   static const String readerTranslationStep = 'reader_translation_step';
+
   /// Reader spacing: compact, normal or relaxed
   static const String readerSpacing = 'reader_spacing';
+
   /// JSON of the reader fonts picked per line and script, e.g.
   /// `{"original":{"tibetan":"jomolhari"}}`; defaults are not stored
   static const String readerFonts = 'reader_fonts';
+
   /// Whether the reader shows verse numbers (default true)
   static const String readerVerseNumbers = 'reader_verse_numbers';
+
   /// First launch flag
   static const String firstLaunch = 'first_launch';
 
   // ========== NOTIFICATIONS ==========
   /// Daily reminder time
   static const String dailyReminderTime = 'daily_reminder_time';
+
   /// Daily reminder enabled flag
   static const String dailyReminderEnabled = 'daily_reminder_enabled';
+
   /// App-level master notification toggle. When false the app cancels all
   /// scheduled notifications without touching OS permission. Re-enabling
   /// re-schedules from the stored routine. Default: true.
   static const String notificationMasterEnabled = 'notification_master_enabled';
+
   /// App-level toggle for routine (plan) block notifications. Default: true.
-  static const String notificationRoutineEnabled = 'notification_routine_enabled';
+  static const String notificationRoutineEnabled =
+      'notification_routine_enabled';
+
   /// App-level toggle for recitation block notifications. Default: true.
-  static const String notificationRecitationEnabled = 'notification_recitation_enabled';
+  static const String notificationRecitationEnabled =
+      'notification_recitation_enabled';
+
   /// App-level toggle for practice (mala / accumulator) block notifications.
   /// Default: true.
-  static const String notificationPracticeEnabled = 'notification_practice_enabled';
+  static const String notificationPracticeEnabled =
+      'notification_practice_enabled';
+
   /// App-level toggle for timer block notifications (the "starting now"
   /// reminder). Default: true.
   static const String notificationTimerEnabled = 'notification_timer_enabled';
+
   /// Latest Firebase Cloud Messaging registration token for this install.
   static const String fcmToken = 'fcm_token';
+
   /// Stable per-install identifier sent as `device_id` when registering the
   /// push token, so token refreshes update the same backend record. Generated
   /// once (UUID) and persisted for the lifetime of the install.
   static const String pushDeviceId = 'push_device_id';
+
   /// The backend's id for this device's push registration (`id` in the
   /// register response). Needed to `DELETE /users/me/push-devices/{id}`
   /// when the master notification switch is turned off. Cleared after a
@@ -99,18 +134,22 @@ class StorageKeys {
   // ========== FEATURES ==========
   /// Profile data JSON
   static const String profileData = 'profile_data';
+
   /// Whether the dual-slot reader's secondary panel is enabled. Global UX
   /// preference (bool). Slot picks (language/version/script) are per-text
   /// and live in memory only — they don't survive navigating to a different
   /// text because `versionId` is text-scoped and won't resolve elsewhere.
   static const String readerSecondaryEnabled = 'reader_secondary_enabled';
+
   /// JSON map of source language code → transliteration script id the
   /// reader shows that language in (e.g. `{"pi":"si"}`). Global preference.
   static const String readerScriptPreference = 'reader_script_preference';
+
   /// Whether the reader shows the original text when a translation is on.
   /// Global preference (bool), default true; ignored when no translation is
   /// showing so the screen is never empty.
   static const String readerOriginalVisible = 'reader_original_visible';
+
   /// JSON of what the reader changed inside one layout context (`event`,
   /// `chant`, `plan`): original on/off, translation on/off and language,
   /// original language, script per source language. Only touched fields are
@@ -118,18 +157,24 @@ class StorageKeys {
   static const String readerLayoutPrefsPrefix = 'reader_layout_';
   static String readerLayoutPrefs(String context) =>
       '$readerLayoutPrefsPrefix$context';
+
   /// The app content language the context stores above were made under. A
   /// different language drops them, so the reader starts from that
   /// language's defaults; the library keys are left alone.
   static const String readerLayoutLanguage = 'reader_layouts_language';
+
   /// Bead-tap sound on the mala counter. Default: true.
   static const String malaSoundEnabled = 'mala_sound_enabled';
+
   /// Haptic feedback on the mala counter. Default: true.
   static const String malaVibrationEnabled = 'mala_vibration_enabled';
+
   /// Mirror the mala counter for left-handed use. Default: false.
   static const String malaLeftHanded = 'mala_left_handed';
+
   /// Scroll speed multiplier for the mantra text marquee. Default: 1.0.
   static const String malaMantraSpeed = 'mala_mantra_speed';
+
   /// Per-preset accumulation source: `personal` or `group:{uuid}`.
   static const String malaAccumulationSelectionPrefix =
       'mala_accumulation_selection_';
@@ -137,12 +182,14 @@ class StorageKeys {
   // ========== BUSINESS LOGIC ==========
   /// Last profile update timestamp
   static const String lastProfileUpdate = 'last_profile_update';
+
   /// Current streak count
   static const String streakCount = 'streak_count';
 
   // ========== CACHE METADATA ==========
   /// Last sync timestamp
   static const String lastSyncTime = 'last_sync_time';
+
   /// Cache version for invalidation
   static const String cacheVersion = 'cache_version';
 }

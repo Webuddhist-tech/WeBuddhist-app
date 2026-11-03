@@ -988,6 +988,11 @@ class AppLocalizationsBo extends AppLocalizations {
   String get routine_title => 'ངའི་འཆར་ཅན་ཉམས་ལེན།';
 
   @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count གཞན།';
+  }
+
+  @override
   String get bookmarks => 'དཔེ་རྟགས།';
 
   @override
@@ -1393,6 +1398,20 @@ class AppLocalizationsBo extends AppLocalizations {
   @override
   String get person_name_invalid_chars =>
       'ཡི་གེ བར་སྟོང་། ཐིག་ཕྲན་དང་ཚེག་འགུག་ཁོ་ན་ཆོག';
+
+  @override
+  String get onboarding_profile_title => 'ཁྱེད་ལ་མིང་ག་རེ་ཟེར་ནས་འབོད་དགོས།';
+
+  @override
+  String get onboarding_profile_subtitle =>
+      'ཚོགས་པའི་ནང་མི་གཞན་གྱིས་ཁྱེད་ལ་འདི་ལྟར་མཐོང་ཐུབ།';
+
+  @override
+  String get onboarding_profile_note =>
+      'འདི་དུས་ནམ་ཡིན་ཡང་སྒྲིག་འགོད་ནང་བསྒྱུར་ཆོག';
+
+  @override
+  String get onboarding_profile_display_name_required => 'མངོན་མིང་འབྲི་རོགས།';
 
   @override
   String get about_title => 'ང་ཚོའི་སྐོར།';
