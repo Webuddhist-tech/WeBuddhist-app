@@ -2118,10 +2118,14 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     bool instant = false,
     bool heading = false,
   }) {
-    // Nothing is drawn yet: the texts before the live one stay out.
-    if (_liveHold) _drawnFrom = source;
+    // Nothing is drawn yet: the texts before the live one stay out, once
+    // the verse is known to be on the page. A verse outside the task's
+    // leaves every text drawn, as the page then shows without following.
+    final views = [for (var i = 0; i < _startedCount; i++) _readView(i)];
     final layout = _layoutFor(
-      _drawnViews([for (var i = 0; i < _startedCount; i++) _readView(i)]),
+      _liveHold && source < views.length
+          ? views.sublist(source)
+          : _drawnViews(views),
     );
     final index = _entryIndexForSegment(
       layout.entries,
@@ -2129,6 +2133,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       source: source,
     );
     if (index == null) return false;
+    if (_liveHold) _drawnFrom = source;
     _liveSource = source;
 
     ReaderPageSection? sectionAt(int entry) {
@@ -2402,6 +2407,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         _isFollowingLive) {
       return;
     }
+    // The list is still moving (a fling after the swipe that paused):
+    // drawing the rows now would redraw the list under it and stop it. The
+    // scroll debounce calls this again once the list is still.
+    if (_debounceTimer?.isActive ?? false) return;
     if (_isUserScrolling || _isProgrammaticScroll || _revealing) {
       _releaseTimer = Timer(
         const Duration(milliseconds: 400),
