@@ -60,6 +60,7 @@ class ReaderContentPart extends ConsumerStatefulWidget {
   final List<ReaderParams> sources;
   final String? initialSegmentId;
   final double bottomPadding;
+
   /// Focus mode: true when the header and bottom bar should slide away, false
   /// when they should come back (see [ReaderFocusMode]).
   final void Function(bool isScrollingDown)? onScrollDirectionChanged;
@@ -461,8 +462,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       }
       return readerTaskProgress(
         sourceVerses: [
-          for (var s = 0; s < widget.sources.length; s++)
-            _taskSourceVerses(s),
+          for (var s = 0; s < widget.sources.length; s++) _taskSourceVerses(s),
         ],
         source: source,
         verseInSource: verseInSource,
@@ -597,7 +597,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       final String title;
       final String titleLanguage;
       if (outline != null) {
-        final opens = opening != null && opening.opensText && opening.depth == 0;
+        final opens =
+            opening != null && opening.opensText && opening.depth == 0;
         titleSectionId = opens ? opening.id : _textSectionId;
         (title, titleLanguage) =
             opens && !view.translationHeadings
@@ -822,10 +823,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   }
 
   /// A section of the whole table of contents as the navigator lists it.
-  (String, String) _outlineTitle(
-    _SourceView view,
-    TextOutlineSection section,
-  ) {
+  (String, String) _outlineTitle(_SourceView view, TextOutlineSection section) {
     final (textTitle, textLanguage) = _titleOf(view);
     final title = readerSectionTitle(
       titles: section.titles,
@@ -910,8 +908,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       context,
       dim: ReaderSheetDim.sections,
       builder:
-          (_) =>
-              ReaderSectionsSheet(snapshot: _sections, current: _currentSectionKey),
+          (_) => ReaderSectionsSheet(
+            snapshot: _sections,
+            current: _currentSectionKey,
+          ),
     );
     if (picked == null || !mounted) return;
     await _goToSection(picked);
@@ -1149,23 +1149,24 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           firstVisibleIndex > start + ReaderConstants.previousLoadThreshold) {
         continue;
       }
-      final first = content.items
-          .map((item) => item.segment?.segmentNumber)
-          .whereType<int>()
-          .firstOrNull;
+      final first =
+          content.items
+              .map((item) => item.segment?.segmentNumber)
+              .whereType<int>()
+              .firstOrNull;
       if (first == null) continue;
       _heldFrom[index] = first;
       _logger.debug('Loading source $index backward from verse $first');
-      ref.read(readerNotifierProvider(params).notifier).loadPreviousPage().then((
-        added,
-      ) {
-        if (!mounted) return;
-        if (added <= 0) {
-          _heldFrom.remove(index);
-          return;
-        }
-        _releaseHeldSources();
-      });
+      ref.read(readerNotifierProvider(params).notifier).loadPreviousPage().then(
+        (added) {
+          if (!mounted) return;
+          if (added <= 0) {
+            _heldFrom.remove(index);
+            return;
+          }
+          _releaseHeldSources();
+        },
+      );
     }
   }
 
@@ -1581,7 +1582,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final notifier = ref.read(
       readerNotifierProvider(widget.sources[index]).notifier,
     );
-    if (ref.read(readerNotifierProvider(widget.sources[index])).selectedSegment
+    if (ref
+            .read(readerNotifierProvider(widget.sources[index]))
+            .selectedSegment
             ?.segmentId !=
         segmentId) {
       return;
@@ -1798,8 +1801,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         // following ends.
         located = await _loadLive(
           position,
-          wanted:
-              () => generation == _liveGeneration && _stillFollowingLive(),
+          wanted: () => generation == _liveGeneration && _stillFollowingLive(),
         );
       } finally {
         _liveJumpInFlight = false;
@@ -2014,12 +2016,28 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     var state = ref.read(readerNotifierProvider(params));
     final active = _activeSegmentIdsOf(index, state);
     if (active.isNotEmpty && !active.contains(local)) return null;
-    if (state.content?.containsSegment(local) != true) {
-      if (atVerse) {
+    final loaded = state.content;
+    if (loaded?.containsSegment(local) != true) {
+      // A verse before the loaded ones (the room went back past a window
+      // opened at a later verse): a forward walk would never reach it, so
+      // the pages around it replace the window. Picked verses tell by
+      // their order; a whole text, by having pages before the loaded ones.
+      final firstLoaded =
+          loaded == null || active.isEmpty
+              ? -1
+              : active.indexWhere(loaded.containsSegment);
+      final before =
+          loaded != null &&
+          (active.isEmpty
+              ? state.hasPreviousPage
+              : firstLoaded >= 0 && active.indexOf(local) < firstLoaded);
+      if (atVerse || before) {
         if (_liveHold) _startTranslationAt(index, local);
         _logOpen('fetching source $index at the live verse');
         final jumped = await notifier.jumpToSegment(local);
         if (!mounted || jumped == null || !wanted()) return null;
+        // The window replaced is not the one those rows were held from.
+        _heldFrom.remove(index);
       } else {
         final arrived = await _loadForwardTo(index, local, wanted: wanted);
         if (!mounted || !arrived) return null;
@@ -2100,7 +2118,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (segmentId == localId || _liveAliases[segmentId] == localId) return;
     setState(() => _liveAliases[segmentId] = localId);
   }
-
 
   /// Scrolls to the rendered line [segmentId] of [source], read in [round];
   /// false when it is not on this page (a verse outside the task's).
@@ -2192,7 +2209,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       target = liveScrollTarget(
         index: index,
         heightFraction:
-            verse == null ? null : verse.itemTrailingEdge - verse.itemLeadingEdge,
+            verse == null
+                ? null
+                : verse.itemTrailingEdge - verse.itemLeadingEdge,
         distanceFromStart:
             verse == null || start == null
                 ? null
@@ -2346,7 +2365,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         index: index,
         heightFraction: verse.itemTrailingEdge - verse.itemLeadingEdge,
         distanceFromStart:
-            start == null ? null : verse.itemLeadingEdge - start.itemLeadingEdge,
+            start == null
+                ? null
+                : verse.itemLeadingEdge - start.itemLeadingEdge,
       );
       if (target != null) {
         _appJump(index: target.index, alignment: target.alignment);
@@ -2875,7 +2896,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         _restartListAt(start);
         _revealing = true;
         _revealFontsIn = false;
-        WidgetsBinding.instance.addPostFrameCallback((_) => _awaitRevealFonts());
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _awaitRevealFonts(),
+        );
       }
     }
     _keepTopEntry(_layout, layout);
@@ -3070,10 +3093,11 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // The translation's headings sit in the verse they open at: until it
     // has the verses drawn above the live one, a heading opening earlier
     // shows in the live verse and leaves it later, moving the page.
-    final firstDrawn = [
-      for (final entry in layout.entries)
-        if (entry.source == source) entry.item?.segment?.segmentNumber,
-    ].whereType<int>().firstOrNull;
+    final firstDrawn =
+        [
+          for (final entry in layout.entries)
+            if (entry.source == source) entry.item?.segment?.segmentNumber,
+        ].whereType<int>().firstOrNull;
     final loaded = secondary?.loadedSegments ?? const [];
     final coversAbove =
         secondary != null &&
@@ -3098,8 +3122,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// grows it and moves the page.
   bool get _holdWaiting =>
       _liveHold &&
-      (!_liveHoldExpired ||
-          (_lastLiveVerse != null && !_translationWaitOver));
+      (!_liveHoldExpired || (_lastLiveVerse != null && !_translationWaitOver));
 
   /// The page while it waits for the live verse: the loading circle, and
   /// each text's first-visit layout applied meanwhile, the live text's too

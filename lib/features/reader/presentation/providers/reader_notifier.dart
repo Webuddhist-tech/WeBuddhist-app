@@ -535,21 +535,30 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   }) async {
     if (_isDisposed) return null;
     try {
-      final target = await resolveSegment(
-        segmentId,
-        sourceTextId: sourceTextId,
-      );
+      final textBefore = await _resolveDetailsTextId();
+      var target = await resolveSegment(segmentId, sourceTextId: sourceTextId);
       if (_isDisposed || target == null) return null;
       final alreadyLoaded = _localSegmentId(state.content, target);
       if (alreadyLoaded != null) return alreadyLoaded;
-      final window = await _fetchWindow(segmentId: target, around: true);
+      var window = await _fetchWindow(segmentId: target, around: true);
       if (_isDisposed) return null;
-      final local = _localSegmentId(window.content, target);
-      if (local == null) return null;
       // Asked for while the first page loads (a live verse found before
       // the text was), fetched alongside it, and shown after it.
       await _firstLoad.future;
       if (_isDisposed) return null;
+      if (await _resolveDetailsTextId() != textBefore) {
+        // The first load opened another text under this one (a translation
+        // shown under its root): the window fetched is the wrong text's.
+        if (_isDisposed) return null;
+        target = await resolveSegment(segmentId, sourceTextId: sourceTextId);
+        if (_isDisposed || target == null) return null;
+        final loaded = _localSegmentId(state.content, target);
+        if (loaded != null) return loaded;
+        window = await _fetchWindow(segmentId: target, around: true);
+        if (_isDisposed) return null;
+      }
+      final local = _localSegmentId(window.content, target);
+      if (local == null) return null;
       _showWindow(window);
       return local;
     } catch (e) {
@@ -976,8 +985,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       // person dragged it to while it stays open.
       splitRatio: opening ? ReaderConstants.defaultSplitRatio : null,
       commentarySegmentId: state.isCommentaryOpen ? segment.segmentId : null,
-      translationSegmentId:
-          state.isTranslationOpen ? segment.segmentId : null,
+      translationSegmentId: state.isTranslationOpen ? segment.segmentId : null,
       videosSegmentId: state.isVideosOpen ? segment.segmentId : null,
     );
   }
