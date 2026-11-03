@@ -314,7 +314,10 @@ void main() {
       await notifier.loadMore();
       signals.emit(path, {'comments_changed_at': DateTime.utc(2026, 1, 1)});
       await pumpEventQueue();
-      expect(container.read(connectPostCommentsProvider('p1')).comments, hasLength(25));
+      expect(
+        container.read(connectPostCommentsProvider('p1')).comments,
+        hasLength(25),
+      );
 
       remote.commentIds = [...remote.commentIds, 'c25'];
       signals.emit(path, {'comments_changed_at': DateTime.utc(2026, 1, 2)});
@@ -331,31 +334,34 @@ void main() {
       );
     });
 
-    test('a pull-to-refresh is not undone by an older background read', () async {
-      remote.commentIds = ['c0'];
-      container.listen(connectPostCommentsProvider('p1'), (_, _) {});
-      await pumpEventQueue();
-      final notifier = container.read(
-        connectPostCommentsProvider('p1').notifier,
-      );
+    test(
+      'a pull-to-refresh is not undone by an older background read',
+      () async {
+        remote.commentIds = ['c0'];
+        container.listen(connectPostCommentsProvider('p1'), (_, _) {});
+        await pumpEventQueue();
+        final notifier = container.read(
+          connectPostCommentsProvider('p1').notifier,
+        );
 
-      final held = Completer<void>();
-      remote.commentGate = held;
-      final background = notifier.refreshLatest();
-      await pumpEventQueue();
-      remote.commentIds = ['c0', 'c1'];
-      await notifier.refresh();
-      held.complete();
-      await background;
+        final held = Completer<void>();
+        remote.commentGate = held;
+        final background = notifier.refreshLatest();
+        await pumpEventQueue();
+        remote.commentIds = ['c0', 'c1'];
+        await notifier.refresh();
+        held.complete();
+        await background;
 
-      expect(
-        container
-            .read(connectPostCommentsProvider('p1'))
-            .comments
-            .map((c) => c.id),
-        ['c0', 'c1'],
-      );
-    });
+        expect(
+          container
+              .read(connectPostCommentsProvider('p1'))
+              .comments
+              .map((c) => c.id),
+          ['c0', 'c1'],
+        );
+      },
+    );
 
     test('a comment deleted elsewhere leaves the list', () async {
       remote.commentIds = ['c0', 'c1'];
@@ -433,30 +439,33 @@ void main() {
       );
     });
 
-    test('a pull-to-refresh is not undone by an older background read', () async {
-      remote.feedPostIds = ['p1'];
-      container.listen(myUnifiedConnectFeedProvider, (_, _) {});
-      final feed = container.read(myUnifiedConnectFeedProvider.notifier);
-      feed.ensureLoaded();
-      await pumpEventQueue();
+    test(
+      'a pull-to-refresh is not undone by an older background read',
+      () async {
+        remote.feedPostIds = ['p1'];
+        container.listen(myUnifiedConnectFeedProvider, (_, _) {});
+        final feed = container.read(myUnifiedConnectFeedProvider.notifier);
+        feed.ensureLoaded();
+        await pumpEventQueue();
 
-      final held = Completer<void>();
-      remote.feedGate = held;
-      final background = feed.refreshLatest();
-      await pumpEventQueue();
-      remote.feedPostIds = ['p2', 'p1'];
-      await feed.refresh();
-      held.complete();
-      await background;
+        final held = Completer<void>();
+        remote.feedGate = held;
+        final background = feed.refreshLatest();
+        await pumpEventQueue();
+        remote.feedPostIds = ['p2', 'p1'];
+        await feed.refresh();
+        held.complete();
+        await background;
 
-      expect(
-        container
-            .read(myUnifiedConnectFeedProvider)
-            .feedItems
-            .map((item) => item.post?.id),
-        ['p2', 'p1'],
-      );
-    });
+        expect(
+          container
+              .read(myUnifiedConnectFeedProvider)
+              .feedItems
+              .map((item) => item.post?.id),
+          ['p2', 'p1'],
+        );
+      },
+    );
 
     test('a signal keeps the My feed pages already loaded', () async {
       remote.groupIds = ['g1'];
@@ -469,7 +478,10 @@ void main() {
       await pumpEventQueue();
       await pumpEventQueue();
       await feed.loadMore();
-      expect(container.read(myUnifiedConnectFeedProvider).feedItems, hasLength(25));
+      expect(
+        container.read(myUnifiedConnectFeedProvider).feedItems,
+        hasLength(25),
+      );
 
       final path = SignalPaths.group('g1');
       signals.emit(path, {'posts_changed_at': DateTime.utc(2026, 1, 1)});
@@ -609,7 +621,10 @@ void main() {
       ]);
 
       expect(remote.eventFetches - before, 2);
-      expect(container.read(discoverConnectEventsProvider).events, hasLength(30));
+      expect(
+        container.read(discoverConnectEventsProvider).events,
+        hasLength(30),
+      );
     });
   });
 
