@@ -1895,6 +1895,15 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String routine_block_default_title(String title, int count) =>
+      TolgeeBridge.format(
+        localeName,
+        'routine_block_default_title',
+        <String, Object>{'title': title, 'count': count},
+        () => _fallback.routine_block_default_title(title, count),
+      );
+
+  @override
   String get bookmarks =>
       TolgeeBridge.get(localeName, 'bookmarks', () => _fallback.bookmarks);
 

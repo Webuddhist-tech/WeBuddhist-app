@@ -982,6 +982,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get routine_title => 'मेरे अभ्यास';
 
   @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count more';
+  }
+
+  @override
   String get bookmarks => 'बुकमार्क';
 
   @override

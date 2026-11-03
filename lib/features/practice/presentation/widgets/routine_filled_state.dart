@@ -618,7 +618,7 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
     final hasItems = block.items.isNotEmpty;
     final labelColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final title = block.title;
+    final title = routineBlockDisplayTitle(block, context.l10n);
     final timeStyle = TextStyle(
       fontSize: title == null ? 15 : 13,
       fontWeight: title == null ? FontWeight.w500 : FontWeight.w400,
