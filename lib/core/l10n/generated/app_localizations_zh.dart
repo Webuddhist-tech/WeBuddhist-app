@@ -944,7 +944,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String routine_block_default_title(String title, int count) {
-    return '$title +$count more';
+    return '$title +另外 $count 項';
   }
 
   @override
@@ -4798,6 +4798,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get routine_title => '日常修持';
+
+  @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +另外 $count 项';
+  }
 
   @override
   String get bookmarks => '书签';

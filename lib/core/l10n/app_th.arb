@@ -284,6 +284,7 @@
   "common_ok": "ตกลง",
   "comingSoonHeadline": "เร็ว ๆ นี้",
   "routine_title": "การปฏิบัติของฉัน",
+  "routine_block_default_title": "{title} +อีก {count} รายการ",
   "bookmarks": "บุ๊กมาร์ก",
   "routine_empty_title": "การปฏิบัติ",
   "routine_edit": "แก้ไข",

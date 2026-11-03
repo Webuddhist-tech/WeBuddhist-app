@@ -292,6 +292,7 @@
   "common_ok": "確定",
   "comingSoonHeadline": "即將推出",
   "routine_title": "日常修持",
+  "routine_block_default_title": "{title} +另外 {count} 項",
   "bookmarks": "書籤",
   "routine_empty_title": "日常修持",
   "routine_edit": "編輯",

@@ -284,6 +284,7 @@
   "common_ok": "OK",
   "comingSoonHeadline": "Sắp ra mắt",
   "routine_title": "Pháp tu của tôi",
+  "routine_block_default_title": "{title} +{count} mục khác",
   "bookmarks": "Dấu trang",
   "routine_empty_title": "Pháp tu",
   "routine_edit": "Chỉnh sửa",

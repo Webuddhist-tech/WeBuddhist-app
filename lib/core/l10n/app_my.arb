@@ -284,6 +284,7 @@
   "common_ok": "အိုကေ",
   "comingSoonHeadline": "မကြာမီ လာမည်",
   "routine_title": "ကျွန်ုပ်၏ ကျင့်စဉ်များ",
+  "routine_block_default_title": "{title} +နောက်ထပ် {count} ခု",
   "bookmarks": "မှတ်ထားချက်များ",
   "routine_empty_title": "ကျင့်စဉ်များ",
   "routine_edit": "ပြင်ဆင်ရန်",

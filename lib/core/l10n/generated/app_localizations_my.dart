@@ -990,7 +990,7 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String routine_block_default_title(String title, int count) {
-    return '$title +$count more';
+    return '$title +နောက်ထပ် $count ခု';
   }
 
   @override

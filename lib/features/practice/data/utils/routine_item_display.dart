@@ -18,12 +18,18 @@ String routineItemDisplayTitle(RoutineItem item, AppLocalizations l10n) {
 /// Title shown for a [RoutineBlock]: the user-given title, or a default built
 /// from its items ("Morning chants" / "Morning chants +3 more").
 ///
-/// Returns null when the block has neither a title nor items.
+/// The default names the block after its first item with a non-blank label,
+/// since API sessions may arrive without a title. Returns null when the block
+/// has no title and no item has a label.
 String? routineBlockDisplayTitle(RoutineBlock block, AppLocalizations l10n) {
-  final title = block.title;
+  final title = block.title?.trim();
   if (title != null && title.isNotEmpty) return title;
-  if (block.items.isEmpty) return null;
-  final firstItem = routineItemDisplayTitle(block.items.first, l10n);
+  final firstItem =
+      block.items
+          .map((item) => routineItemDisplayTitle(item, l10n).trim())
+          .where((label) => label.isNotEmpty)
+          .firstOrNull;
+  if (firstItem == null) return null;
   final remaining = block.items.length - 1;
   if (remaining == 0) return firstItem;
   return l10n.routine_block_default_title(firstItem, remaining);
