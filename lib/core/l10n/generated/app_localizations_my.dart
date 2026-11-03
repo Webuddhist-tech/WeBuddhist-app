@@ -605,6 +605,9 @@ class AppLocalizationsMy extends AppLocalizations {
   String get see_all => 'အားလုံး ကြည့်ရန်';
 
   @override
+  String get see_more => 'See more';
+
+  @override
   String get connect_groups_load_error =>
       'အဖွဲ့များကို ဖွင့်၍ မရပါ။\nအင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ';
 
@@ -722,6 +725,9 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get home_group_events => 'အထူးဖော်ပြထားသော ပွဲများ';
+
+  @override
+  String get home_community_feed => 'From the community';
 
   @override
   String get home_poems => 'ကဗျာများ';

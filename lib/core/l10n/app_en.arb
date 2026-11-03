@@ -256,6 +256,7 @@
   "discover_groups": "Discover spaces",
   "my_groups": "My spaces",
   "see_all": "See all",
+  "see_more": "See more",
   "connect_groups_load_error": "Unable to load spaces.\nCheck your connection and try again",
   "connect_groups_empty_title": "No more spaces",
   "connect_tab_feed": "Feed",
@@ -310,6 +311,7 @@
     }
   },
   "home_group_events": "Featured events",
+  "home_community_feed": "From the community",
   "home_poems": "Poems",
   "poems_load_error": "Unable to load poems.\nCheck your connection and try again",
   "poems_empty": "No poems yet. Check back soon",

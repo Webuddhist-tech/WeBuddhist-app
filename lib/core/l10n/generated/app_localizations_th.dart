@@ -593,6 +593,9 @@ class AppLocalizationsTh extends AppLocalizations {
   String get see_all => 'ดูทั้งหมด';
 
   @override
+  String get see_more => 'See more';
+
+  @override
   String get connect_groups_load_error =>
       'ไม่สามารถโหลดกลุ่มได้\nตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง';
 
@@ -707,6 +710,9 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get home_group_events => 'กิจกรรมแนะนำ';
+
+  @override
+  String get home_community_feed => 'From the community';
 
   @override
   String get home_poems => 'บทกวี';

@@ -30,6 +30,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/screens/my_prayer
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_profile_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_recitation_collection_screen.dart';
 import 'package:flutter_pecha/features/home/domain/entities/series.dart';
+import 'package:flutter_pecha/features/home/presentation/screens/community_feed_screen.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/group_events_screen.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/plan_list_screen.dart';
@@ -442,6 +443,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 name: "home-group-events",
                 parentNavigatorKey: rootNavigatorKey,
                 builder: (context, state) => const GroupEventsScreen(),
+              ),
+              GoRoute(
+                path: "community-feed",
+                name: "home-community-feed",
+                parentNavigatorKey: rootNavigatorKey,
+                builder: (context, state) => const CommunityFeedScreen(),
               ),
               GoRoute(
                 path: "events/:eventId",

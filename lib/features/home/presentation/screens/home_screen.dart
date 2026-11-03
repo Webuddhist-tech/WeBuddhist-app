@@ -7,6 +7,7 @@ import 'package:flutter_pecha/core/services/service_providers.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_unified_feed_providers.dart';
 import 'package:flutter_pecha/features/home/domain/entities/series.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/featured_series_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/home_group_events_preview_provider.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_
 import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/home_screen_constants.dart';
 import 'package:flutter_pecha/features/home/presentation/utils/home_analytics.dart';
+import 'package:flutter_pecha/features/home/presentation/widgets/community_feed_section.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/featured_plan_section.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/group_events_section.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/home_header.dart';
@@ -247,6 +249,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       ref.read(routineInfoDomainRepositoryProvider).refreshRoutineInfo(),
       ref.read(streakDomainRepositoryProvider).refreshStreak(),
+      // A member whose feed was empty may have joined groups since, so the
+      // own feed is re-read even while Home shows Discover.
+      if (ref.exists(myUnifiedConnectFeedProvider))
+        ref.read(myUnifiedConnectFeedProvider.notifier).refresh(),
+      if (ref.exists(discoverUnifiedConnectFeedProvider))
+        ref.read(discoverUnifiedConnectFeedProvider.notifier).refresh(),
     ]);
   }
 
@@ -370,6 +378,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const GroupEventsSection(),
                   const SizedBox(height: HomeScreenConstants.cardSpacing),
                   const PoemsSection(),
+                  const SizedBox(height: HomeScreenConstants.cardSpacing),
+                  const CommunityFeedSection(),
                 ],
               ),
             ),
