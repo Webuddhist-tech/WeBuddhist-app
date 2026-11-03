@@ -988,6 +988,11 @@ class AppLocalizationsBo extends AppLocalizations {
   String get routine_title => 'ངའི་འཆར་ཅན་ཉམས་ལེན།';
 
   @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count more';
+  }
+
+  @override
   String get bookmarks => 'དཔེ་རྟགས།';
 
   @override

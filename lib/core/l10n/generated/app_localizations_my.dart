@@ -989,6 +989,11 @@ class AppLocalizationsMy extends AppLocalizations {
   String get routine_title => 'ကျွန်ုပ်၏ ကျင့်စဉ်များ';
 
   @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count more';
+  }
+
+  @override
   String get bookmarks => 'မှတ်ထားချက်များ';
 
   @override

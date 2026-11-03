@@ -1,3 +1,4 @@
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/content_language_analytics.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_pecha/core/localization/app_language.dart';
 import 'package:flutter_pecha/core/localization/languages_providers.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/theme/theme_notifier.dart';
+import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/shared/widgets/app_toggle_switch.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
@@ -63,6 +65,10 @@ class MoreScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           children: [
+            if (authState.isLoggedIn && !authState.isGuest) ...[
+              _buildProfileCard(context, ref),
+              const SizedBox(height: 24),
+            ],
             // Personalisation Section
             _buildSectionHeader(
               context,
@@ -159,6 +165,99 @@ class MoreScreen extends ConsumerWidget {
               .read(themeModeProvider.notifier)
               .setTheme(value ? ThemeMode.dark : ThemeMode.light);
         },
+      ),
+    );
+  }
+
+  /// Signed-in user's avatar, username and email. Tapping opens Edit profile.
+  /// Email is omitted when there is none, e.g. phone sign-in.
+  Widget _buildProfileCard(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(userProvider.select((s) => s.user));
+    if (user == null) return const SizedBox.shrink();
+
+    final textTheme = Theme.of(context).textTheme;
+    final avatarUrl = user.avatarUrl ?? '';
+    final username = user.username?.trim() ?? '';
+    final email = user.email?.trim() ?? '';
+    const avatarSize = 56.0;
+    final placeholderIcon = Icon(
+      AppAssets.profile,
+      size: 28,
+      color: AppColors.grey600,
+    );
+
+    return InkWell(
+      onTap: () => context.push(AppRoutes.profile),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            SizedBox(
+              width: avatarSize,
+              height: avatarSize,
+              child: ClipOval(
+                child:
+                    avatarUrl.isNotEmpty
+                        ? CachedNetworkImageWidget(
+                          imageUrl: avatarUrl,
+                          width: avatarSize,
+                          height: avatarSize,
+                          fit: BoxFit.cover,
+                          placeholder: const ColoredBox(
+                            color: AppColors.grey300,
+                          ),
+                          errorWidget: ColoredBox(
+                            color: AppColors.grey300,
+                            child: placeholderIcon,
+                          ),
+                        )
+                        : DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.grey300,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: placeholderIcon,
+                        ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              // Personal details stay hidden in Clarity recordings.
+              child: ClarityMask(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (username.isNotEmpty)
+                      Text(
+                        username,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    if (email.isNotEmpty) ...[
+                      if (username.isNotEmpty) const SizedBox(height: 2),
+                      Text(
+                        email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: AppColors.grey600,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            Icon(AppAssets.caretRight, size: 24, color: AppColors.grey600),
+          ],
+        ),
       ),
     );
   }
