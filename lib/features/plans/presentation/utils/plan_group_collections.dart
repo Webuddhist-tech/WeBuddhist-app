@@ -36,6 +36,26 @@ Future<PlanGroupCollections> loadPlanGroupCollections(
   return Map.fromEntries(entries.whereType<MapEntry<String, List<String>>>());
 }
 
+/// Collections [prefetchPlanGroupCollections] has asked for this session.
+final Set<String> _prefetched = {};
+
+/// Starts loading each collection in [collectionIds] that has no stored
+/// copy yet, once a session, while its day's tasks are on screen: the tap
+/// that opens one then finds it in hand rather than waiting for it. A tap
+/// while it still loads shares the same request (the screen cache store
+/// runs one fetch per key at a time).
+void prefetchPlanGroupCollections(WidgetRef ref, Set<String> collectionIds) {
+  if (collectionIds.isEmpty) return;
+  final repository = ref.read(groupProfileRepositoryProvider);
+  for (final id in collectionIds) {
+    if (!_prefetched.add(id)) continue;
+    final source = repository.recitationCollectionDetailSource(
+      collectionId: id,
+    );
+    if (source.read() == null) unawaited(source.refresh());
+  }
+}
+
 bool _opening = false;
 
 /// [loadPlanGroupCollections] for a tap that opens the reader: null while an

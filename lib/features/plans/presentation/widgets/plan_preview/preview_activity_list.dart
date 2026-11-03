@@ -71,6 +71,10 @@ class PreviewActivityList extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
+    prefetchPlanGroupCollections(
+      ref,
+      PlanSubtaskNavigation.groupCollectionIdsForPlanTasks(tasks),
+    );
     final sortedTasks = _sortedTasks;
 
     return Column(

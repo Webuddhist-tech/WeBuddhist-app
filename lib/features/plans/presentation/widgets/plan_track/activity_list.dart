@@ -66,6 +66,10 @@ class ActivityList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    prefetchPlanGroupCollections(
+      ref,
+      PlanSubtaskNavigation.groupCollectionIdsForUserTasks(tasks),
+    );
     final sortedTasks = List<UserTasksDto>.from(tasks)
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
