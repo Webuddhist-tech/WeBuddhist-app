@@ -1283,9 +1283,6 @@ class AppLocalizationsNe extends AppLocalizations {
   String get settings_section_account => 'खाता';
 
   @override
-  String get settings_email => 'इमेल';
-
-  @override
   String get settings_edit_profile => 'प्रोफाइल सम्पादन गर्नुहोस्';
 
   @override

@@ -1220,9 +1220,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_section_account => '帳號';
 
   @override
-  String get settings_email => '電子郵件';
-
-  @override
   String get settings_edit_profile => '編輯個人檔案';
 
   @override
@@ -5073,9 +5070,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get settings_section_account => '帐号';
-
-  @override
-  String get settings_email => '电子邮件';
 
   @override
   String get settings_edit_profile => '编辑个人资料';

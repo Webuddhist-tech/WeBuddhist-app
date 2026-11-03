@@ -1271,9 +1271,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settings_section_account => 'अकाउंट';
 
   @override
-  String get settings_email => 'ईमेल';
-
-  @override
   String get settings_edit_profile => 'प्रोफ़ाइल एडिट करें';
 
   @override

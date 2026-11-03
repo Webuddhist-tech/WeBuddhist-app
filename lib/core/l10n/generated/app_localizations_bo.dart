@@ -1279,9 +1279,6 @@ class AppLocalizationsBo extends AppLocalizations {
   String get settings_section_account => 'མིང་ཐོ།';
 
   @override
-  String get settings_email => 'གློག་འཕྲིན།';
-
-  @override
   String get settings_edit_profile => 'ངོ་སྤྲོད་བཟོ་བཅོས།';
 
   @override

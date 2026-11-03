@@ -1269,9 +1269,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settings_section_account => 'TÀI KHOẢN';
 
   @override
-  String get settings_email => 'Email';
-
-  @override
   String get settings_edit_profile => 'Chỉnh sửa hồ sơ';
 
   @override

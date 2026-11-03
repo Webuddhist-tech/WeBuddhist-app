@@ -1274,9 +1274,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get settings_section_account => 'БҮРТГЭЛ';
 
   @override
-  String get settings_email => 'И-мэйл';
-
-  @override
   String get settings_edit_profile => 'Профайл засах';
 
   @override

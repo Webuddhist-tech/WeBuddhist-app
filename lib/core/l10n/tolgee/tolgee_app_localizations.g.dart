@@ -2425,13 +2425,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get settings_email => TolgeeBridge.get(
-    localeName,
-    'settings_email',
-    () => _fallback.settings_email,
-  );
-
-  @override
   String get settings_edit_profile => TolgeeBridge.get(
     localeName,
     'settings_edit_profile',

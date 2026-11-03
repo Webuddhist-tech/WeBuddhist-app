@@ -11,6 +11,7 @@ import 'package:flutter_pecha/core/localization/app_language.dart';
 import 'package:flutter_pecha/core/localization/languages_providers.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/theme/theme_notifier.dart';
+import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/shared/widgets/app_toggle_switch.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
@@ -64,6 +65,10 @@ class MoreScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           children: [
+            if (authState.isLoggedIn && !authState.isGuest) ...[
+              _buildProfileCard(context, ref),
+              const SizedBox(height: 24),
+            ],
             // Personalisation Section
             _buildSectionHeader(
               context,
@@ -121,7 +126,6 @@ class MoreScreen extends ConsumerWidget {
                         LoginDrawer.show(context, ref, useRootNavigator: true),
               ),
             ] else ...[
-              _buildEmailRow(context, ref, localizations),
               _buildSettingsRow(
                 context,
                 icon: AppAssets.signOut,
@@ -165,42 +169,95 @@ class MoreScreen extends ConsumerWidget {
     );
   }
 
-  /// Read-only account email. Hidden when there is none, e.g. phone sign-in.
-  Widget _buildEmailRow(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations localizations,
-  ) {
-    final email =
-        ref.watch(userProvider.select((s) => s.user?.email))?.trim() ?? '';
-    if (email.isEmpty) return const SizedBox.shrink();
+  /// Signed-in user's avatar, username and email. Tapping opens Edit profile.
+  /// Email is omitted when there is none, e.g. phone sign-in.
+  Widget _buildProfileCard(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(userProvider.select((s) => s.user));
+    if (user == null) return const SizedBox.shrink();
 
     final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Icon(
-            Icons.mail_outline,
-            size: 24,
-            color: Theme.of(context).iconTheme.color,
-          ),
-          const SizedBox(width: 12),
-          Text(localizations.settings_email, style: textTheme.bodyLarge),
-          const SizedBox(width: 16),
-          Expanded(
-            // Personal details stay hidden in Clarity recordings.
-            child: ClarityMask(
-              child: Text(
-                email,
-                textAlign: TextAlign.end,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.bodyLarge?.copyWith(color: AppColors.grey600),
+    final avatarUrl = user.avatarUrl ?? '';
+    final username = user.username?.trim() ?? '';
+    final email = user.email?.trim() ?? '';
+    const avatarSize = 56.0;
+    final placeholderIcon = Icon(
+      AppAssets.profile,
+      size: 28,
+      color: AppColors.grey600,
+    );
+
+    return InkWell(
+      onTap: () => context.push(AppRoutes.profile),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            SizedBox(
+              width: avatarSize,
+              height: avatarSize,
+              child: ClipOval(
+                child:
+                    avatarUrl.isNotEmpty
+                        ? CachedNetworkImageWidget(
+                          imageUrl: avatarUrl,
+                          width: avatarSize,
+                          height: avatarSize,
+                          fit: BoxFit.cover,
+                          placeholder: const ColoredBox(
+                            color: AppColors.grey300,
+                          ),
+                          errorWidget: ColoredBox(
+                            color: AppColors.grey300,
+                            child: placeholderIcon,
+                          ),
+                        )
+                        : DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.grey300,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: placeholderIcon,
+                        ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              // Personal details stay hidden in Clarity recordings.
+              child: ClarityMask(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (username.isNotEmpty)
+                      Text(
+                        username,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    if (email.isNotEmpty) ...[
+                      if (username.isNotEmpty) const SizedBox(height: 2),
+                      Text(
+                        email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: AppColors.grey600,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            Icon(AppAssets.caretRight, size: 24, color: AppColors.grey600),
+          ],
+        ),
       ),
     );
   }
