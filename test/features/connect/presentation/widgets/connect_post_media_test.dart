@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/cache/app_image_cache_manager.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_expandable_caption.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_media_grid.dart';
@@ -205,11 +207,9 @@ void main() {
     });
 
     group('decode size', () {
-      Future<CachedNetworkImage> decodedImage(
+      Future<ResizeImage> decodedImage(
         WidgetTester tester, {
         required double viewportWidth,
-        int? width,
-        int? height,
       }) async {
         tester.view.devicePixelRatio = 3;
         tester.view.physicalSize = Size(viewportWidth, 2400);
@@ -221,66 +221,48 @@ void main() {
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: ConnectPostMediaViewer(
-              media: [
+              media: const [
                 ConnectPostMedia(
                   id: 'm',
                   mediaType: 'IMAGE',
-                  url: 'https://example.com/m.jpg',
-                  width: width,
-                  height: height,
+                  url: 'https://example.com/m.jpg?X-Amz-Signature=1',
                 ),
               ],
             ),
           ),
         );
-        return tester.widget<CachedNetworkImage>(
-          find.byType(CachedNetworkImage),
-        );
+        return tester.widget<Image>(find.byType(Image)).image as ResizeImage;
       }
 
-      testWidgets('allows for full zoom', (tester) async {
-        final image = await decodedImage(
-          tester,
-          viewportWidth: 900,
-          width: 5000,
-          height: 1000,
-        );
-
-        expect(image.memCacheWidth, 900 * 4);
-        expect(image.memCacheHeight, isNull);
-      });
-
-      testWidgets('never exceeds the original photo', (tester) async {
-        final image = await decodedImage(
-          tester,
-          viewportWidth: 1200,
-          width: 2000,
-          height: 1000,
-        );
-
-        expect(image.memCacheWidth, 2000);
-        expect(image.memCacheHeight, isNull);
-      });
-
-      testWidgets('caps a huge photo on its longest side', (tester) async {
-        final image = await decodedImage(
-          tester,
-          viewportWidth: 1200,
-          width: 6000,
-          height: 12000,
-        );
-
-        expect(image.memCacheWidth, isNull);
-        expect(image.memCacheHeight, 4096);
-      });
-
-      testWidgets('falls back to the viewport without photo dimensions', (
+      testWidgets('bounds both sides by the viewport at full zoom', (
         tester,
       ) async {
         final image = await decodedImage(tester, viewportWidth: 900);
 
-        expect(image.memCacheWidth, 900 * 4);
-        expect(image.memCacheHeight, isNull);
+        expect(image.width, 900 * 4);
+        expect(image.height, 4096);
+        expect(image.policy, ResizeImagePolicy.fit);
+        expect(image.allowUpscaling, isFalse);
+      });
+
+      testWidgets('caps both sides on a large viewport', (tester) async {
+        final image = await decodedImage(tester, viewportWidth: 1200);
+
+        expect(image.width, 4096);
+        expect(image.height, 4096);
+      });
+
+      testWidgets('shares the app image cache entry', (tester) async {
+        final image = await decodedImage(tester, viewportWidth: 900);
+
+        final provider = image.imageProvider as CachedNetworkImageProvider;
+        expect(provider.cacheManager, same(appImageCacheManager));
+        expect(
+          provider.cacheKey,
+          stableNetworkImageCacheKey(
+            'https://example.com/m.jpg?X-Amz-Signature=1',
+          ),
+        );
       });
     });
 

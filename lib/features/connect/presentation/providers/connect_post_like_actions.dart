@@ -19,13 +19,61 @@ class ConnectPostLikeResult {
       ConnectPostLikeResult._(errorMessage: message);
 }
 
+/// A like or unlike still on its way to the server.
+class ConnectPendingPostLike {
+  const ConnectPendingPostLike({
+    required this.wasLiked,
+    required this.optimisticLikeCount,
+    required this.result,
+  });
+
+  final bool wasLiked;
+  final int optimisticLikeCount;
+  final Future<ConnectPostLikeResult> result;
+}
+
 /// Toggles a Connect post like and keeps list providers in sync.
 class ConnectPostLikeActions {
   ConnectPostLikeActions(this.ref);
 
   final Ref ref;
+  final Map<String, ConnectPendingPostLike> _pending = {};
+
+  /// The request in flight for this post. A second one could reach the server
+  /// first and be undone, so surfaces wait for this before toggling again.
+  ConnectPendingPostLike? pendingLike(String postId) => _pending[postId];
 
   Future<ConnectPostLikeResult> toggleLike({
+    required ConnectPost post,
+    required bool wasLiked,
+    required int optimisticLikeCount,
+    required bool includeUnfollowed,
+    String? groupId,
+  }) {
+    final result = _sendLike(
+      post: post,
+      wasLiked: wasLiked,
+      optimisticLikeCount: optimisticLikeCount,
+      includeUnfollowed: includeUnfollowed,
+      groupId: groupId,
+    );
+    final pending = ConnectPendingPostLike(
+      wasLiked: wasLiked,
+      optimisticLikeCount: optimisticLikeCount,
+      result: result,
+    );
+    _pending[post.id] = pending;
+
+    void clear() {
+      if (identical(_pending[post.id], pending)) _pending.remove(post.id);
+    }
+
+    // Registered first, so callers already see it cleared when they resume.
+    result.then((_) => clear(), onError: (Object _) => clear());
+    return result;
+  }
+
+  Future<ConnectPostLikeResult> _sendLike({
     required ConnectPost post,
     required bool wasLiked,
     required int optimisticLikeCount,

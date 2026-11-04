@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -25,16 +27,19 @@ class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
 class _FakeConnectRepository extends Fake implements ConnectRepository {
   final List<String> calls = [];
 
+  /// When set, requests stay in flight until this completes.
+  Completer<Either<Failure, void>>? gate;
+
   @override
   Future<Either<Failure, void>> likePost(String postId) async {
     calls.add('like:$postId');
-    return const Right(null);
+    return gate?.future ?? const Right(null);
   }
 
   @override
   Future<Either<Failure, void>> unlikePost(String postId) async {
     calls.add('unlike:$postId');
-    return const Right(null);
+    return gate?.future ?? const Right(null);
   }
 }
 
@@ -81,7 +86,7 @@ void main() {
   });
 
   /// No key on the card, like the feed, so a new post reuses its state.
-  Future<void> pumpCardAndOpenViewer(WidgetTester tester) async {
+  Future<void> pumpCard(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -107,12 +112,26 @@ void main() {
         ),
       ),
     );
+  }
+
+  /// Fixed pumps: a pending like's spinner never lets pumpAndSettle finish.
+  Future<void> openViewer(WidgetTester tester) async {
     await tester.tap(find.byKey(const ValueKey('connect_post_media_tile_0')));
     // The tap waits out the double-tap-to-like window.
     await tester.pump(kDoubleTapTimeout);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
     expect(find.byType(ConnectPostMediaViewer), findsOneWidget);
   }
+
+  Future<void> pumpCardAndOpenViewer(WidgetTester tester) async {
+    await pumpCard(tester);
+    await openViewer(tester);
+  }
+
+  Finder cardIcon(IconData icon) => find.descendant(
+    of: find.byType(ConnectPostCard),
+    matching: find.byIcon(icon),
+  );
 
   testWidgets('like stays on the opened post when the card is reused', (
     tester,
@@ -186,5 +205,69 @@ void main() {
       ),
       findsNothing,
     );
+  });
+
+  testWidgets('viewer waits for a like the card still has in flight', (
+    tester,
+  ) async {
+    final gate = repository.gate = Completer();
+    await pumpCard(tester);
+    await tester.tap(cardIcon(AppAssets.heart));
+    await tester.pump();
+
+    await openViewer(tester);
+    expect(_viewerFilledHeart, findsOneWidget);
+
+    await tester.tap(_viewerFilledHeart, warnIfMissed: false);
+    await tester.pump();
+    expect(repository.calls, ['like:a']);
+
+    repository.gate = null;
+    gate.complete(const Right(null));
+    await tester.pumpAndSettle();
+
+    await tester.tap(_viewerFilledHeart);
+    await tester.pumpAndSettle();
+    expect(repository.calls, ['like:a', 'unlike:a']);
+    expect(_viewerHeart, findsOneWidget);
+  });
+
+  testWidgets('viewer rolls back when the card request fails', (tester) async {
+    final gate = repository.gate = Completer();
+    await pumpCard(tester);
+    await tester.tap(cardIcon(AppAssets.heart));
+    await tester.pump();
+
+    await openViewer(tester);
+    final viewerCount = find.descendant(
+      of: find.byType(ConnectPostMediaViewerActions),
+      matching: find.text('1'),
+    );
+    expect(viewerCount, findsOneWidget);
+
+    gate.complete(const Left(ServerFailure('nope')));
+    await tester.pumpAndSettle();
+
+    expect(_viewerHeart, findsOneWidget);
+    expect(_viewerFilledHeart, findsNothing);
+    expect(viewerCount, findsNothing);
+  });
+
+  testWidgets('card waits for a like the closed viewer has in flight', (
+    tester,
+  ) async {
+    final gate = repository.gate = Completer();
+    await pumpCardAndOpenViewer(tester);
+    await tester.tap(_viewerHeart);
+    await tester.pump();
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(cardIcon(AppAssets.heart));
+    await tester.pump();
+    expect(repository.calls, ['like:a']);
+
+    gate.complete(const Right(null));
+    await tester.pumpAndSettle();
   });
 }

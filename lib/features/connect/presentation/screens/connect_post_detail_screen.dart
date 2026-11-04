@@ -223,7 +223,11 @@ class _ConnectPostDetailPanelState
   }
 
   Future<void> _toggleLike() async {
-    if (_likeState.isSubmitting) return;
+    if (_likeState.isSubmitting ||
+        ref.read(connectPostLikeActionsProvider).pendingLike(_post.id) !=
+            null) {
+      return;
+    }
 
     final authState = ref.read(authProvider);
     if (authState.isGuest || !authState.isLoggedIn) {

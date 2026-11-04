@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -198,24 +196,8 @@ class _ZoomableImageState extends State<_ZoomableImage> {
     super.dispose();
   }
 
-  /// Sharp at full zoom, but never above the original or [_maxDecodeSide].
-  /// Only one axis is set so the decode keeps the photo's shape.
-  (int? width, int? height) _decodeSize(Size viewport) {
-    final width = widget.media.width;
-    final height = widget.media.height;
-    if (width == null || height == null || width <= 0 || height <= 0) {
-      // A contained photo is never wider than the viewport.
-      final target = viewport.width * _maxScale;
-      return (target.clamp(1.0, _maxDecodeSide).round(), null);
-    }
-
-    final fitScale = math.min(viewport.width / width, viewport.height / height);
-    final longestSide = math.max(width, height);
-    final target = math.min(
-      longestSide * fitScale * _maxScale,
-      math.min(longestSide.toDouble(), _maxDecodeSide),
-    );
-    return width >= height ? (target.round(), null) : (null, target.round());
+  int _decodeBound(double viewportPx) {
+    return (viewportPx * _maxScale).clamp(1.0, _maxDecodeSide).round();
   }
 
   void _toggleZoom() {
@@ -245,18 +227,26 @@ class _ZoomableImageState extends State<_ZoomableImage> {
         onInteractionEnd: (_) => widget.onZoomChanged(_isZoomed),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final (decodeWidth, decodeHeight) = _decodeSize(
-              constraints.biggest * MediaQuery.devicePixelRatioOf(context),
-            );
+            final viewport =
+                constraints.biggest * MediaQuery.devicePixelRatioOf(context);
             return SizedBox.expand(
-              child: CachedNetworkImageWidget(
-                imageUrl: widget.media.url,
-                fit: BoxFit.contain,
-                memCacheWidth: decodeWidth,
-                memCacheHeight: decodeHeight,
-                errorWidget: const Center(
-                  child: Icon(AppAssets.photoLibrary, color: AppColors.grey500),
+              // Sharp at full zoom. The fit policy reads the real photo size,
+              // so both sides stay bounded without stretching or upscaling.
+              child: Image(
+                image: ResizeImage(
+                  widget.media.url.trim().cachedNetworkImageProvider,
+                  width: _decodeBound(viewport.width),
+                  height: _decodeBound(viewport.height),
+                  policy: ResizeImagePolicy.fit,
                 ),
+                fit: BoxFit.contain,
+                errorBuilder:
+                    (_, __, ___) => const Center(
+                      child: Icon(
+                        AppAssets.photoLibrary,
+                        color: AppColors.grey500,
+                      ),
+                    ),
               ),
             );
           },
@@ -304,8 +294,51 @@ class _ConnectPostMediaViewerActionsState
     serverLikedByMe: _post.likedByMe,
   );
 
+  @override
+  void initState() {
+    super.initState();
+    final pending = ref
+        .read(connectPostLikeActionsProvider)
+        .pendingLike(widget.post.id);
+    if (pending != null) _followPendingLike(pending);
+  }
+
+  /// Shows a request another surface started, and stays locked until it ends,
+  /// so a new toggle cannot race it. That surface reports any failure.
+  void _followPendingLike(ConnectPendingPostLike pending) {
+    _post = _post.copyWith(
+      likedByMe: !pending.wasLiked,
+      likeCount: pending.optimisticLikeCount,
+    );
+    _likeState.isSubmitting = true;
+
+    void settle({required bool succeeded}) {
+      if (!mounted) return;
+      setState(() {
+        _likeState.isSubmitting = false;
+        if (succeeded) return;
+        _post = _post.copyWith(
+          likedByMe: pending.wasLiked,
+          likeCount: nextLikeCountAfterToggle(
+            currentCount: pending.optimisticLikeCount,
+            wasLiked: !pending.wasLiked,
+          ),
+        );
+      });
+    }
+
+    pending.result.then(
+      (result) => settle(succeeded: result.isSuccess),
+      onError: (Object _) => settle(succeeded: false),
+    );
+  }
+
   Future<void> _toggleLike() async {
-    if (_likeState.isSubmitting) return;
+    if (_likeState.isSubmitting ||
+        ref.read(connectPostLikeActionsProvider).pendingLike(_post.id) !=
+            null) {
+      return;
+    }
 
     final authState = ref.read(authProvider);
     if (authState.isGuest || !authState.isLoggedIn) {
