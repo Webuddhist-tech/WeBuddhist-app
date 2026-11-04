@@ -708,6 +708,10 @@ class AppLocalizationsNe extends AppLocalizations {
       'अहिलेसम्म कुनै टिप्पणी छैन। कुराकानी सुरु गर्नुहोस्';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'जुम गर्न पिन्च गर्नुहोस् वा दुई पटक ट्याप गर्नुहोस् · अर्को तस्बिरका लागि स्वाइप गर्नुहोस्';
+
+  @override
   String get connect_online => 'अनलाइन';
 
   @override

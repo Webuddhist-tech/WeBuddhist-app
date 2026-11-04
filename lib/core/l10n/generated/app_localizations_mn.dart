@@ -702,6 +702,10 @@ class AppLocalizationsMn extends AppLocalizations {
       'Одоогоор сэтгэгдэл алга. Яриаг эхлүүлээрэй';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'Томруулахын тулд чимхэх эсвэл хоёр товшино уу · дараагийн зураг руу шилжихийн тулд гүйлгэнэ үү';
+
+  @override
   String get connect_online => 'Онлайн';
 
   @override

@@ -695,6 +695,10 @@ class AppLocalizationsTh extends AppLocalizations {
       'ยังไม่มีความคิดเห็น มาเริ่มการสนทนากัน';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'จีบนิ้วหรือแตะสองครั้งเพื่อซูม · ปัดเพื่อดูรูปถัดไป';
+
+  @override
   String get connect_online => 'ออนไลน์';
 
   @override

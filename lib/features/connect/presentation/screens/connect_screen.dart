@@ -252,9 +252,10 @@ class _ChatsAction extends ConsumerWidget {
                 width: 9,
                 height: 9,
                 decoration: BoxDecoration(
-                  color: theme.brightness == Brightness.dark
-                      ? AppColors.unreadBadgeDark
-                      : AppColors.unreadBadge,
+                  color:
+                      theme.brightness == Brightness.dark
+                          ? AppColors.unreadBadgeDark
+                          : AppColors.unreadBadge,
                   shape: BoxShape.circle,
                   // Rings the dot in the bar's own colour so it stays legible
                   // where it overlaps the glyph.

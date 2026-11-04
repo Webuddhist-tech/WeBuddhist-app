@@ -66,7 +66,11 @@ List<String> _ids(AsyncValue<DiscoverGroupsPage> value) =>
 void main() {
   late FakeScreenCacheStore store;
   late _FakeRemote remote;
-  final key = ScreenCacheKey.user('my_groups', userId: 'user-1', language: 'en');
+  final key = ScreenCacheKey.user(
+    'my_groups',
+    userId: 'user-1',
+    language: 'en',
+  );
 
   setUp(() {
     store = FakeScreenCacheStore();
@@ -131,15 +135,17 @@ void main() {
       GroupProfileModel.fromJson({'id': 'g2', 'slug': 'g2'}).toEntity(),
       GroupProfileModel.fromJson({'id': 'g9', 'slug': 'g9'}).toEntity(),
     ];
-    container.read(pendingUnjoinedGroupIdsProvider.notifier).state = {'g1', 'zz'};
+    container.read(pendingUnjoinedGroupIdsProvider.notifier).state = {
+      'g1',
+      'zz',
+    };
 
     container.listen(myGroupsProvider, (_, __) {});
     await pumpEventQueue();
 
-    expect(
-      container.read(pendingJoinedGroupsProvider).map((g) => g.id),
-      ['g9'],
-    );
+    expect(container.read(pendingJoinedGroupsProvider).map((g) => g.id), [
+      'g9',
+    ]);
     expect(container.read(pendingUnjoinedGroupIdsProvider), {'g1'});
   });
 }

@@ -791,6 +791,7 @@
     }
   },
   "connect_post_comments_empty": "還沒有留言。開始討論吧",
+  "connect_post_media_viewer_hint": "雙指縮放或點兩下放大 · 滑動查看下一張",
   "connect_online": "線上",
   "home_group_events": "精選活動",
   "home_poems": "詩偈",

@@ -706,6 +706,10 @@ class AppLocalizationsBo extends AppLocalizations {
       'ད་དུང་བསམ་ཚུལ་མི་འདུག གླེང་མོལ་འགོ་བཙུགས།';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'ཆེ་རུ་གཏོང་བར་མཛུབ་མོས་བསྐྱེད་པའམ་ཐེངས་གཉིས་རྡེབ། · པར་རྗེས་མར་སྤོ་བར་འདྲུད།';
+
+  @override
   String get connect_online => 'དྲ་ཐོག';
 
   @override

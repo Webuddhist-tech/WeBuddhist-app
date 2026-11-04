@@ -699,6 +699,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'No comments yet. Start the conversation';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'Pinch or double-tap to zoom · swipe for the next image';
+
+  @override
   String get connect_online => 'Online';
 
   @override

@@ -1330,6 +1330,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_post_media_viewer_hint => TolgeeBridge.get(
+    localeName,
+    'connect_post_media_viewer_hint',
+    () => _fallback.connect_post_media_viewer_hint,
+  );
+
+  @override
   String get connect_online => TolgeeBridge.get(
     localeName,
     'connect_online',

@@ -88,7 +88,9 @@ class ConnectRepositoryImpl implements ConnectRepository {
   }) {
     final source = myGroupsSource(language: language);
     if (source == null) {
-      return Stream.value(const Left(AuthenticationFailure('Not authenticated')));
+      return Stream.value(
+        const Left(AuthenticationFailure('Not authenticated')),
+      );
     }
     return source.watch();
   }

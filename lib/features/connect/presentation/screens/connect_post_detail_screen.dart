@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/constants/app_config.dart';
-import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
@@ -17,11 +14,13 @@ import 'package:flutter_pecha/features/connect/presentation/providers/connect_po
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_signal_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_like_actions.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_post_share.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_comment_tile.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_comment_composer.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_media_grid.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_media_viewer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 bool _containsTibetan(String value) {
@@ -87,7 +86,8 @@ class ConnectPostDetailPanel extends ConsumerStatefulWidget {
       _ConnectPostDetailPanelState();
 }
 
-class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel> {
+class _ConnectPostDetailPanelState
+    extends ConsumerState<ConnectPostDetailPanel> {
   late final ScrollController _scrollController;
   late final bool _ownsScrollController;
   late ConnectPost _post;
@@ -196,8 +196,38 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
         );
   }
 
+  void _openMediaViewer(List<ConnectPostMedia> media, int index) {
+    ConnectPostMediaViewer.show(
+      context,
+      media: media,
+      initialIndex: index,
+      title: _post.groupName,
+      actions: ConnectPostMediaViewerActions(
+        post: _post.copyWith(likedByMe: _isLiked, likeCount: _likeCount),
+        includeUnfollowed: widget.includeUnfollowed,
+        groupId: widget.groupId,
+        onLikeChanged: _onViewerLikeChanged,
+      ),
+    );
+  }
+
+  void _onViewerLikeChanged(ConnectPost updated) {
+    if (!mounted) return;
+    setState(() {
+      _likeState.clearOverrides();
+      _post = _post.copyWith(
+        likedByMe: updated.likedByMe,
+        likeCount: updated.likeCount,
+      );
+    });
+  }
+
   Future<void> _toggleLike() async {
-    if (_likeState.isSubmitting) return;
+    if (_likeState.isSubmitting ||
+        ref.read(connectPostLikeActionsProvider).pendingLike(_post.id) !=
+            null) {
+      return;
+    }
 
     final authState = ref.read(authProvider);
     if (authState.isGuest || !authState.isLoggedIn) {
@@ -222,9 +252,7 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
 
     if (!result.isSuccess) {
       setState(() => _likeState.revert(wasLiked));
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             wasLiked
@@ -245,34 +273,7 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
     });
   }
 
-  Future<void> _sharePost() async {
-    final caption = _post.caption.trim();
-    final longUrl =
-        _post.groupId.isNotEmpty
-            ? DeepLinkUrlBuilder.groupLink(groupId: _post.groupId).toString()
-            : '';
-    final shareUrl =
-        longUrl.isNotEmpty ? await resolveShareUrlRef(ref, longUrl) : '';
-    if (!mounted) return;
-
-    final message =
-        caption.isNotEmpty && shareUrl.isNotEmpty
-            ? '$caption\n\n$shareUrl'
-            : caption.isNotEmpty
-            ? caption
-            : shareUrl;
-    if (message.isEmpty) return;
-    final shareAnalytics = ref.read(shareAnalyticsProvider);
-    final result = await SharePlus.instance.share(ShareParams(text: message));
-    if (ShareAnalytics.wasUsed(result)) {
-      shareAnalytics.contentShared(
-        surface: ShareSurface.post,
-        targetId: _post.id,
-        format: 'text',
-        groupId: _post.groupId,
-      );
-    }
-  }
+  Future<void> _sharePost() => shareConnectPost(context, ref, _post);
 
   @override
   Widget build(BuildContext context) {
@@ -284,7 +285,10 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
         (widget.groupId ?? '').isNotEmpty ? widget.groupId! : _post.groupId;
     if (signalGroupId.isNotEmpty) {
       ref.watch(
-        postCommentsSignalProvider((groupId: signalGroupId, postId: widget.postId)),
+        postCommentsSignalProvider((
+          groupId: signalGroupId,
+          postId: widget.postId,
+        )),
       );
     }
     final isSubmittingComment = ref.watch(
@@ -361,12 +365,7 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
 
     return ListView(
       controller: _scrollController,
-      padding: EdgeInsets.fromLTRB(
-        20,
-        widget.showPostPreview ? 0 : 8,
-        20,
-        16,
-      ),
+      padding: EdgeInsets.fromLTRB(20, widget.showPostPreview ? 0 : 8, 20, 16),
       children: [
         if (widget.showPostPreview) ...[
           _buildPostCard(context, isDark, commentCount),
@@ -452,7 +451,12 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
           ],
           if (imageMedia.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _PostMediaGallery(media: imageMedia, isDark: isDark),
+            ConnectPostMediaGrid(
+              media: imageMedia,
+              isDark: isDark,
+              borderRadius: BorderRadius.circular(12),
+              onTapImage: (index) => _openMediaViewer(imageMedia, index),
+            ),
           ],
           const SizedBox(height: 12),
           Row(
@@ -499,7 +503,9 @@ class _PostAuthorRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayName =
-        name.trim().isNotEmpty ? name.trim() : context.l10n.connect_group_fallback_title;
+        name.trim().isNotEmpty
+            ? name.trim()
+            : context.l10n.connect_group_fallback_title;
 
     return Row(
       children: [
@@ -537,99 +543,6 @@ class _PostAuthorRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _PostMediaGallery extends StatelessWidget {
-  const _PostMediaGallery({required this.media, required this.isDark});
-
-  final List<ConnectPostMedia> media;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    if (media.length == 1) {
-      return _PostMediaTile(media: media.first, isDark: isDark);
-    }
-
-    final visibleMedia = media.take(2).toList();
-    return Row(
-      children: [
-        for (var i = 0; i < visibleMedia.length; i++) ...[
-          if (i > 0) const SizedBox(width: 8),
-          Expanded(
-            child: _PostMediaTile(
-              media: visibleMedia[i],
-              isDark: isDark,
-              compact: true,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _PostMediaTile extends StatelessWidget {
-  const _PostMediaTile({
-    required this.media,
-    required this.isDark,
-    this.compact = false,
-  });
-
-  final ConnectPostMedia media;
-  final bool isDark;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final errorWidget = ColoredBox(
-      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-      child: Icon(
-        AppAssets.photoLibrary,
-        color: isDark ? AppColors.grey500 : AppColors.grey600,
-      ),
-    );
-
-    if (compact) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: CachedNetworkImageWidget(
-            imageUrl: media.url,
-            fit: BoxFit.cover,
-            errorWidget: errorWidget,
-          ),
-        ),
-      );
-    }
-
-    final width = media.width;
-    final height = media.height;
-    if (width != null && height != null && width > 0 && height > 0) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: AspectRatio(
-          aspectRatio: width / height,
-          child: CachedNetworkImageWidget(
-            imageUrl: media.url,
-            fit: BoxFit.cover,
-            errorWidget: errorWidget,
-          ),
-        ),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: CachedNetworkImageWidget(
-        imageUrl: media.url,
-        width: double.infinity,
-        fit: BoxFit.fitWidth,
-        errorWidget: errorWidget,
-      ),
     );
   }
 }

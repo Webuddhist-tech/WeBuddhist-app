@@ -19,8 +19,7 @@ class ConnectSegmentedControl extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final trackColor =
         isDark ? AppColors.surfaceVariantDark : AppColors.grey100;
-    final selectedColor =
-        isDark ? AppColors.grey800 : AppColors.surfaceWhite;
+    final selectedColor = isDark ? AppColors.grey800 : AppColors.surfaceWhite;
     final selectedTextColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final unselectedTextColor =

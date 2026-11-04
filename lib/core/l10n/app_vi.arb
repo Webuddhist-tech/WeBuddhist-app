@@ -201,6 +201,7 @@
   "connect_comment_delete_failed": "Không thể xóa bình luận",
   "connect_post_comments_count": "{count, plural, =1 {1 bình luận} other {{count} bình luận}}",
   "connect_post_comments_empty": "Chưa có bình luận nào. Hãy bắt đầu cuộc trò chuyện",
+  "connect_post_media_viewer_hint": "Chụm hoặc chạm hai lần để thu phóng · vuốt để xem ảnh tiếp theo",
   "connect_online": "Trực tuyến",
   "connect_ended": "Đã kết thúc",
   "connect_ended_on": "Đã kết thúc {date}",

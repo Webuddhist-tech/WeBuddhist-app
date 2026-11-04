@@ -299,6 +299,7 @@
     }
   },
   "connect_post_comments_empty": "No comments yet. Start the conversation",
+  "connect_post_media_viewer_hint": "Pinch or double-tap to zoom · swipe for the next image",
   "connect_online": "Online",
   "connect_ended": "Ended",
   "connect_ended_on": "Ended {date}",

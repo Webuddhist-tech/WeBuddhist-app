@@ -74,10 +74,7 @@ class ConnectFeedItemModel {
         eventJson['group_avatar_url'] = json['group_avatar_url'];
       }
       event =
-          GroupEventModel.fromJson(
-            eventJson,
-            language: language,
-          ).toEntity();
+          GroupEventModel.fromJson(eventJson, language: language).toEntity();
     }
 
     GroupPractice? practice;
@@ -143,10 +140,7 @@ class ConnectFeedPageModel {
         itemsJson
             .whereType<Map<String, dynamic>>()
             .map(
-              (item) => ConnectFeedItemModel.fromJson(
-                item,
-                language: language,
-              ),
+              (item) => ConnectFeedItemModel.fromJson(item, language: language),
             )
             .where((item) {
               return switch (item.type) {

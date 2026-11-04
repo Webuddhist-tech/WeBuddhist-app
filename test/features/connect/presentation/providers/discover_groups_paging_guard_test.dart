@@ -59,7 +59,11 @@ Map<String, dynamic> _json(List<String> ids, {required int total}) => {
   'total': total,
 };
 
-DiscoverGroupsPage _typed(List<String> ids, {required int skip, required int total}) {
+DiscoverGroupsPage _typed(
+  List<String> ids, {
+  required int skip,
+  required int total,
+}) {
   return DiscoverGroupsPage(
     groups: [
       for (final id in ids)
@@ -100,19 +104,22 @@ void main() {
   List<String> ids() =>
       container.read(discoverGroupsProvider).groups.map((g) => g.id).toList();
 
-  test('loadMore waits while the first page is still being refreshed', () async {
-    final notifier = container.read(discoverGroupsProvider.notifier);
-    expect(ids(), ['g1', 'g2']);
-    notifier.ensureLoaded();
-    await pumpEventQueue();
+  test(
+    'loadMore waits while the first page is still being refreshed',
+    () async {
+      final notifier = container.read(discoverGroupsProvider.notifier);
+      expect(ids(), ['g1', 'g2']);
+      notifier.ensureLoaded();
+      await pumpEventQueue();
 
-    await notifier.loadMore();
-    expect(remote.nextPageCalls, 0);
+      await notifier.loadMore();
+      expect(remote.nextPageCalls, 0);
 
-    remote.firstPage.complete(_json(['g1', 'g9'], total: 10));
-    await pumpEventQueue();
-    expect(ids(), ['g1', 'g9']);
-  });
+      remote.firstPage.complete(_json(['g1', 'g9'], total: 10));
+      await pumpEventQueue();
+      expect(ids(), ['g1', 'g9']);
+    },
+  );
 
   test('a page fetched against an older first page is dropped', () async {
     final notifier = container.read(discoverGroupsProvider.notifier);
@@ -125,7 +132,8 @@ void main() {
     expect(remote.nextPageCalls, 1);
 
     // A fresh first page lands while page two is still in flight.
-    remote.firstPage = Completer()..complete(_json(['g1', 'g2', 'g3'], total: 10));
+    remote.firstPage =
+        Completer()..complete(_json(['g1', 'g2', 'g3'], total: 10));
     await notifier.loadInitial();
     expect(ids(), ['g1', 'g2', 'g3']);
 

@@ -74,16 +74,18 @@ class ConnectCommentComposer extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(child: _CommentTextField(
-                controller: controller,
-                focusNode: focusNode,
-                isDark: isDark,
-                hintText:
-                    replyHandle == null
-                        ? l10n.connect_comment_hint
-                        : l10n.connect_comment_reply_hint,
-                onSubmit: onSubmit,
-              )),
+              Expanded(
+                child: _CommentTextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  isDark: isDark,
+                  hintText:
+                      replyHandle == null
+                          ? l10n.connect_comment_hint
+                          : l10n.connect_comment_reply_hint,
+                  onSubmit: onSubmit,
+                ),
+              ),
               ValueListenableBuilder<TextEditingValue>(
                 valueListenable: controller,
                 builder: (context, value, _) {
@@ -149,23 +151,31 @@ class _CommentTextField extends StatelessWidget {
         hintStyle: TextStyle(
           fontSize: 15,
           height: 1.2,
-          color:
-              isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+          color: isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
         ),
         filled: true,
         fillColor: fillColor,
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ConnectCommentComposer._fieldHeight / 2),
+          borderRadius: BorderRadius.circular(
+            ConnectCommentComposer._fieldHeight / 2,
+          ),
           borderSide: BorderSide(color: borderColor),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ConnectCommentComposer._fieldHeight / 2),
+          borderRadius: BorderRadius.circular(
+            ConnectCommentComposer._fieldHeight / 2,
+          ),
           borderSide: BorderSide(color: borderColor),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ConnectCommentComposer._fieldHeight / 2),
+          borderRadius: BorderRadius.circular(
+            ConnectCommentComposer._fieldHeight / 2,
+          ),
           borderSide: BorderSide(
             color: isDark ? AppColors.grey600 : AppColors.grey400,
           ),

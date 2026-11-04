@@ -61,8 +61,7 @@ class _ConnectFeedTabState extends ConsumerState<ConnectFeedTab>
       onMyRefresh:
           () => ref.read(myUnifiedConnectFeedProvider.notifier).refresh(),
       onDiscoverRefresh:
-          () =>
-              ref.read(discoverUnifiedConnectFeedProvider.notifier).refresh(),
+          () => ref.read(discoverUnifiedConnectFeedProvider.notifier).refresh(),
       onMyLoadMore:
           () => ref.read(myUnifiedConnectFeedProvider.notifier).loadMore(),
       onDiscoverLoadMore:
@@ -80,7 +79,8 @@ class _ConnectFeedTabState extends ConsumerState<ConnectFeedTab>
           error: myState.error,
           hasMore: myState.hasMore,
           hasLoaded: myState.hasLoaded,
-          onRetry: () => ref.read(myUnifiedConnectFeedProvider.notifier).retry(),
+          onRetry:
+              () => ref.read(myUnifiedConnectFeedProvider.notifier).retry(),
           myEmptyState: ConnectMyEmptyState(
             type: ConnectMyEmptyStateType.feed,
             onBrowseTap: switchToDiscover,
@@ -106,7 +106,8 @@ class _ConnectFeedTabState extends ConsumerState<ConnectFeedTab>
           hasMore: discoverState.hasMore,
           hasLoaded: discoverState.hasLoaded,
           onRetry:
-              () => ref.read(discoverUnifiedConnectFeedProvider.notifier).retry(),
+              () =>
+                  ref.read(discoverUnifiedConnectFeedProvider.notifier).retry(),
           emptyDiscoverMessage: context.l10n.connect_empty_discover_feed,
           itemBuilder:
               (context, index) => _buildFeedItem(

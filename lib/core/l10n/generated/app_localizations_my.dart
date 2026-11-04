@@ -710,6 +710,10 @@ class AppLocalizationsMy extends AppLocalizations {
       'မှတ်ချက် မရှိသေးပါ။ စတင် ဆွေးနွေးလိုက်ပါ';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'ချဲ့ရန် ဆွဲချဲ့ပါ သို့မဟုတ် နှစ်ချက်နှိပ်ပါ · နောက်ပုံအတွက် ပွတ်ဆွဲပါ';
+
+  @override
   String get connect_online => 'အွန်လိုင်း';
 
   @override

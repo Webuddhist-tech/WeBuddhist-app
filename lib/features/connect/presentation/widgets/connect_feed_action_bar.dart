@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 
-typedef ConnectFeedAction = ({
-  IconData icon,
-  Color? iconColor,
-  int? count,
-  bool isLoading,
-  VoidCallback? onTap,
-});
+typedef ConnectFeedAction =
+    ({
+      IconData icon,
+      Color? iconColor,
+      int? count,
+      bool isLoading,
+      VoidCallback? onTap,
+    });
 
 /// Shared engagement row for Connect feed cards.
 class ConnectFeedActionBar extends StatelessWidget {
-  const ConnectFeedActionBar({
-    super.key,
-    required this.actions,
-    this.trailing,
-  });
+  const ConnectFeedActionBar({super.key, required this.actions, this.trailing});
 
   final List<ConnectFeedAction> actions;
   final Widget? trailing;
@@ -33,15 +30,9 @@ class ConnectFeedActionBar extends StatelessWidget {
         children: [
           for (var i = 0; i < actions.length; i++) ...[
             if (i > 0) const SizedBox(width: 4),
-            _ActionChip(
-              action: actions[i],
-              defaultColor: defaultColor,
-            ),
+            _ActionChip(action: actions[i], defaultColor: defaultColor),
           ],
-          if (trailing != null) ...[
-            const Spacer(),
-            trailing!,
-          ],
+          if (trailing != null) ...[const Spacer(), trailing!],
         ],
       ),
     );
@@ -49,10 +40,7 @@ class ConnectFeedActionBar extends StatelessWidget {
 }
 
 class _ActionChip extends StatelessWidget {
-  const _ActionChip({
-    required this.action,
-    required this.defaultColor,
-  });
+  const _ActionChip({required this.action, required this.defaultColor});
 
   final ConnectFeedAction action;
   final Color defaultColor;

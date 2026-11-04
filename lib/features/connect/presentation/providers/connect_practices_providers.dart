@@ -103,7 +103,10 @@ class ConnectPracticesNotifier extends StateNotifier<ConnectPracticesState> {
       return;
     }
     // Only an empty list shows the loader; a seeded one refreshes silently.
-    state = state.copyWith(isLoading: state.practices.isEmpty, clearError: true);
+    state = state.copyWith(
+      isLoading: state.practices.isEmpty,
+      clearError: true,
+    );
 
     _firstPageInFlight = true;
     try {
@@ -146,12 +149,14 @@ class ConnectPracticesNotifier extends StateNotifier<ConnectPracticesState> {
     state = state.copyWith(isLoadingMore: true, clearError: true);
     final epoch = _pageEpoch;
 
-    final result = await ref.read(groupProfileRepositoryProvider).getConnectPractices(
-      includeUnfollowed: includeUnfollowed,
-      language: language,
-      skip: state.skip,
-      limit: _limit,
-    );
+    final result = await ref
+        .read(groupProfileRepositoryProvider)
+        .getConnectPractices(
+          includeUnfollowed: includeUnfollowed,
+          language: language,
+          skip: state.skip,
+          limit: _limit,
+        );
 
     if (!mounted) return;
     // Page one was replaced meanwhile; this page belongs to the old list.
@@ -192,48 +197,46 @@ class ConnectPracticesNotifier extends StateNotifier<ConnectPracticesState> {
   }
 }
 
-final myConnectPracticesProvider =
-    StateNotifierProvider.autoDispose<
-      ConnectPracticesNotifier,
-      ConnectPracticesState
-    >((ref) {
-      final language = ref.watch(contentLanguageProvider);
-      final signedIn = ref.watch(
-        authProvider.select((a) => a.isLoggedIn && !a.isGuest),
-      );
-      return ConnectPracticesNotifier(
-        ref: ref,
-        includeUnfollowed: false,
-        language: language,
-        source:
-            signedIn
-                ? ref
-                    .watch(connectRepositoryProvider)
-                    .connectPracticesFirstPage(
-                      includeUnfollowed: false,
-                      language: language,
-                      limit: ConnectPracticesNotifier._limit,
-                    )
-                : null,
-      );
-    });
+final myConnectPracticesProvider = StateNotifierProvider.autoDispose<
+  ConnectPracticesNotifier,
+  ConnectPracticesState
+>((ref) {
+  final language = ref.watch(contentLanguageProvider);
+  final signedIn = ref.watch(
+    authProvider.select((a) => a.isLoggedIn && !a.isGuest),
+  );
+  return ConnectPracticesNotifier(
+    ref: ref,
+    includeUnfollowed: false,
+    language: language,
+    source:
+        signedIn
+            ? ref
+                .watch(connectRepositoryProvider)
+                .connectPracticesFirstPage(
+                  includeUnfollowed: false,
+                  language: language,
+                  limit: ConnectPracticesNotifier._limit,
+                )
+            : null,
+  );
+});
 
-final discoverConnectPracticesProvider =
-    StateNotifierProvider.autoDispose<
-      ConnectPracticesNotifier,
-      ConnectPracticesState
-    >((ref) {
-      final language = ref.watch(contentLanguageProvider);
-      return ConnectPracticesNotifier(
-        ref: ref,
-        includeUnfollowed: true,
-        language: language,
-        source: ref
-            .watch(connectRepositoryProvider)
-            .connectPracticesFirstPage(
-              includeUnfollowed: true,
-              language: language,
-              limit: ConnectPracticesNotifier._limit,
-            ),
-      );
-    });
+final discoverConnectPracticesProvider = StateNotifierProvider.autoDispose<
+  ConnectPracticesNotifier,
+  ConnectPracticesState
+>((ref) {
+  final language = ref.watch(contentLanguageProvider);
+  return ConnectPracticesNotifier(
+    ref: ref,
+    includeUnfollowed: true,
+    language: language,
+    source: ref
+        .watch(connectRepositoryProvider)
+        .connectPracticesFirstPage(
+          includeUnfollowed: true,
+          language: language,
+          limit: ConnectPracticesNotifier._limit,
+        ),
+  );
+});

@@ -159,13 +159,15 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
     state = state.copyWith(isLoadingMore: true, clearError: true);
     final epoch = _pageEpoch;
 
-    final result = await ref.read(groupProfileRepositoryProvider).getConnectEvents(
-      includeUnfollowed: includeUnfollowed,
-      language: language,
-      skip: state.skip,
-      limit: _limit,
-      eventFormat: eventFormat,
-    );
+    final result = await ref
+        .read(groupProfileRepositoryProvider)
+        .getConnectEvents(
+          includeUnfollowed: includeUnfollowed,
+          language: language,
+          skip: state.skip,
+          limit: _limit,
+          eventFormat: eventFormat,
+        );
 
     if (!mounted) return;
     // Page one was replaced meanwhile; this page belongs to the old list.
@@ -225,15 +227,14 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
       window: () => math.max(_limit, state.skip),
       fetch:
           (skip, limit) async => (await ref
-                  .read(groupProfileRepositoryProvider)
-                  .getConnectEvents(
-                    includeUnfollowed: includeUnfollowed,
-                    language: language,
-                    skip: skip,
-                    limit: limit,
-                    eventFormat: eventFormat,
-                  ))
-              .map((page) => (page.events, page.total)),
+              .read(groupProfileRepositoryProvider)
+              .getConnectEvents(
+                includeUnfollowed: includeUnfollowed,
+                language: language,
+                skip: skip,
+                limit: limit,
+                eventFormat: eventFormat,
+              )).map((page) => (page.events, page.total)),
       idOf: (event) => event.id,
       // A pull-to-refresh that landed meanwhile is newer.
       isCurrent: () => mounted && epoch == _pageEpoch,
@@ -266,48 +267,49 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
   }
 }
 
-final myConnectEventsProvider = StateNotifierProvider.autoDispose
-    .family<ConnectEventsNotifier, ConnectEventsState, ConnectEventFormatFilter>(
-      (ref, filter) {
-        final language = ref.watch(contentLanguageProvider);
-        final signedIn = ref.watch(
-          authProvider.select((a) => a.isLoggedIn && !a.isGuest),
-        );
-        return ConnectEventsNotifier(
-          ref: ref,
-          includeUnfollowed: false,
-          language: language,
-          eventFormat: filter.apiValue,
-          source:
-              signedIn
-                  ? ref
-                      .watch(connectRepositoryProvider)
-                      .connectEventsFirstPage(
-                        includeUnfollowed: false,
-                        language: language,
-                        limit: ConnectEventsNotifier._limit,
-                        eventFormat: filter.apiValue,
-                      )
-                  : null,
-        );
-      },
-    );
+final myConnectEventsProvider = StateNotifierProvider.autoDispose.family<
+  ConnectEventsNotifier,
+  ConnectEventsState,
+  ConnectEventFormatFilter
+>((ref, filter) {
+  final language = ref.watch(contentLanguageProvider);
+  final signedIn = ref.watch(
+    authProvider.select((a) => a.isLoggedIn && !a.isGuest),
+  );
+  return ConnectEventsNotifier(
+    ref: ref,
+    includeUnfollowed: false,
+    language: language,
+    eventFormat: filter.apiValue,
+    source:
+        signedIn
+            ? ref
+                .watch(connectRepositoryProvider)
+                .connectEventsFirstPage(
+                  includeUnfollowed: false,
+                  language: language,
+                  limit: ConnectEventsNotifier._limit,
+                  eventFormat: filter.apiValue,
+                )
+            : null,
+  );
+});
 
-final discoverConnectEventsProvider =
-    StateNotifierProvider.autoDispose<ConnectEventsNotifier, ConnectEventsState>((
-      ref,
-    ) {
-      final language = ref.watch(contentLanguageProvider);
-      return ConnectEventsNotifier(
-        ref: ref,
-        includeUnfollowed: true,
-        language: language,
-        source: ref
-            .watch(connectRepositoryProvider)
-            .connectEventsFirstPage(
-              includeUnfollowed: true,
-              language: language,
-              limit: ConnectEventsNotifier._limit,
-            ),
-      );
-    });
+final discoverConnectEventsProvider = StateNotifierProvider.autoDispose<
+  ConnectEventsNotifier,
+  ConnectEventsState
+>((ref) {
+  final language = ref.watch(contentLanguageProvider);
+  return ConnectEventsNotifier(
+    ref: ref,
+    includeUnfollowed: true,
+    language: language,
+    source: ref
+        .watch(connectRepositoryProvider)
+        .connectEventsFirstPage(
+          includeUnfollowed: true,
+          language: language,
+          limit: ConnectEventsNotifier._limit,
+        ),
+  );
+});
