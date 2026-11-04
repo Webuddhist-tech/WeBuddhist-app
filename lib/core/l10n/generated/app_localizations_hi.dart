@@ -619,6 +619,18 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_tab_groups => 'स्पेस';
 
   @override
+  String get connect_landing_title => 'Connect with your Buddhist community';
+
+  @override
+  String get connect_popular_spaces => 'Popular spaces';
+
+  @override
+  String get connect_your_spaces => 'Your spaces';
+
+  @override
+  String get connect_find_a_space => 'Find a space';
+
+  @override
   String get connect_segment_my => 'आपके स्पेस';
 
   @override

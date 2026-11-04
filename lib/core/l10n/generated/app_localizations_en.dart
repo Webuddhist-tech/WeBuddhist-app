@@ -496,10 +496,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notification_row_timer => 'Timer';
 
   @override
-  String get notification_row_group_posts => 'Group posts';
+  String get notification_row_group_posts => 'Space posts';
 
   @override
-  String get notification_row_group_chats => 'Group chats';
+  String get notification_row_group_chats => 'Space chats';
 
   @override
   String get notification_row_my_prayer_requests => 'My prayer requests';
@@ -615,6 +615,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_tab_groups => 'Spaces';
+
+  @override
+  String get connect_landing_title => 'Connect with your Buddhist community';
+
+  @override
+  String get connect_popular_spaces => 'Popular spaces';
+
+  @override
+  String get connect_your_spaces => 'Your spaces';
+
+  @override
+  String get connect_find_a_space => 'Find a space';
 
   @override
   String get connect_segment_my => 'Your spaces';

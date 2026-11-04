@@ -179,6 +179,9 @@ class StorageKeys {
   static const String malaAccumulationSelectionPrefix =
       'mala_accumulation_selection_';
 
+  /// Space the Connect tab last showed, by group id.
+  static const String connectLastSpaceId = 'connect_last_space_id';
+
   // ========== BUSINESS LOGIC ==========
   /// Last profile update timestamp
   static const String lastProfileUpdate = 'last_profile_update';

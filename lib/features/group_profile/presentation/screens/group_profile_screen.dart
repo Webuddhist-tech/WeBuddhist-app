@@ -26,10 +26,14 @@ class GroupProfileScreen extends ConsumerStatefulWidget {
   /// prayer-request notification tap.
   final bool openPrayerRequests;
 
+  /// Replaces the back arrow, e.g. the Connect tab's spaces menu.
+  final Widget? leading;
+
   const GroupProfileScreen({
     super.key,
     required this.groupId,
     this.openPrayerRequests = false,
+    this.leading,
   });
 
   @override
@@ -131,16 +135,17 @@ class _GroupProfileScreenState extends ConsumerState<GroupProfileScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(AppAssets.arrowLeft),
-            onPressed: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go(AppRoutes.home);
-              }
-            },
-          ),
+          widget.leading ??
+              IconButton(
+                icon: const Icon(AppAssets.arrowLeft),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(AppRoutes.home);
+                  }
+                },
+              ),
           Expanded(
             child: AnimatedOpacity(
               opacity: showTitle && hasTitle ? 1 : 0,

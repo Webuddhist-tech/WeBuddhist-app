@@ -8,84 +8,87 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_profi
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+/// A space as one flat row: avatar, name and member count. Opens the space's
+/// page unless [onTap] is given; [trailing] sits at the end, e.g. an unread dot.
 class GroupSearchResultCard extends StatelessWidget {
-  const GroupSearchResultCard({super.key, required this.group});
+  const GroupSearchResultCard({
+    super.key,
+    required this.group,
+    this.onTap,
+    this.trailing,
+  });
 
   final GroupProfile group;
+  final VoidCallback? onTap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final cardColor =
-        isDark ? AppColors.cardBackgroundDark : AppColors.cardBackgroundLight;
     final subtitleColor =
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => context.push('/home/group/${group.id}'),
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: cardColor,
-          ),
-          child: Row(
-            children: [
-              _GroupAvatar(group: group, isDark: isDark),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      group.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        height: 1.3,
-                      ),
+    return InkWell(
+      onTap: onTap ?? () => context.push('/home/group/${group.id}'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            _GroupAvatar(group: group, isDark: isDark),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    group.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      height: 1.3,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _subtitle(context),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: subtitleColor,
-                        fontSize: 13,
-                      ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _subtitle(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: subtitleColor,
+                      fontSize: 13,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            if (trailing != null) ...[const SizedBox(width: 12), trailing!],
+          ],
         ),
       ),
     );
   }
 
   String _subtitle(BuildContext context) {
-    final typeLabel =
-        group.subTitle ??
-        (group.tags.isNotEmpty ? group.tags.first : group.groupType.name);
-    final memberCount = group.memberCount;
+    // Same count as the space page header: `member_count` is not sent by the
+    // joined-spaces list.
+    final memberCount = group.memberOrFollowerCount;
     final formattedCount = _formatCompactCount(
       memberCount,
       intlFormatLocaleOf(context),
     );
     final memberLabel =
-        memberCount == 1
-            ? context.l10n.group_member
-            : context.l10n.group_members;
+        group.groupType.isPage
+            ? (memberCount == 1
+                ? context.l10n.group_follower
+                : context.l10n.group_followers)
+            : (memberCount == 1
+                ? context.l10n.group_member
+                : context.l10n.group_members);
 
-    return '$typeLabel · $formattedCount $memberLabel';
+    return '$formattedCount $memberLabel';
   }
 
   String _formatCompactCount(int count, String locale) {
@@ -118,21 +121,21 @@ class _GroupAvatar extends StatelessWidget {
 
     return ClipOval(
       child: SizedBox(
-        width: 48,
-        height: 48,
+        width: 40,
+        height: 40,
         child:
             group.avatarUrl != null && group.avatarUrl!.isNotEmpty
                 ? CachedNetworkImageWidget(
                   imageUrl: group.avatarUrl!,
                   fit: BoxFit.cover,
-                  width: 48,
-                  height: 48,
+                  width: 40,
+                  height: 40,
                 )
                 : ColoredBox(
                   color: placeholderColor,
                   child: Icon(
                     AppAssets.usersThree,
-                    size: 22,
+                    size: 20,
                     color: isDark ? AppColors.grey500 : AppColors.grey600,
                   ),
                 ),

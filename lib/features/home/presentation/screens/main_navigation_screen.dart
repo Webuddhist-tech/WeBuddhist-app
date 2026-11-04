@@ -4,7 +4,7 @@ import 'package:flutter_pecha/features/more/presentation/me_screen.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
-import 'package:flutter_pecha/features/connect/presentation/screens/connect_screen.dart';
+import 'package:flutter_pecha/features/connect/presentation/screens/connect_tab_screen.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/home_screen.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/practice_explore_screen.dart';
 import 'package:flutter_pecha/shared/widgets/appBottomNavBar/app_bottom_nav_bar.dart';
@@ -52,7 +52,7 @@ List<AppBottomBarItemModel<int>> mainNavigationItems(
     AppBottomBarItemModel(
       type: 2,
       label: localizations.nav_connect,
-      selectedWidget: const ConnectScreen(),
+      selectedWidget: const ConnectTabScreen(),
       selectedIconData: AppAssets.connectSelected,
       unSelectedIconData: AppAssets.connectUnselected,
     ),

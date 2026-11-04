@@ -75,7 +75,7 @@ class _GroupSearchScreenState extends ConsumerState<GroupSearchScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 20, 12),
+              padding: const EdgeInsets.fromLTRB(4, 8, 16, 8),
               child: Row(
                 children: [
                   IconButton(
@@ -83,7 +83,8 @@ class _GroupSearchScreenState extends ConsumerState<GroupSearchScreen> {
                       ref.read(groupSearchProvider.notifier).clear();
                       Navigator.of(context).pop();
                     },
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                    icon: const Icon(AppAssets.arrowLeft),
                   ),
                   Expanded(
                     child: TextField(
@@ -106,9 +107,12 @@ class _GroupSearchScreenState extends ConsumerState<GroupSearchScreen> {
                             _searchController.text.isNotEmpty
                                 ? IconButton(
                                   onPressed: _onClear,
+                                  tooltip: MaterialLocalizations.of(
+                                    context,
+                                  ).deleteButtonTooltip,
                                   icon: Icon(
-                                    Icons.clear,
-                                    size: 20,
+                                    AppAssets.x,
+                                    size: 18,
                                     color: subtitleColor,
                                   ),
                                 )
@@ -118,9 +122,10 @@ class _GroupSearchScreenState extends ConsumerState<GroupSearchScreen> {
                             isDark
                                 ? AppColors.surfaceDark
                                 : AppColors.surfaceWhite,
+                        isDense: true,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 12,
+                          vertical: 10,
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(999),
@@ -152,12 +157,8 @@ class _GroupSearchScreenState extends ConsumerState<GroupSearchScreen> {
     GroupSearchState searchState,
     bool isDark,
   ) {
-    if (searchState.query.trim().isEmpty) {
-      return _EmptySearchState(
-        title: context.l10n.search_for_groups,
-        isDark: isDark,
-      );
-    }
+    // Blank until something is typed, as in the design.
+    if (searchState.query.trim().isEmpty) return const SizedBox.shrink();
 
     if (searchState.isLoading && searchState.results.isEmpty) {
       return const Center(child: CircularProgressIndicator());
@@ -178,11 +179,10 @@ class _GroupSearchScreenState extends ConsumerState<GroupSearchScreen> {
       );
     }
 
-    return ListView.separated(
+    return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      padding: const EdgeInsets.only(bottom: 24),
       itemCount: searchState.results.length + (searchState.hasMore ? 1 : 0),
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         if (index == searchState.results.length) {
           return Padding(

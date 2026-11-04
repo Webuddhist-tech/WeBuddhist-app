@@ -1171,6 +1171,34 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_landing_title => TolgeeBridge.get(
+    localeName,
+    'connect_landing_title',
+    () => _fallback.connect_landing_title,
+  );
+
+  @override
+  String get connect_popular_spaces => TolgeeBridge.get(
+    localeName,
+    'connect_popular_spaces',
+    () => _fallback.connect_popular_spaces,
+  );
+
+  @override
+  String get connect_your_spaces => TolgeeBridge.get(
+    localeName,
+    'connect_your_spaces',
+    () => _fallback.connect_your_spaces,
+  );
+
+  @override
+  String get connect_find_a_space => TolgeeBridge.get(
+    localeName,
+    'connect_find_a_space',
+    () => _fallback.connect_find_a_space,
+  );
+
+  @override
   String get connect_segment_my => TolgeeBridge.get(
     localeName,
     'connect_segment_my',
