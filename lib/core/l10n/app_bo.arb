@@ -292,6 +292,7 @@
   "common_ok": "འགྲིག",
   "comingSoonHeadline": "ཐོན་ལ་ཉེ།",
   "routine_title": "ངའི་འཆར་ཅན་ཉམས་ལེན།",
+  "routine_block_default_title": "{title} +{count} གཞན།",
   "bookmarks": "དཔེ་རྟགས།",
   "routine_empty_title": "འཆར་ཅན་ཉམས་ལེན།",
   "routine_edit": "བཟོ་བཅོས།",

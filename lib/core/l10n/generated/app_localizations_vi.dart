@@ -987,6 +987,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get routine_title => 'Pháp tu của tôi';
 
   @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count mục khác';
+  }
+
+  @override
   String get bookmarks => 'Dấu trang';
 
   @override

@@ -424,6 +424,7 @@
   "common_ok": "确定",
   "comingSoonHeadline": "即将推出",
   "routine_title": "日常修持",
+  "routine_block_default_title": "{title} +另外 {count} 项",
   "bookmarks": "书签",
   "routine_empty_title": "日常修持",
   "routine_edit": "编辑",

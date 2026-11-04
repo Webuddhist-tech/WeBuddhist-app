@@ -17,64 +17,36 @@ class MeProfileHeader extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textTheme = Theme.of(context).textTheme;
     final avatarUrl = user.avatarUrl ?? '';
-    final username = user.username?.trim() ?? '';
-    final email = user.email ?? '';
-    final bio = user.aboutMe ?? '';
+    // The username is the app bar title and email lives in Settings, so the
+    // avatar sits beside the bio.
+    final bio = user.aboutMe?.trim() ?? '';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Hero(tag: 'profile-avatar', child: _Avatar(avatarUrl: avatarUrl)),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  // Personal details stay hidden in Clarity recordings.
-                  child: ClarityMask(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (username.isNotEmpty)
-                          Text(
-                            username,
-                            style: textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+          Hero(tag: 'profile-avatar', child: _Avatar(avatarUrl: avatarUrl)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              // Personal details stay hidden in Clarity recordings.
+              child: ClarityMask(
+                child:
+                    bio.isNotEmpty
+                        ? Text(
+                          bio,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color:
+                                isDark ? AppColors.grey400 : AppColors.grey900,
+                            height: 1.4,
                           ),
-                        if (email.isNotEmpty) ...[
-                          if (username.isNotEmpty) const SizedBox(height: 4),
-                          Text(
-                            email,
-                            style: textTheme.bodyMedium?.copyWith(
-                              color:
-                                  isDark
-                                      ? AppColors.grey600
-                                      : AppColors.grey900,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (bio.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text(
-              bio,
-              style: textTheme.bodyMedium?.copyWith(
-                color: isDark ? AppColors.grey400 : AppColors.grey900,
-                height: 1.4,
+                        )
+                        : const SizedBox.shrink(),
               ),
             ),
-          ],
+          ),
         ],
       ),
     );

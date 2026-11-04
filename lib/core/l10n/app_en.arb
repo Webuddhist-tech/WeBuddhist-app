@@ -454,6 +454,17 @@
   "common_ok": "OK",
   "comingSoonHeadline": "Coming soon",
   "routine_title": "My practices",
+  "routine_block_default_title": "{title} +{count} more",
+  "@routine_block_default_title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "bookmarks": "Bookmarks",
   "routine_empty_title": "Practices",
   "routine_edit": "Edit",

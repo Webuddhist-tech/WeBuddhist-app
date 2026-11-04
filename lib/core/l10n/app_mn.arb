@@ -299,6 +299,7 @@
   "common_ok": "За",
   "comingSoonHeadline": "Удахгүй",
   "routine_title": "Миний дадлагууд",
+  "routine_block_default_title": "{title} +{count} бусад",
   "bookmarks": "Хавчуурга",
   "routine_empty_title": "Дадлагууд",
   "routine_edit": "Засах",

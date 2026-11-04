@@ -2,6 +2,15 @@
 /// height from the top: the verse's middle sits here.
 const double liveHoldFraction = 2 / 3;
 
+/// How long a page opened following live waits for the live verse before
+/// it shows as it is.
+const Duration liveOpenHoldLimit = Duration(seconds: 5);
+
+/// How long such a page, its live verse found, waits for that verse's
+/// translation before it shows without it: one landing later grows the
+/// verse and moves the page.
+const Duration liveOpenTranslationLimit = Duration(seconds: 8);
+
 /// Where to scroll for the live verse: the list row and the fraction of the
 /// text area its top edge lands at.
 typedef LiveScrollTarget = ({int index, double alignment});
@@ -38,6 +47,27 @@ LiveScrollTarget? liveScrollTarget({
   }
   return (index: index, alignment: alignment);
 }
+
+/// Whether the live verse, its edges at [top] and [bottom] as fractions of
+/// the text area, shows where [liveScrollTarget] would leave it: all of it
+/// on screen, or, taller than the screen, filling it from the top.
+bool liveVerseInView({required double top, required double bottom}) {
+  const slack = 0.01;
+  if (bottom - top >= 1) return top <= slack && bottom >= 1 - slack;
+  return top >= -slack && bottom <= 1 + slack;
+}
+
+/// The section the live verse was last placed in, to tell a jump by. While
+/// that verse is on the page ([verseOnPage]) its section is read from the
+/// page as it is now ([current]): a section's id changes as the text's
+/// table of contents and translation load. Once it has left, as when a
+/// jump in a whole text replaced the loaded pages, the id kept when it was
+/// placed ([kept]) stands in.
+String? livePreviousSection({
+  required bool verseOnPage,
+  String? current,
+  String? kept,
+}) => verseOnPage ? current : kept;
 
 /// Whether the live position moved to a new section or a new round, so the
 /// page should bring that section's heading to the top rather than hold the

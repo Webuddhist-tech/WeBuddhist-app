@@ -990,6 +990,11 @@ class AppLocalizationsMn extends AppLocalizations {
   String get routine_title => 'Миний дадлагууд';
 
   @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count бусад';
+  }
+
+  @override
   String get bookmarks => 'Хавчуурга';
 
   @override

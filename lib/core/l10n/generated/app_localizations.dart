@@ -1829,6 +1829,12 @@ abstract class AppLocalizations {
   /// **'My practices'**
   String get routine_title;
 
+  /// No description provided for @routine_block_default_title.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} +{count} more'**
+  String routine_block_default_title(String title, int count);
+
   /// No description provided for @bookmarks.
   ///
   /// In en, this message translates to:

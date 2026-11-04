@@ -299,6 +299,7 @@
   "common_ok": "ठीक छ",
   "comingSoonHeadline": "चाँडै आउँदैछ",
   "routine_title": "मेरा अभ्यासहरू",
+  "routine_block_default_title": "{title} +{count} थप",
   "bookmarks": "बुकमार्कहरू",
   "routine_empty_title": "अभ्यासहरू",
   "routine_edit": "सम्पादन गर्नुहोस्",
