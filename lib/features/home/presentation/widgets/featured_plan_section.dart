@@ -148,142 +148,6 @@ Color _featuredPlanBackgroundColor(BuildContext context) {
   return isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
 }
 
-class _FeaturedPlanHeroCard extends StatelessWidget {
-  const _FeaturedPlanHeroCard({
-    required this.series,
-    required this.titleFontSize,
-    required this.dateFontSize,
-    required this.contentPadding,
-    required this.titleDateGap,
-    required this.onTap,
-  });
-
-  final Series series;
-  final double titleFontSize;
-  final double dateFontSize;
-  final double contentPadding;
-  final double titleDateGap;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Material(
-      color: _featuredPlanBackgroundColor(context),
-      borderRadius: BorderRadius.circular(
-        FeaturedPlanSection._imageBorderRadius,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: ResponsiveCoverImage(
-                image: series.coverImage,
-                fallbackAsset: 'assets/images/tag_cover/cover_image.jpg',
-                fit: BoxFit.cover,
-                width: double.infinity,
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                contentPadding,
-                contentPadding,
-                contentPadding,
-                contentPadding + 4,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    series.title,
-                    strutStyle: context.tibetanStrutStyle(
-                      titleFontSize,
-                      compact: true,
-                    ),
-                    style: TextStyle(
-                      fontSize: titleFontSize,
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurface,
-                      height:
-                          context.isTibetanLocale
-                              ? AppFontConfig.tibetanCompactLineHeight
-                              : 1.3,
-                      leadingDistribution:
-                          context.isTibetanLocale
-                              ? AppFontConfig.tibetanLeadingDistribution
-                              : null,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (series.partner != null) ...[
-                    SizedBox(height: titleDateGap),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: SeriesPlanPartnerRow(
-                            partner: series.partner!,
-                            fontSize: dateFontSize,
-                            avatarSize: 32,
-                          ),
-                        ),
-                        if (series.enrolledCount > 0) ...[
-                          const SizedBox(width: 12),
-                          SeriesPlanEnrolledCount(
-                            count: series.enrolledCount,
-                            fontSize: dateFontSize,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ] else if (series.progress != null &&
-                      series.progress!.totalDayCount > 0) ...[
-                    SizedBox(height: titleDateGap + 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: SeriesPlanProgressBar(
-                            progress: series.progress!,
-                          ),
-                        ),
-                        if (series.enrolledCount > 0) ...[
-                          const SizedBox(width: 12),
-                          SeriesPlanEnrolledCount(
-                            count: series.enrolledCount,
-                            fontSize: dateFontSize,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ] else if (series.enrolledCount > 0) ...[
-                    SizedBox(height: titleDateGap),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: SeriesPlanEnrolledCount(
-                        count: series.enrolledCount,
-                        fontSize: dateFontSize,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _FeaturedPlanListItem extends StatelessWidget {
   const _FeaturedPlanListItem({
     required this.series,
@@ -361,7 +225,28 @@ class _FeaturedPlanListItem extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (series.progress != null &&
+                    if (series.partner != null) ...[
+                      SizedBox(height: titleDateGap),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: SeriesPlanPartnerRow(
+                              partner: series.partner!,
+                              fontSize: dateFontSize,
+                            ),
+                          ),
+                          if (series.enrolledCount > 0) ...[
+                            const SizedBox(width: 12),
+                            SeriesPlanEnrolledCount(
+                              count: series.enrolledCount,
+                              fontSize: dateFontSize,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ] else if (series.progress != null &&
                         series.progress!.totalDayCount > 0) ...[
                       SizedBox(height: titleDateGap + 4),
                       Row(
