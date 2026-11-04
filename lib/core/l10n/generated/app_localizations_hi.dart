@@ -597,6 +597,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get see_all => 'सभी देखें';
 
   @override
+  String get see_more => 'See more';
+
+  @override
   String get connect_groups_load_error =>
       'समूह लोड नहीं हो सके।\nअपना कनेक्शन जाँचें और फिर से प्रयास करें';
 
@@ -717,6 +720,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get home_group_events => 'विशेष कार्यक्रम';
+
+  @override
+  String get home_community_feed => 'From the community';
 
   @override
   String get home_poems => 'कविताएँ';

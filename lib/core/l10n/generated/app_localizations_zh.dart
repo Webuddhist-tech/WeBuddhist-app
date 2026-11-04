@@ -574,6 +574,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get see_all => '查看全部';
 
   @override
+  String get see_more => 'See more';
+
+  @override
   String get connect_groups_load_error => '無法載入社群，\n請檢查網路連線後重試';
 
   @override
@@ -685,6 +688,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get home_group_events => '精選活動';
+
+  @override
+  String get home_community_feed => 'From the community';
 
   @override
   String get home_poems => '詩偈';

@@ -1145,6 +1145,12 @@ abstract class AppLocalizations {
   /// **'See all'**
   String get see_all;
 
+  /// No description provided for @see_more.
+  ///
+  /// In en, this message translates to:
+  /// **'See more'**
+  String get see_more;
+
   /// No description provided for @connect_groups_load_error.
   ///
   /// In en, this message translates to:
@@ -1348,6 +1354,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Featured events'**
   String get home_group_events;
+
+  /// No description provided for @home_community_feed.
+  ///
+  /// In en, this message translates to:
+  /// **'From the community'**
+  String get home_community_feed;
 
   /// No description provided for @home_poems.
   ///

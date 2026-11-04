@@ -603,6 +603,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get see_all => 'ཡོངས་ལ་གཟིགས།';
 
   @override
+  String get see_more => 'See more';
+
+  @override
   String get connect_groups_load_error =>
       'ཚོགས་པ་ལེན་མ་ཐུབ།\nཁྱེད་ཀྱི་དྲ་རྒྱར་བསྐྱར་ཞིབ་བྱས་ཏེ་བསྐྱར་དུ་ཚོད་ལྟ་བྱོས།';
 
@@ -722,6 +725,9 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get home_group_events => 'ཁྱད་གསལ་བྱེད་སྒོ།';
+
+  @override
+  String get home_community_feed => 'From the community';
 
   @override
   String get home_poems => 'སྙན་ངག';

@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/features/connect/domain/entities/connect_feed_item.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_unified_feed_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_signal_providers.dart';
-import 'package:flutter_pecha/features/connect/presentation/widgets/connect_event_card.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_lazy_segment_mixin.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_my_discover_tab_gate.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_my_empty_state.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_item_view.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_paginated_list_view.dart';
-import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_card.dart';
-import 'package:flutter_pecha/features/connect/presentation/widgets/connect_practice_card.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -86,9 +83,8 @@ class _ConnectFeedTabState extends ConsumerState<ConnectFeedTab>
             onBrowseTap: switchToDiscover,
           ),
           itemBuilder:
-              (context, index) => _buildFeedItem(
-                context,
-                myItems[index],
+              (context, index) => ConnectFeedItemView(
+                item: myItems[index],
                 includeUnfollowed: false,
               ),
         );
@@ -110,36 +106,12 @@ class _ConnectFeedTabState extends ConsumerState<ConnectFeedTab>
                   ref.read(discoverUnifiedConnectFeedProvider.notifier).retry(),
           emptyDiscoverMessage: context.l10n.connect_empty_discover_feed,
           itemBuilder:
-              (context, index) => _buildFeedItem(
-                context,
-                discoverItems[index],
+              (context, index) => ConnectFeedItemView(
+                item: discoverItems[index],
                 includeUnfollowed: true,
               ),
         );
       },
     );
-  }
-
-  Widget _buildFeedItem(
-    BuildContext context,
-    ConnectFeedItem item, {
-    required bool includeUnfollowed,
-  }) {
-    if (item.type == ConnectFeedItemType.post && item.post != null) {
-      return ConnectPostCard(
-        post: item.post!,
-        includeUnfollowed: includeUnfollowed,
-      );
-    }
-
-    if (item.type == ConnectFeedItemType.event && item.event != null) {
-      return ConnectEventCard(event: item.event!);
-    }
-
-    if (item.type == ConnectFeedItemType.practice && item.practice != null) {
-      return ConnectPracticeCard(practice: item.practice!);
-    }
-
-    return const SizedBox.shrink();
   }
 }

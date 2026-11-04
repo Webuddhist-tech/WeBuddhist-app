@@ -595,6 +595,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get see_all => 'See all';
 
   @override
+  String get see_more => 'See more';
+
+  @override
   String get connect_groups_load_error =>
       'Unable to load spaces.\nCheck your connection and try again';
 
@@ -715,6 +718,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get home_group_events => 'Featured events';
+
+  @override
+  String get home_community_feed => 'From the community';
 
   @override
   String get home_poems => 'Poems';

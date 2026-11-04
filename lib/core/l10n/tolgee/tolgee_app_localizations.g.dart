@@ -1125,6 +1125,10 @@ class TolgeeAppLocalizations extends AppLocalizations {
       TolgeeBridge.get(localeName, 'see_all', () => _fallback.see_all);
 
   @override
+  String get see_more =>
+      TolgeeBridge.get(localeName, 'see_more', () => _fallback.see_more);
+
+  @override
   String get connect_groups_load_error => TolgeeBridge.get(
     localeName,
     'connect_groups_load_error',
@@ -1363,6 +1367,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'home_group_events',
     () => _fallback.home_group_events,
+  );
+
+  @override
+  String get home_community_feed => TolgeeBridge.get(
+    localeName,
+    'home_community_feed',
+    () => _fallback.home_community_feed,
   );
 
   @override

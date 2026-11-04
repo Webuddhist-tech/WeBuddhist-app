@@ -598,6 +598,9 @@ class AppLocalizationsMn extends AppLocalizations {
   String get see_all => 'Бүгдийг харах';
 
   @override
+  String get see_more => 'See more';
+
+  @override
   String get connect_groups_load_error =>
       'Бүлгүүдийг ачаалах боломжгүй.\nХолболтоо шалгаад дахин оролдоно уу';
 
@@ -718,6 +721,9 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get home_group_events => 'Онцлох арга хэмжээ';
+
+  @override
+  String get home_community_feed => 'From the community';
 
   @override
   String get home_poems => 'Шүлэг';

@@ -599,6 +599,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get see_all => 'Xem tất cả';
 
   @override
+  String get see_more => 'See more';
+
+  @override
   String get connect_groups_load_error =>
       'Không thể tải các nhóm.\nHãy kiểm tra kết nối và thử lại';
 
@@ -720,6 +723,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get home_group_events => 'Sự kiện nổi bật';
+
+  @override
+  String get home_community_feed => 'From the community';
 
   @override
   String get home_poems => 'Thi kệ';
