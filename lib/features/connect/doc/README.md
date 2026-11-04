@@ -8,20 +8,17 @@ Social hub tab: unified feed, group events, and group discovery from followed co
 
 ## User-facing functionality
 
-- Main nav **Connect** tab with 3 sub-tabs
-- **Feed** — merged posts, events, practices from followed groups; posts carry likes and comments
-- **Events** — group events with attendance
-- **Groups** — discover, my groups, follow/unfollow
-- Group search (`GroupSearchScreen`), My Groups list, followed-groups row above the tabs
+- Main nav **Connect** tab: guests and members with no spaces see a landing page (hero with space search, then popular spaces); otherwise the page of the space last opened, with ☰ opening **Your spaces** to switch
+- **Feed** — merged posts, events, practices from followed groups, shown on Home as "From the community" (preview + full screen); posts carry likes and comments
+- Group search (`GroupSearchScreen`), reached from the landing page and Your spaces
 - Post detail (drawer from a card, or `/home/posts/:postId` route from a push) with comment thread
-- App-bar **Chats** action with unread dot (members only) — opens `group_chat`'s Chats screen
 - Optimistic pending join/unjoin while API catches up
 
 ## Architecture
 
 ```
 connect/
-├── connect.dart          # exports ConnectScreen only
+├── connect.dart          # exports ConnectTabScreen only
 ├── data/                 datasource, models, repository impl
 ├── domain/               entities, repository interface
 └── presentation/         providers (split by tab), screens, utils, widgets
@@ -33,7 +30,7 @@ connect/
 
 | Area | Files |
 |------|-------|
-| Tab host | `presentation/screens/connect_screen.dart` (tabs `feed` / `events` / `groups`, `_ChatsAction`) |
+| Tab host | `presentation/screens/connect_tab_screen.dart` (landing or remembered space), `connect_space_providers.dart`, `your_spaces_screen.dart`, `connect_landing_view.dart` |
 | Feed | `connect_unified_feed_providers.dart`, `connect_feed_merge_utils.dart` |
 | Post likes/comments | `connect_post_like_actions.dart`, `connect_post_comments_providers.dart` |
 | Followed practices list | `connect_practices_providers.dart` — no tab of its own; backs the group post composer's in-app content sheet |
@@ -49,8 +46,8 @@ connect/
 - `StateNotifierProvider.autoDispose` with explicit state classes per tab (`myUnifiedConnectFeedProvider` / `discoverUnifiedConnectFeedProvider`, events, practices, `discoverGroupsProvider`, `groupSearchProvider`, `connectPostCommentsProvider` family)
 - `FutureProvider`: `myGroupsProvider`
 - `StateProvider`: pending join/unjoin optimistic state
-- `ConnectLazyMyDiscoverTabMixin` (in `connect_lazy_segment_mixin.dart`) — lazy My/Discover segment loading; pass `isActive` to defer fetch
-- `ConnectMyDiscoverTabGate` — waits for the first My fetch, then opens on Discover if My is empty
+- `joinedSpacesProvider` — joined spaces merged with pending joins/leaves; `connectLastSpaceProvider` — space the tab last showed (SharedPreferences)
+- `homeCommunityFeedProvider` — Home shows the member's own feed, falling back to Discover once it loads empty
 
 ## Data sources
 
@@ -60,7 +57,7 @@ connect/
 ## Cross-feature dependencies
 
 - **auth** — guest gating, login prompts
-- **group_chat** — `chatRoomsProvider` / `chatRoomsPushRefreshProvider` drive the Chats unread dot
+- **group_chat** — `chatRoomsProvider` / `chatRoomsPushRefreshProvider` drive the ☰ unread dot (`unreadSpaceIdsProvider`)
 - **group_profile** — entities (`GroupProfile`, `GroupEvent`, `GroupPractice`), repository, follow invalidation
 - **core** — `contentLanguageProvider`, theme
 
@@ -100,10 +97,9 @@ connect/
 
 | Task | Where to start |
 |------|----------------|
-| New feed card type | entity/model → datasource → merge utils → tab widget |
+| New feed card type | entity/model → datasource → merge utils → `connect_feed_item_view.dart` |
 | Comment thread | `connect_post_comments_providers.dart`, detail screen |
 | Like behavior | `connect_post_like_actions.dart`, `connect_like_utils.dart` |
-| New sub-tab | provider file + tab widget + `_tabNames` / `TabController` length in `ConnectScreen` |
 
 ### Testing
 

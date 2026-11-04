@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/connect/data/datasource/connect_remote_da
 import 'package:flutter_pecha/features/connect/data/repositories/connect_repository_impl.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/discover_groups_page.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_space_providers.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_profile_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -147,5 +148,33 @@ void main() {
       'g9',
     ]);
     expect(container.read(pendingUnjoinedGroupIdsProvider), {'g1'});
+  });
+
+  test('refreshing after a failed first read brings the spaces back', () async {
+    remote.error = const NetworkException('offline');
+    final container = build();
+    container.listen(myGroupsProvider, (_, __) {});
+    await pumpEventQueue();
+    expect(container.read(myGroupsProvider).hasError, isTrue);
+    expect(container.read(joinedSpacesProvider).spaces, isEmpty);
+
+    remote.error = null;
+    remote.response = _page(['g1', 'g2']);
+    await refreshJoinedSpaces(container.read);
+    await pumpEventQueue();
+
+    expect(_ids(container.read(myGroupsProvider)), ['g1', 'g2']);
+    expect(
+      container.read(joinedSpacesProvider).spaces.map((g) => g.id),
+      ['g1', 'g2'],
+    );
+  });
+
+  test('refreshing joined spaces sends nothing for guests', () async {
+    final container = build(guest: true);
+    container.listen(myGroupsProvider, (_, __) {});
+    await pumpEventQueue();
+    await refreshJoinedSpaces(container.read);
+    expect(remote.calls, 0);
   });
 }
