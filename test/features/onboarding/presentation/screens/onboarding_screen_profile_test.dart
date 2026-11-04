@@ -241,6 +241,36 @@ void main() {
     expect(nextCalls, 1);
   });
 
+  testWidgets('a new username after a relaunch keeps the saved display name', (
+    tester,
+  ) async {
+    storage.values[StorageKeys.onboardingProfileSaved] = jsonEncode({
+      'userId': userId,
+      'username': 'tenzin',
+      'displayName': 'Tenzin Dhakar',
+    });
+    when(
+      updateUsername(any),
+    ).thenAnswer((_) async => Right(UsernameUpdateResult.success('tenzin_d')));
+    when(
+      updateUserInfo(any),
+    ).thenAnswer((_) async => const Left(ServerFailure('down')));
+    await pumpScreen(tester);
+    await tester.pump();
+    await tester.enterText(find.byType(TextField).at(1), 'tenzin_d');
+
+    await tapContinue(tester);
+
+    expect(
+      jsonDecode(storage.values[StorageKeys.onboardingProfileSaved] as String),
+      {
+        'userId': userId,
+        'username': 'tenzin_d',
+        'displayName': 'Tenzin Dhakar',
+      },
+    );
+  });
+
   testWidgets('another account\'s saved values are not restored', (
     tester,
   ) async {

@@ -111,7 +111,8 @@ class _OnboardingScreenProfileState
     });
   }
 
-  /// Records a successful save, so [_restoreSaved] can bring it back.
+  /// Records a successful save, so [_restoreSaved] can bring it back. A
+  /// username-only save keeps the display name this account saved before.
   Future<void> _rememberSaved({
     required String username,
     String? displayName,
@@ -120,6 +121,16 @@ class _OnboardingScreenProfileState
     try {
       _userId ??= await storage.get<String>(StorageKeys.currentUserId);
       if (_userId == null) return;
+      if (displayName == null) {
+        final raw = await storage.get<String>(
+          StorageKeys.onboardingProfileSaved,
+        );
+        final previous =
+            raw == null ? null : jsonDecode(raw) as Map<String, dynamic>?;
+        if (previous?['userId'] == _userId) {
+          displayName = previous?['displayName'] as String?;
+        }
+      }
       await storage.set(
         StorageKeys.onboardingProfileSaved,
         jsonEncode({
