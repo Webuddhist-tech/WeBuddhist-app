@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
@@ -34,6 +35,18 @@ final joinedSpacesProvider = Provider<JoinedSpaces>((ref) {
         spaces.isEmpty && myGroupsAsync.isLoading && !myGroupsAsync.hasValue,
   );
 });
+
+/// Refetches the member's spaces, keeping what is on screen. Also how a
+/// failed first read recovers: the landing page it leaves a member on has no
+/// other way back to their spaces. Does nothing for guests.
+Future<void> refreshJoinedSpaces(
+  T Function<T>(ProviderListenable<T> provider) read,
+) async {
+  final auth = read(authProvider);
+  if (!auth.isLoggedIn || auth.isGuest) return;
+  await read(connectRepositoryProvider)
+      .refreshMyGroups(language: read(contentLanguageProvider));
+}
 
 /// The remembered space if it is still joined, otherwise the first joined
 /// one; null when the member has joined none.

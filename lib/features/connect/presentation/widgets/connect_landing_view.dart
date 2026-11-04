@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_space_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/screens/group_search_screen.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/group_search_result_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,7 +33,12 @@ class ConnectLandingView extends ConsumerWidget {
       child: ColoredBox(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: RefreshIndicator(
-          onRefresh: notifier.refresh,
+          onRefresh:
+              () => Future.wait([
+                notifier.refresh(),
+                // A member sees this page when their spaces failed to load.
+                refreshJoinedSpaces(ref.read),
+              ]),
           child: NotificationListener<ScrollNotification>(
             onNotification: (notification) {
               if (notification.metrics.pixels >=
@@ -126,8 +132,7 @@ class _ConnectHero extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Placeholder until the design's hero photo is added.
-          Image.asset(AppAssets.connect, fit: BoxFit.cover),
+          Image.asset(AppAssets.connectDefault, fit: BoxFit.cover),
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
