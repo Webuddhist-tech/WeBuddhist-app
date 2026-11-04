@@ -78,11 +78,13 @@ class PracticePlanListTile extends StatelessWidget {
                                 progress: series.progress!,
                               ),
                             ),
-                            if (series.enrolledCount > 0)
+                            if (series.enrolledCount > 0) ...[
+                              const SizedBox(width: 12),
                               SeriesPlanEnrolledCount(
                                 count: series.enrolledCount,
                                 fontSize: _metaFontSize,
                               ),
+                            ],
                           ],
                         ),
                       ] else if (series.enrolledCount > 0) ...[

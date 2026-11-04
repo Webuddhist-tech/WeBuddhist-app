@@ -14,24 +14,17 @@ class SeriesPlanProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final trackColor =
-        isDark ? AppColors.grey800.withValues(alpha: 0.6) : AppColors.greyLight;
+        isDark ? AppColors.grey800.withValues(alpha: 0.6) : AppColors.grey300;
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: FractionallySizedBox(
-        widthFactor: 0.5,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress.fraction,
-            minHeight: 6,
-            backgroundColor: trackColor,
-            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-          ),
-        ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: LinearProgressIndicator(
+        value: progress.fraction,
+        minHeight: 4,
+        backgroundColor: trackColor,
+        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFF2B24F)),
       ),
     );
   }

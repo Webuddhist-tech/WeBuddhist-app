@@ -110,12 +110,13 @@ class _FeaturedPlanContent extends ConsumerWidget {
               ),
             )
           else ...[
-            _FeaturedPlanHeroCard(
+            _FeaturedPlanListItem(
               series: layout.featured,
               titleFontSize: titleFontSize,
               dateFontSize: dateFontSize,
               contentPadding: contentPadding,
               titleDateGap: titleDateGap,
+              imageTextGap: imageTextGap,
               onTap: () => onSeriesTap(layout.featured),
             ),
             if (layout.others.isNotEmpty) ...[
@@ -372,11 +373,13 @@ class _FeaturedPlanListItem extends StatelessWidget {
                               progress: series.progress!,
                             ),
                           ),
-                          if (series.enrolledCount > 0)
+                          if (series.enrolledCount > 0) ...[
+                            const SizedBox(width: 12),
                             SeriesPlanEnrolledCount(
                               count: series.enrolledCount,
                               fontSize: dateFontSize,
                             ),
+                          ],
                         ],
                       ),
                     ] else if (series.enrolledCount > 0) ...[
