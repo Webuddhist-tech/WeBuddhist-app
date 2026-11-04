@@ -3071,11 +3071,15 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        AnimatedOpacity(
-          opacity: _revealing ? 0 : 1,
-          duration:
-              _revealing ? Duration.zero : const Duration(milliseconds: 200),
-          child: page,
+        // Hidden verses are not tappable: a tap would pause live following.
+        IgnorePointer(
+          ignoring: _revealing,
+          child: AnimatedOpacity(
+            opacity: _revealing ? 0 : 1,
+            duration:
+                _revealing ? Duration.zero : const Duration(milliseconds: 200),
+            child: page,
+          ),
         ),
         if (_revealing) const Center(child: CircularProgressIndicator()),
       ],
