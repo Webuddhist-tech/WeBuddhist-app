@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
@@ -201,6 +202,86 @@ void main() {
       await tester.tap(find.byTooltip('Close'));
       await tester.pumpAndSettle();
       expect(find.byType(ConnectPostMediaViewer), findsNothing);
+    });
+
+    group('decode size', () {
+      Future<CachedNetworkImage> decodedImage(
+        WidgetTester tester, {
+        required double viewportWidth,
+        int? width,
+        int? height,
+      }) async {
+        tester.view.devicePixelRatio = 3;
+        tester.view.physicalSize = Size(viewportWidth, 2400);
+        addTearDown(tester.view.reset);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: ConnectPostMediaViewer(
+              media: [
+                ConnectPostMedia(
+                  id: 'm',
+                  mediaType: 'IMAGE',
+                  url: 'https://example.com/m.jpg',
+                  width: width,
+                  height: height,
+                ),
+              ],
+            ),
+          ),
+        );
+        return tester.widget<CachedNetworkImage>(
+          find.byType(CachedNetworkImage),
+        );
+      }
+
+      testWidgets('allows for full zoom', (tester) async {
+        final image = await decodedImage(
+          tester,
+          viewportWidth: 900,
+          width: 5000,
+          height: 1000,
+        );
+
+        expect(image.memCacheWidth, 900 * 4);
+        expect(image.memCacheHeight, isNull);
+      });
+
+      testWidgets('never exceeds the original photo', (tester) async {
+        final image = await decodedImage(
+          tester,
+          viewportWidth: 1200,
+          width: 2000,
+          height: 1000,
+        );
+
+        expect(image.memCacheWidth, 2000);
+        expect(image.memCacheHeight, isNull);
+      });
+
+      testWidgets('caps a huge photo on its longest side', (tester) async {
+        final image = await decodedImage(
+          tester,
+          viewportWidth: 1200,
+          width: 6000,
+          height: 12000,
+        );
+
+        expect(image.memCacheWidth, isNull);
+        expect(image.memCacheHeight, 4096);
+      });
+
+      testWidgets('falls back to the viewport without photo dimensions', (
+        tester,
+      ) async {
+        final image = await decodedImage(tester, viewportWidth: 900);
+
+        expect(image.memCacheWidth, 900 * 4);
+        expect(image.memCacheHeight, isNull);
+      });
     });
 
     testWidgets('single photo hides the counter', (tester) async {

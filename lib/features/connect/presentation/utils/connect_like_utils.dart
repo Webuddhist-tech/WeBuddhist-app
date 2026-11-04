@@ -69,4 +69,10 @@ class ConnectOptimisticLikeState {
       serverLikedByMe: serverLikedByMe,
     );
   }
+
+  /// Falls back to the server values, after another surface changed the like.
+  void clearOverrides() {
+    likedOverride = null;
+    likeCountOverride = null;
+  }
 }

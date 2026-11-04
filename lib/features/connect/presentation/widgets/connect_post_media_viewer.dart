@@ -1,9 +1,17 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_like_actions.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_post_share.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Full-screen photo viewer for a post: swipe between photos, pinch or
 /// double-tap to zoom.
@@ -13,8 +21,7 @@ class ConnectPostMediaViewer extends StatefulWidget {
     required this.media,
     this.initialIndex = 0,
     this.title,
-    this.listenable,
-    this.actionsBuilder,
+    this.actions,
   });
 
   final List<ConnectPostMedia> media;
@@ -23,17 +30,14 @@ class ConnectPostMediaViewer extends StatefulWidget {
   /// Shown above the zoom hint, usually the group name.
   final String? title;
 
-  /// Rebuilds [actionsBuilder] when the post's like state changes.
-  final Listenable? listenable;
-  final WidgetBuilder? actionsBuilder;
+  final Widget? actions;
 
   static Future<void> show(
     BuildContext context, {
     required List<ConnectPostMedia> media,
     int initialIndex = 0,
     String? title,
-    Listenable? listenable,
-    WidgetBuilder? actionsBuilder,
+    Widget? actions,
   }) {
     return Navigator.of(context, rootNavigator: true).push(
       PageRouteBuilder<void>(
@@ -44,8 +48,7 @@ class ConnectPostMediaViewer extends StatefulWidget {
               media: media,
               initialIndex: initialIndex,
               title: title,
-              listenable: listenable,
-              actionsBuilder: actionsBuilder,
+              actions: actions,
             ),
         transitionsBuilder:
             (_, animation, __, child) =>
@@ -79,7 +82,7 @@ class _ConnectPostMediaViewerState extends State<ConnectPostMediaViewer> {
   @override
   Widget build(BuildContext context) {
     final title = widget.title?.trim() ?? '';
-    final actionsBuilder = widget.actionsBuilder;
+    final actions = widget.actions;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -128,7 +131,7 @@ class _ConnectPostMediaViewerState extends State<ConnectPostMediaViewer> {
                     }),
                 itemBuilder:
                     (context, index) => _ZoomableImage(
-                      url: widget.media[index].url,
+                      media: widget.media[index],
                       onZoomChanged: (zoomed) {
                         if (zoomed != _zoomed) setState(() => _zoomed = zoomed);
                       },
@@ -156,15 +159,7 @@ class _ConnectPostMediaViewerState extends State<ConnectPostMediaViewer> {
                     context.l10n.connect_post_media_viewer_hint,
                     style: const TextStyle(fontSize: 13, color: Colors.white70),
                   ),
-                  if (actionsBuilder != null) ...[
-                    const SizedBox(height: 8),
-                    widget.listenable == null
-                        ? actionsBuilder(context)
-                        : ListenableBuilder(
-                          listenable: widget.listenable!,
-                          builder: (context, _) => actionsBuilder(context),
-                        ),
-                  ],
+                  if (actions != null) ...[const SizedBox(height: 8), actions],
                 ],
               ),
             ),
@@ -176,9 +171,9 @@ class _ConnectPostMediaViewerState extends State<ConnectPostMediaViewer> {
 }
 
 class _ZoomableImage extends StatefulWidget {
-  const _ZoomableImage({required this.url, required this.onZoomChanged});
+  const _ZoomableImage({required this.media, required this.onZoomChanged});
 
-  final String url;
+  final ConnectPostMedia media;
   final ValueChanged<bool> onZoomChanged;
 
   @override
@@ -187,6 +182,10 @@ class _ZoomableImage extends StatefulWidget {
 
 class _ZoomableImageState extends State<_ZoomableImage> {
   static const _doubleTapScale = 2.5;
+  static const _maxScale = 4.0;
+
+  /// Longest decoded side; keeps a huge photo from taking hundreds of MB.
+  static const _maxDecodeSide = 4096.0;
 
   final TransformationController _transformation = TransformationController();
   Offset _doubleTapPosition = Offset.zero;
@@ -197,6 +196,26 @@ class _ZoomableImageState extends State<_ZoomableImage> {
   void dispose() {
     _transformation.dispose();
     super.dispose();
+  }
+
+  /// Sharp at full zoom, but never above the original or [_maxDecodeSide].
+  /// Only one axis is set so the decode keeps the photo's shape.
+  (int? width, int? height) _decodeSize(Size viewport) {
+    final width = widget.media.width;
+    final height = widget.media.height;
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      // A contained photo is never wider than the viewport.
+      final target = viewport.width * _maxScale;
+      return (target.clamp(1.0, _maxDecodeSide).round(), null);
+    }
+
+    final fitScale = math.min(viewport.width / width, viewport.height / height);
+    final longestSide = math.max(width, height);
+    final target = math.min(
+      longestSide * fitScale * _maxScale,
+      math.min(longestSide.toDouble(), _maxDecodeSide),
+    );
+    return width >= height ? (target.round(), null) : (null, target.round());
   }
 
   void _toggleZoom() {
@@ -222,16 +241,25 @@ class _ZoomableImageState extends State<_ZoomableImage> {
       child: InteractiveViewer(
         transformationController: _transformation,
         minScale: 1,
-        maxScale: 4,
+        maxScale: _maxScale,
         onInteractionEnd: (_) => widget.onZoomChanged(_isZoomed),
-        child: SizedBox.expand(
-          child: CachedNetworkImageWidget(
-            imageUrl: widget.url,
-            fit: BoxFit.contain,
-            errorWidget: const Center(
-              child: Icon(AppAssets.photoLibrary, color: AppColors.grey500),
-            ),
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final (decodeWidth, decodeHeight) = _decodeSize(
+              constraints.biggest * MediaQuery.devicePixelRatioOf(context),
+            );
+            return SizedBox.expand(
+              child: CachedNetworkImageWidget(
+                imageUrl: widget.media.url,
+                fit: BoxFit.contain,
+                memCacheWidth: decodeWidth,
+                memCacheHeight: decodeHeight,
+                errorWidget: const Center(
+                  child: Icon(AppAssets.photoLibrary, color: AppColors.grey500),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -239,28 +267,101 @@ class _ZoomableImageState extends State<_ZoomableImage> {
 }
 
 /// Like and share buttons for the viewer's dark footer.
-class ConnectPostMediaViewerActions extends StatelessWidget {
+///
+/// Holds its own copy of the post and like state: the screen that opened the
+/// viewer can be reused for another post or disposed while the viewer is open.
+class ConnectPostMediaViewerActions extends ConsumerStatefulWidget {
   const ConnectPostMediaViewerActions({
     super.key,
-    required this.isLiked,
-    required this.likeCount,
-    required this.isLoading,
-    required this.onLike,
-    required this.onShare,
+    required this.post,
+    this.includeUnfollowed = false,
+    this.groupId,
+    this.onLikeChanged,
   });
 
-  final bool isLiked;
-  final int likeCount;
-  final bool isLoading;
-  final VoidCallback onLike;
-  final VoidCallback onShare;
+  /// The post as the opening screen currently shows it.
+  final ConnectPost post;
+  final bool includeUnfollowed;
+  final String? groupId;
+
+  /// Called after a like succeeds, even if the viewer has closed by then.
+  final ValueChanged<ConnectPost>? onLikeChanged;
+
+  @override
+  ConsumerState<ConnectPostMediaViewerActions> createState() =>
+      _ConnectPostMediaViewerActionsState();
+}
+
+class _ConnectPostMediaViewerActionsState
+    extends ConsumerState<ConnectPostMediaViewerActions> {
+  final ConnectOptimisticLikeState _likeState = ConnectOptimisticLikeState();
+  late ConnectPost _post = widget.post;
+
+  bool get _isLiked => _likeState.isLiked(_post.likedByMe);
+
+  int get _likeCount => _likeState.likeCount(
+    serverLikeCount: _post.likeCount,
+    serverLikedByMe: _post.likedByMe,
+  );
+
+  Future<void> _toggleLike() async {
+    if (_likeState.isSubmitting) return;
+
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref, useRootNavigator: true);
+      return;
+    }
+
+    final wasLiked = _isLiked;
+    final onLikeChanged = widget.onLikeChanged;
+    setState(() => _likeState.beginToggle(wasLiked));
+
+    final result = await ref
+        .read(connectPostLikeActionsProvider)
+        .toggleLike(
+          post: _post,
+          wasLiked: wasLiked,
+          optimisticLikeCount: _likeCount,
+          includeUnfollowed: widget.includeUnfollowed,
+          groupId: widget.groupId,
+        );
+
+    if (result.isSuccess) onLikeChanged?.call(result.updatedPost!);
+    if (!mounted) return;
+
+    if (!result.isSuccess) {
+      setState(() => _likeState.revert(wasLiked));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            wasLiked
+                ? context.l10n.connect_failed_unlike_post_error
+                : context.l10n.connect_failed_like_post_error,
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _likeState.commitSuccess(
+        serverLikeCount: _post.likeCount,
+        serverLikedByMe: _post.likedByMe,
+      );
+      _post = result.updatedPost!;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isLiked = _isLiked;
+    final likeCount = _likeCount;
+
     return Row(
       children: [
         InkWell(
-          onTap: isLoading ? null : onLike,
+          onTap: _likeState.isSubmitting ? null : _toggleLike,
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
@@ -285,7 +386,7 @@ class ConnectPostMediaViewerActions extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         IconButton(
-          onPressed: onShare,
+          onPressed: () => shareConnectPost(context, ref, _post),
           icon: const Icon(
             AppAssets.readerShare,
             size: 20,

@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/constants/app_config.dart';
-import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -12,6 +9,7 @@ import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.da
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_like_actions.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_post_share.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_action_menu.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_expandable_caption.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_action_bar.dart';
@@ -22,7 +20,6 @@ import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_media_grid.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_media_viewer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
 
 bool _containsTibetan(String value) {
   return RegExp(r'[\u0F00-\u0FFF]').hasMatch(value);
@@ -60,9 +57,6 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
   static const _collapsedCaptionLines = 2;
 
   final ConnectOptimisticLikeState _likeState = ConnectOptimisticLikeState();
-
-  /// Bumped on every like change so an open photo viewer redraws its footer.
-  final ValueNotifier<int> _likeChanges = ValueNotifier(0);
   bool _captionExpanded = false;
 
   bool get _isLiked => _likeState.isLiked(widget.post.likedByMe);
@@ -77,12 +71,6 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
     super.didUpdateWidget(oldWidget);
     // Feed cards have no keys, so a reorder can hand this state another post.
     if (widget.post.id != oldWidget.post.id) _captionExpanded = false;
-  }
-
-  @override
-  void dispose() {
-    _likeChanges.dispose();
-    super.dispose();
   }
 
   @override
@@ -256,35 +244,32 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
       media: media,
       initialIndex: index,
       title: widget.post.groupName,
-      listenable: _likeChanges,
-      actionsBuilder:
-          (_) => ConnectPostMediaViewerActions(
-            isLiked: _isLiked,
-            likeCount: _likeCount,
-            isLoading: _likeState.isSubmitting,
-            onLike: () => _toggleLike(fromViewer: true),
-            onShare: () => _sharePost(widget.post),
-          ),
+      actions: ConnectPostMediaViewerActions(
+        post: widget.post.copyWith(likedByMe: _isLiked, likeCount: _likeCount),
+        includeUnfollowed: widget.includeUnfollowed,
+        groupId: widget.groupId,
+        onLikeChanged: _onViewerLikeChanged,
+      ),
     );
   }
 
-  void _setLikeState(VoidCallback fn) {
-    setState(fn);
-    _likeChanges.value++;
+  /// The feed already holds the viewer's result; only drop stale overrides.
+  void _onViewerLikeChanged(ConnectPost updated) {
+    if (!mounted || widget.post.id != updated.id) return;
+    setState(_likeState.clearOverrides);
   }
 
-  /// [fromViewer] puts the login sheet above the full-screen photo viewer.
-  Future<void> _toggleLike({bool fromViewer = false}) async {
+  Future<void> _toggleLike() async {
     if (_likeState.isSubmitting) return;
 
     final authState = ref.read(authProvider);
     if (authState.isGuest || !authState.isLoggedIn) {
-      LoginDrawer.show(context, ref, useRootNavigator: fromViewer);
+      LoginDrawer.show(context, ref);
       return;
     }
 
     final wasLiked = _isLiked;
-    _setLikeState(() => _likeState.beginToggle(wasLiked));
+    setState(() => _likeState.beginToggle(wasLiked));
 
     final result = await ref
         .read(connectPostLikeActionsProvider)
@@ -299,7 +284,7 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
     if (!mounted) return;
 
     if (!result.isSuccess) {
-      _setLikeState(() => _likeState.revert(wasLiked));
+      setState(() => _likeState.revert(wasLiked));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -312,7 +297,7 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
       return;
     }
 
-    _setLikeState(
+    setState(
       () => _likeState.commitSuccess(
         serverLikeCount: widget.post.likeCount,
         serverLikedByMe: widget.post.likedByMe,
@@ -320,32 +305,6 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
     );
   }
 
-  Future<void> _sharePost(ConnectPost post) async {
-    final caption = post.caption.trim();
-    final longUrl =
-        post.groupId.isNotEmpty
-            ? DeepLinkUrlBuilder.groupLink(groupId: post.groupId).toString()
-            : '';
-    final shareUrl =
-        longUrl.isNotEmpty ? await resolveShareUrlRef(ref, longUrl) : '';
-    if (!mounted) return;
-
-    final message =
-        caption.isNotEmpty && shareUrl.isNotEmpty
-            ? '$caption\n\n$shareUrl'
-            : caption.isNotEmpty
-            ? caption
-            : shareUrl;
-    if (message.isEmpty) return;
-    final shareAnalytics = ref.read(shareAnalyticsProvider);
-    final result = await SharePlus.instance.share(ShareParams(text: message));
-    if (ShareAnalytics.wasUsed(result)) {
-      shareAnalytics.contentShared(
-        surface: ShareSurface.post,
-        targetId: post.id,
-        format: 'text',
-        groupId: post.groupId,
-      );
-    }
-  }
+  Future<void> _sharePost(ConnectPost post) =>
+      shareConnectPost(context, ref, post);
 }
