@@ -1886,7 +1886,12 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       if (!mounted || local == null) return null;
       if (_liveHold) _startTranslationAt(0, local);
       _logOpen('fetching the text at the live verse');
-      final jumpedTo = await notifier.jumpToSegment(local);
+      // The operator's own id and text, not [local]: if the first load
+      // swaps the text under it meanwhile, the jump re-aligns from these.
+      final jumpedTo = await notifier.jumpToSegment(
+        position.segmentId,
+        sourceTextId: position.textId,
+      );
       if (!mounted || jumpedTo == null) return null;
       _rememberLiveAlias(position.segmentId, jumpedTo);
       return (0, jumpedTo);
@@ -2007,7 +2012,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // A text that does not hold the operator's verse is passed over:
     // loading all of it in search of the verse would insert its pages
     // above the live one and push the page away from it.
-    final local = await notifier.resolveSegment(
+    var local = await notifier.resolveSegment(
       position.segmentId,
       sourceTextId: position.textId,
       alignedOnly: true,
@@ -2034,8 +2039,14 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       if (atVerse || before) {
         if (_liveHold) _startTranslationAt(index, local);
         _logOpen('fetching source $index at the live verse');
-        final jumped = await notifier.jumpToSegment(local);
+        // As in [_loadLive]: the operator's id and text, so a text swapped
+        // during the first load is re-aligned rather than missed.
+        final jumped = await notifier.jumpToSegment(
+          position.segmentId,
+          sourceTextId: position.textId,
+        );
         if (!mounted || jumped == null || !wanted()) return null;
+        local = jumped;
         // The window replaced is not the one those rows were held from.
         _heldFrom.remove(index);
       } else {
