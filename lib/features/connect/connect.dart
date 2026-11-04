@@ -1,4 +1,4 @@
 /// Connect feature barrel export
 library;
 
-export 'presentation/screens/connect_screen.dart';
+export 'presentation/screens/connect_tab_screen.dart';

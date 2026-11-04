@@ -5,6 +5,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_space_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/screens/your_spaces_screen.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_analytics.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_chats_button.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_landing_view.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_profile_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,6 +64,7 @@ class _ConnectTabScreenState extends ConsumerState<ConnectTabScreen> {
       key: ValueKey(space.id),
       groupId: space.id,
       leading: _SpacesMenuButton(currentSpaceId: space.id),
+      actions: const [ConnectChatsButton()],
     );
   }
 }

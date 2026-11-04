@@ -7,29 +7,51 @@ import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_space_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/screens/group_search_screen.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_chats_button.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/group_search_result_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Connect for someone with no spaces: a hero with the space search, then
 /// the popular spaces to start from.
-class ConnectLandingView extends ConsumerWidget {
+class ConnectLandingView extends ConsumerStatefulWidget {
   const ConnectLandingView({super.key});
 
+  @override
+  ConsumerState<ConnectLandingView> createState() => _ConnectLandingViewState();
+}
+
+class _ConnectLandingViewState extends ConsumerState<ConnectLandingView> {
   static const _paginationThreshold = 200.0;
 
+  /// Whether the hero photo is still behind the status bar.
+  bool _heroUnderStatusBar = true;
+
+  void _onScroll(ScrollMetrics metrics) {
+    final hidden =
+        _ConnectHero.heightOf(context) - MediaQuery.paddingOf(context).top;
+    final underStatusBar = metrics.pixels < hidden;
+    if (underStatusBar != _heroUnderStatusBar) {
+      setState(() => _heroUnderStatusBar = underStatusBar);
+    }
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final state = ref.watch(discoverGroupsProvider);
     final notifier = ref.read(discoverGroupsProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       ref.read(discoverGroupsProvider.notifier).ensureLoaded();
     });
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      // Light status bar over the hero photo.
-      value: SystemUiOverlayStyle.light,
+      // White icons over the photo; once it scrolls away, the theme's.
+      value:
+          _heroUnderStatusBar || isDark
+              ? SystemUiOverlayStyle.light
+              : SystemUiOverlayStyle.dark,
       child: ColoredBox(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: RefreshIndicator(
@@ -41,9 +63,9 @@ class ConnectLandingView extends ConsumerWidget {
               ]),
           child: NotificationListener<ScrollNotification>(
             onNotification: (notification) {
+              if (notification.depth == 0) _onScroll(notification.metrics);
               if (notification.metrics.pixels >=
-                  notification.metrics.maxScrollExtent -
-                      _paginationThreshold) {
+                  notification.metrics.maxScrollExtent - _paginationThreshold) {
                 notifier.loadMore();
               }
               return false;
@@ -122,13 +144,19 @@ class ConnectLandingView extends ConsumerWidget {
 class _ConnectHero extends StatelessWidget {
   const _ConnectHero();
 
+  /// Full height, including the part behind the status bar.
+  static double heightOf(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    return (width * 0.95).clamp(280.0, 420.0) +
+        MediaQuery.paddingOf(context).top;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
     final topInset = MediaQuery.paddingOf(context).top;
 
     return SizedBox(
-      height: (width * 0.95).clamp(280.0, 420.0) + topInset,
+      height: heightOf(context),
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -146,6 +174,11 @@ class _ConnectHero extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+          Positioned(
+            top: topInset + 4,
+            right: 8,
+            child: const ConnectChatsButton(color: Colors.white),
           ),
           Positioned(
             left: 16,

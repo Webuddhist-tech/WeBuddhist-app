@@ -29,11 +29,15 @@ class GroupProfileScreen extends ConsumerStatefulWidget {
   /// Replaces the back arrow, e.g. the Connect tab's spaces menu.
   final Widget? leading;
 
+  /// Extra top-bar buttons before the ⋮, e.g. the Connect tab's chats.
+  final List<Widget> actions;
+
   const GroupProfileScreen({
     super.key,
     required this.groupId,
     this.openPrayerRequests = false,
     this.leading,
+    this.actions = const [],
   });
 
   @override
@@ -162,6 +166,7 @@ class _GroupProfileScreenState extends ConsumerState<GroupProfileScreen> {
               ),
             ),
           ),
+          ...widget.actions,
           if (profile != null)
             _MemberMenuButton(profile: profile)
           else
