@@ -685,6 +685,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_post_comments_empty => '還沒有留言。開始討論吧';
 
   @override
+  String get connect_post_media_viewer_hint => '雙指縮放或點兩下放大 · 滑動查看下一張';
+
+  @override
   String get connect_online => '線上';
 
   @override
@@ -959,6 +962,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get routine_title => '日常修持';
+
+  @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +另外 $count 項';
+  }
 
   @override
   String get bookmarks => '書籤';
@@ -4543,6 +4551,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get connect_post_comments_empty => '还没有留言。开始讨论吧';
 
   @override
+  String get connect_post_media_viewer_hint => '双指缩放或点两下放大 · 滑动查看下一张';
+
+  @override
   String get connect_online => '在线';
 
   @override
@@ -4811,6 +4822,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get routine_title => '日常修持';
+
+  @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +另外 $count 项';
+  }
 
   @override
   String get bookmarks => '书签';

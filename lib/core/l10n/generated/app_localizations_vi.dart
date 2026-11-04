@@ -719,6 +719,10 @@ class AppLocalizationsVi extends AppLocalizations {
       'Chưa có bình luận nào. Hãy bắt đầu cuộc trò chuyện';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'Chụm hoặc chạm hai lần để thu phóng · vuốt để xem ảnh tiếp theo';
+
+  @override
   String get connect_online => 'Trực tuyến';
 
   @override
@@ -999,6 +1003,11 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get routine_title => 'Pháp tu của tôi';
+
+  @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count mục khác';
+  }
 
   @override
   String get bookmarks => 'Dấu trang';

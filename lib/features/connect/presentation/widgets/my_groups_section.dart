@@ -108,8 +108,7 @@ class _MyGroupTile extends StatelessWidget {
       fontSize: _titleFontSize,
       color: subtitleColor,
       fontWeight: FontWeight.w500,
-      height:
-          hasTibetanTitle ? AppFontConfig.tibetanCompactLineHeight : null,
+      height: hasTibetanTitle ? AppFontConfig.tibetanCompactLineHeight : null,
       leadingDistribution:
           hasTibetanTitle ? AppFontConfig.tibetanLeadingDistribution : null,
     );

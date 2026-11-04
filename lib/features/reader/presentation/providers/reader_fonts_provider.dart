@@ -76,6 +76,19 @@ final readerFontPreloadProvider = FutureProvider.autoDispose
       }
     });
 
+/// Waits for the fonts text has asked for so far, after
+/// [readerFontPreloadTimeout] at the latest, and never fails. Overridden in
+/// widget tests, where no font ever arrives.
+final readerPendingFontsProvider = Provider<Future<void> Function()>(
+  (ref) => () async {
+    try {
+      await GoogleFonts.pendingFonts().timeout(readerFontPreloadTimeout);
+    } catch (_) {
+      // Offline or slow: the lines show in the fallback until it lands.
+    }
+  },
+);
+
 /// The [readerFontPreloadProvider] key for [fonts].
 String readerFontPreloadKey(Iterable<ReaderFont> fonts) =>
     (fonts.map((font) => font.id).toSet().toList()..sort()).join(',');

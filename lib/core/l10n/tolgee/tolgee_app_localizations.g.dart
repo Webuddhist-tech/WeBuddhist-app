@@ -1362,6 +1362,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_post_media_viewer_hint => TolgeeBridge.get(
+    localeName,
+    'connect_post_media_viewer_hint',
+    () => _fallback.connect_post_media_viewer_hint,
+  );
+
+  @override
   String get connect_online => TolgeeBridge.get(
     localeName,
     'connect_online',
@@ -1932,6 +1939,15 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'routine_title',
     () => _fallback.routine_title,
   );
+
+  @override
+  String routine_block_default_title(String title, int count) =>
+      TolgeeBridge.format(
+        localeName,
+        'routine_block_default_title',
+        <String, Object>{'title': title, 'count': count},
+        () => _fallback.routine_block_default_title(title, count),
+      );
 
   @override
   String get bookmarks =>

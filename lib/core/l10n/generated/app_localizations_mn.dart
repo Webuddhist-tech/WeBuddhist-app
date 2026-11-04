@@ -717,6 +717,10 @@ class AppLocalizationsMn extends AppLocalizations {
       'Одоогоор сэтгэгдэл алга. Яриаг эхлүүлээрэй';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'Томруулахын тулд чимхэх эсвэл хоёр товшино уу · дараагийн зураг руу шилжихийн тулд гүйлгэнэ үү';
+
+  @override
   String get connect_online => 'Онлайн';
 
   @override
@@ -1002,6 +1006,11 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get routine_title => 'Миний дадлагууд';
+
+  @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count бусад';
+  }
 
   @override
   String get bookmarks => 'Хавчуурга';

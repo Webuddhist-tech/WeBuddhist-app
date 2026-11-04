@@ -299,6 +299,7 @@
   "common_ok": "ठीक है",
   "comingSoonHeadline": "जल्द आ रहा है",
   "routine_title": "मेरे अभ्यास",
+  "routine_block_default_title": "{title} +{count} और",
   "bookmarks": "बुकमार्क",
   "routine_empty_title": "अभ्यास",
   "routine_edit": "एडिट  करें",
@@ -807,6 +808,7 @@
     }
   },
   "connect_post_comments_empty": "अभी कोई टिप्पणी नहीं। बातचीत शुरू करें",
+  "connect_post_media_viewer_hint": "ज़ूम करने के लिए पिंच करें या दो बार टैप करें · अगली तस्वीर के लिए स्वाइप करें",
   "connect_online": "ऑनलाइन",
   "home_group_events": "विशेष कार्यक्रम",
   "home_poems": "कविताएँ",

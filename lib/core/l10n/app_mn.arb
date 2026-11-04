@@ -299,6 +299,7 @@
   "common_ok": "За",
   "comingSoonHeadline": "Удахгүй",
   "routine_title": "Миний дадлагууд",
+  "routine_block_default_title": "{title} +{count} бусад",
   "bookmarks": "Хавчуурга",
   "routine_empty_title": "Дадлагууд",
   "routine_edit": "Засах",
@@ -807,6 +808,7 @@
     }
   },
   "connect_post_comments_empty": "Одоогоор сэтгэгдэл алга. Яриаг эхлүүлээрэй",
+  "connect_post_media_viewer_hint": "Томруулахын тулд чимхэх эсвэл хоёр товшино уу · дараагийн зураг руу шилжихийн тулд гүйлгэнэ үү",
   "connect_online": "Онлайн",
   "home_group_events": "Онцлох арга хэмжээ",
   "home_poems": "Шүлэг",

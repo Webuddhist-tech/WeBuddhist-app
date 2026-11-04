@@ -710,6 +710,10 @@ class AppLocalizationsTh extends AppLocalizations {
       'ยังไม่มีความคิดเห็น มาเริ่มการสนทนากัน';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'จีบนิ้วหรือแตะสองครั้งเพื่อซูม · ปัดเพื่อดูรูปถัดไป';
+
+  @override
   String get connect_online => 'ออนไลน์';
 
   @override
@@ -987,6 +991,11 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get routine_title => 'การปฏิบัติของฉัน';
+
+  @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +อีก $count รายการ';
+  }
 
   @override
   String get bookmarks => 'บุ๊กมาร์ก';

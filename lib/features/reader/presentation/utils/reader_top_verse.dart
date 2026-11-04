@@ -29,3 +29,21 @@ int? readerTopVerseEntry(
       ? first.index
       : onScreen[1].index;
 }
+
+/// Where the entry at [index] of [before] is in [after], the list rebuilt,
+/// matched by [keyOf]. Null when it is still at [index], or gone.
+///
+/// The list keeps its place by index, so rows added above the entry at the
+/// top of the screen push it down the page; it is put back by this index.
+int? movedTopEntry<E>(
+  List<E> before,
+  List<E> after,
+  int index,
+  Object? Function(E entry) keyOf,
+) {
+  if (index < 0 || index >= before.length) return null;
+  final key = keyOf(before[index]);
+  if (index < after.length && keyOf(after[index]) == key) return null;
+  final moved = after.indexWhere((entry) => keyOf(entry) == key);
+  return moved < 0 ? null : moved;
+}

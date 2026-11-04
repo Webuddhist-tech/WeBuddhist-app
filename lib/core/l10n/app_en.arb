@@ -304,6 +304,7 @@
     }
   },
   "connect_post_comments_empty": "No comments yet. Start the conversation",
+  "connect_post_media_viewer_hint": "Pinch or double-tap to zoom · swipe for the next image",
   "connect_online": "Online",
   "connect_ended": "Ended",
   "connect_ended_on": "Ended {date}",
@@ -459,6 +460,17 @@
   "common_ok": "OK",
   "comingSoonHeadline": "Coming soon",
   "routine_title": "My practices",
+  "routine_block_default_title": "{title} +{count} more",
+  "@routine_block_default_title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "bookmarks": "Bookmarks",
   "routine_empty_title": "Practices",
   "routine_edit": "Edit",

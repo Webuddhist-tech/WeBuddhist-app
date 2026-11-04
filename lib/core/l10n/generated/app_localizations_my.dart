@@ -725,6 +725,10 @@ class AppLocalizationsMy extends AppLocalizations {
       'မှတ်ချက် မရှိသေးပါ။ စတင် ဆွေးနွေးလိုက်ပါ';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'ချဲ့ရန် ဆွဲချဲ့ပါ သို့မဟုတ် နှစ်ချက်နှိပ်ပါ · နောက်ပုံအတွက် ပွတ်ဆွဲပါ';
+
+  @override
   String get connect_online => 'အွန်လိုင်း';
 
   @override
@@ -1005,6 +1009,11 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get routine_title => 'ကျွန်ုပ်၏ ကျင့်စဉ်များ';
+
+  @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +နောက်ထပ် $count ခု';
+  }
 
   @override
   String get bookmarks => 'မှတ်ထားချက်များ';

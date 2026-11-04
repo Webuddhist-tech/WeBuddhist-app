@@ -714,6 +714,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'No comments yet. Start the conversation';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'Pinch or double-tap to zoom · swipe for the next image';
+
+  @override
   String get connect_online => 'Online';
 
   @override
@@ -991,6 +995,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get routine_title => 'My practices';
+
+  @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count more';
+  }
 
   @override
   String get bookmarks => 'Bookmarks';

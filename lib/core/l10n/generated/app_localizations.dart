@@ -1349,6 +1349,12 @@ abstract class AppLocalizations {
   /// **'No comments yet. Start the conversation'**
   String get connect_post_comments_empty;
 
+  /// No description provided for @connect_post_media_viewer_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinch or double-tap to zoom · swipe for the next image'**
+  String get connect_post_media_viewer_hint;
+
   /// No description provided for @connect_online.
   ///
   /// In en, this message translates to:
@@ -1858,6 +1864,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'My practices'**
   String get routine_title;
+
+  /// No description provided for @routine_block_default_title.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} +{count} more'**
+  String routine_block_default_title(String title, int count);
 
   /// No description provided for @bookmarks.
   ///

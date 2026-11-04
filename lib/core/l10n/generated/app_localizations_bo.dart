@@ -721,6 +721,10 @@ class AppLocalizationsBo extends AppLocalizations {
       'ད་དུང་བསམ་ཚུལ་མི་འདུག གླེང་མོལ་འགོ་བཙུགས།';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'ཆེ་རུ་གཏོང་བར་མཛུབ་མོས་བསྐྱེད་པའམ་ཐེངས་གཉིས་རྡེབ། · པར་རྗེས་མར་སྤོ་བར་འདྲུད།';
+
+  @override
   String get connect_online => 'དྲ་ཐོག';
 
   @override
@@ -1004,6 +1008,11 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get routine_title => 'ངའི་འཆར་ཅན་ཉམས་ལེན།';
+
+  @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count གཞན།';
+  }
 
   @override
   String get bookmarks => 'དཔེ་རྟགས།';

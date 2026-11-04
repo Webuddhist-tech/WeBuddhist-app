@@ -53,9 +53,7 @@ class ConnectPaginatedListView<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if ((isLoading || !hasLoaded) && items.isEmpty) {
-      return _scrollableState(
-        const Center(child: CircularProgressIndicator()),
-      );
+      return _scrollableState(const Center(child: CircularProgressIndicator()));
     }
 
     if (error != null && items.isEmpty) {
@@ -145,20 +143,14 @@ class ConnectPaginatedListView<T> extends StatelessWidget {
     );
   }
 
-  Widget _scrollableState(
-    Widget child, {
-    bool hasScrollBody = true,
-  }) {
+  Widget _scrollableState(Widget child, {bool hasScrollBody = true}) {
     return CustomScrollView(
       key: scrollViewKey,
       controller: scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         if (header != null) SliverToBoxAdapter(child: header!),
-        SliverFillRemaining(
-          hasScrollBody: hasScrollBody,
-          child: child,
-        ),
+        SliverFillRemaining(hasScrollBody: hasScrollBody, child: child),
       ],
     );
   }

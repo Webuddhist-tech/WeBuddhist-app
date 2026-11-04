@@ -44,9 +44,7 @@ class ConnectFeedItem {
   DateTime? get sortDate {
     return switch (type) {
       ConnectFeedItemType.post =>
-        feedAt ??
-            post?.publishedAt ??
-            post?.createdAt,
+        feedAt ?? post?.publishedAt ?? post?.createdAt,
       ConnectFeedItemType.event => feedAt ?? event?.startDate,
       ConnectFeedItemType.practice => feedAt ?? practice?.practiceAt,
     };

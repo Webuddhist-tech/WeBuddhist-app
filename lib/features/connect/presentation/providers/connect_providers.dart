@@ -78,7 +78,9 @@ class DiscoverGroupsNotifier extends StateNotifier<DiscoverGroupsState> {
        super(_seed(source));
 
   // The stored page is the first state, so the first frame never spins.
-  static DiscoverGroupsState _seed(ScreenCacheSource<DiscoverGroupsPage> source) {
+  static DiscoverGroupsState _seed(
+    ScreenCacheSource<DiscoverGroupsPage> source,
+  ) {
     final page = source.read();
     if (page == null) return const DiscoverGroupsState();
     return DiscoverGroupsState(
@@ -208,29 +210,31 @@ class DiscoverGroupsNotifier extends StateNotifier<DiscoverGroupsState> {
   }
 }
 
-final discoverGroupsProvider =
-    StateNotifierProvider.autoDispose<DiscoverGroupsNotifier, DiscoverGroupsState>(
-      (ref) {
-        final language = ref.watch(contentLanguageProvider);
-        final repository = ref.watch(connectRepositoryProvider);
-        return DiscoverGroupsNotifier(
-          repository: repository,
-          language: language,
-          source: repository.discoverGroupsFirstPage(
-            language: language,
-            limit: DiscoverGroupsNotifier._limit,
-          ),
-        );
-      },
-    );
+final discoverGroupsProvider = StateNotifierProvider.autoDispose<
+  DiscoverGroupsNotifier,
+  DiscoverGroupsState
+>((ref) {
+  final language = ref.watch(contentLanguageProvider);
+  final repository = ref.watch(connectRepositoryProvider);
+  return DiscoverGroupsNotifier(
+    repository: repository,
+    language: language,
+    source: repository.discoverGroupsFirstPage(
+      language: language,
+      limit: DiscoverGroupsNotifier._limit,
+    ),
+  );
+});
 
 /// Groups joined this session before the my-groups API reflects them.
-final pendingJoinedGroupsProvider =
-    StateProvider<List<GroupProfile>>((ref) => const []);
+final pendingJoinedGroupsProvider = StateProvider<List<GroupProfile>>(
+  (ref) => const [],
+);
 
 /// Groups unfollowed this session while the my-groups API still returns them.
-final pendingUnjoinedGroupIdsProvider =
-    StateProvider<Set<String>>((ref) => const {});
+final pendingUnjoinedGroupIdsProvider = StateProvider<Set<String>>(
+  (ref) => const {},
+);
 
 /// Stored page is the first state, refreshed in the background; pull-to-refresh
 /// goes through `refreshMyGroups`, not `ref.refresh`, so the UI keeps its data.
@@ -303,12 +307,14 @@ void syncPendingGroupsWithApi({
   required Ref ref,
   required Set<String> apiGroupIds,
 }) {
-  ref.read(pendingJoinedGroupsProvider.notifier).update(
-    (pending) =>
-        pending.where((group) => !apiGroupIds.contains(group.id)).toList(),
-  );
+  ref
+      .read(pendingJoinedGroupsProvider.notifier)
+      .update(
+        (pending) =>
+            pending.where((group) => !apiGroupIds.contains(group.id)).toList(),
+      );
 
-  ref.read(pendingUnjoinedGroupIdsProvider.notifier).update(
-    (unjoined) => unjoined.intersection(apiGroupIds),
-  );
+  ref
+      .read(pendingUnjoinedGroupIdsProvider.notifier)
+      .update((unjoined) => unjoined.intersection(apiGroupIds));
 }

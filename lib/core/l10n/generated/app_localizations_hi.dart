@@ -716,6 +716,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'अभी कोई टिप्पणी नहीं। बातचीत शुरू करें';
 
   @override
+  String get connect_post_media_viewer_hint =>
+      'ज़ूम करने के लिए पिंच करें या दो बार टैप करें · अगली तस्वीर के लिए स्वाइप करें';
+
+  @override
   String get connect_online => 'ऑनलाइन';
 
   @override
@@ -998,6 +1002,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get routine_title => 'मेरे अभ्यास';
+
+  @override
+  String routine_block_default_title(String title, int count) {
+    return '$title +$count और';
+  }
 
   @override
   String get bookmarks => 'बुकमार्क';
