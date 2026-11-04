@@ -12,7 +12,6 @@ Social hub tab: unified feed, group events, and group discovery from followed co
 - **Feed** — merged posts, events, practices from followed groups, shown on Home as "From the community" (preview + full screen); posts carry likes and comments
 - Group search (`GroupSearchScreen`), reached from the landing page and Your spaces
 - Post detail (drawer from a card, or `/home/posts/:postId` route from a push) with comment thread
-- **Chats** button with unread dot (members only, `ConnectChatsButton`) on the space page and landing page — opens `group_chat`'s Chats screen
 - Optimistic pending join/unjoin while API catches up
 
 ## Architecture
@@ -58,7 +57,7 @@ connect/
 ## Cross-feature dependencies
 
 - **auth** — guest gating, login prompts
-- **group_chat** — `chatRoomsProvider` / `chatRoomsPushRefreshProvider` drive the Chats unread dot
+- **group_chat** — `chatRoomsProvider` / `chatRoomsPushRefreshProvider` drive the ☰ unread dot (`unreadSpaceIdsProvider`)
 - **group_profile** — entities (`GroupProfile`, `GroupEvent`, `GroupPractice`), repository, follow invalidation
 - **core** — `contentLanguageProvider`, theme
 

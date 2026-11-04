@@ -7,7 +7,6 @@ import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_space_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/screens/group_search_screen.dart';
-import 'package:flutter_pecha/features/connect/presentation/widgets/connect_chats_button.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/group_search_result_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -153,8 +152,6 @@ class _ConnectHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topInset = MediaQuery.paddingOf(context).top;
-
     return SizedBox(
       height: heightOf(context),
       child: Stack(
@@ -174,11 +171,6 @@ class _ConnectHero extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-          Positioned(
-            top: topInset + 4,
-            right: 8,
-            child: const ConnectChatsButton(color: Colors.white),
           ),
           Positioned(
             left: 16,
