@@ -163,6 +163,14 @@ class StorageKeys {
   /// language's defaults; the library keys are left alone.
   static const String readerLayoutLanguage = 'reader_layouts_language';
 
+  /// The account the reader settings on this device last synced with, so one
+  /// account's settings are never uploaded to another.
+  static const String readerSettingsOwner = 'reader_settings_owner';
+
+  /// JSON of the reader settings last known to be on the server. Local values
+  /// that differ from it have not been saved yet.
+  static const String readerSettingsSynced = 'reader_settings_synced';
+
   /// Bead-tap sound on the mala counter. Default: true.
   static const String malaSoundEnabled = 'mala_sound_enabled';
 

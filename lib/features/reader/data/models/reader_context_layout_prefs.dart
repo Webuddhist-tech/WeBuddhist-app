@@ -107,6 +107,27 @@ class ReaderContextLayoutPrefs extends Equatable {
     );
   }
 
+  /// Server shape (`preferences.reader.<context>`): what was never picked is
+  /// left out. A null in [scripts] stays, because it is a pick ("as written").
+  Map<String, dynamic> toWire() => {
+    if (originalVisible != null) 'original_visible': originalVisible,
+    if (translationOn != null) 'translation_on': translationOn,
+    if (translationLanguage != null) 'translation_language': translationLanguage,
+    if (scripts.isNotEmpty) 'scripts': scripts,
+    if (translationVersions.isNotEmpty)
+      'translation_versions': translationVersions,
+  };
+
+  /// Reads [toWire]'s output, tolerating anything unexpected as [fromJson] does.
+  factory ReaderContextLayoutPrefs.fromWire(Map<String, dynamic> json) =>
+      ReaderContextLayoutPrefs.fromJson({
+        'originalVisible': json['original_visible'],
+        'translationOn': json['translation_on'],
+        'translationLanguage': json['translation_language'],
+        'scripts': json['scripts'],
+        'translationVersions': json['translation_versions'],
+      });
+
   String encode() => jsonEncode(toJson());
 
   /// Never throws: a corrupt value reads as no picks.

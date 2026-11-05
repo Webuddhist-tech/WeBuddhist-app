@@ -40,6 +40,13 @@ class ReaderFontsNotifier extends StateNotifier<ReaderFontChoices> {
     state = state.pick(line, script, font);
     await _storage.set<String>(StorageKeys.readerFonts, state.toJson());
   }
+
+  /// Replaces every pick with [choices], e.g. those saved on the server.
+  Future<void> replaceAll(ReaderFontChoices choices) async {
+    await _ready;
+    state = choices;
+    await _storage.set<String>(StorageKeys.readerFonts, state.toJson());
+  }
 }
 
 final readerFontsProvider =

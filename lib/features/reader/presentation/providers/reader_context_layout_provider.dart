@@ -78,6 +78,9 @@ class ReaderContextLayoutNotifier extends StateNotifier<ReaderContextLayoutPrefs
     ),
   );
 
+  /// Replaces every pick with [prefs], e.g. those saved on the server.
+  void replaceAll(ReaderContextLayoutPrefs prefs) => _update((_) => prefs);
+
   void _update(
     ReaderContextLayoutPrefs Function(ReaderContextLayoutPrefs) edit,
   ) {

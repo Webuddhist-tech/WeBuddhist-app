@@ -279,11 +279,13 @@ class PracticeRecitationsLanguageNotifier extends StateNotifier<String> {
     required LocalStorageService localStorageService,
     required String fallbackLanguage,
   }) : _localStorageService = localStorageService,
+       _fallbackLanguage = fallbackLanguage,
        super(_lastKnown ?? fallbackLanguage) {
     _initFuture = _initialize();
   }
 
   final LocalStorageService _localStorageService;
+  final String _fallbackLanguage;
   // Kept static so a stored pick is re-applied synchronously when the notifier
   // is rebuilt (app content language change) instead of flashing that language.
   static String? _lastKnown;
@@ -326,6 +328,19 @@ class PracticeRecitationsLanguageNotifier extends StateNotifier<String> {
     } catch (e) {
       _logger.warning('Persisting chant list language failed', e);
     }
+  }
+
+  /// Takes the pick saved on the server; null means none, so the list goes
+  /// back to following the content language.
+  Future<void> applySynced(String? languageCode) async {
+    if (languageCode != null && languageCode.isNotEmpty) {
+      await setLanguage(languageCode);
+      return;
+    }
+    _userSelected = true;
+    _lastKnown = null;
+    state = _fallbackLanguage;
+    await _localStorageService.remove(StorageKeys.chantListLanguage);
   }
 }
 
