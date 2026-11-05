@@ -177,14 +177,12 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
                             ? AppColors.textSecondaryDark
                             : AppColors.textSecondary),
                 count: _likeCount,
-                isLoading: _likeState.isSubmitting,
                 onTap: _toggleLike,
               ),
               (
                 icon: AppAssets.chatCircle,
                 iconColor: null,
                 count: post.commentCount,
-                isLoading: false,
                 onTap: _openDetail,
               ),
             ],

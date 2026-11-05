@@ -6,7 +6,6 @@ typedef ConnectFeedAction =
       IconData icon,
       Color? iconColor,
       int? count,
-      bool isLoading,
       VoidCallback? onTap,
     });
 
@@ -47,34 +46,21 @@ class _ActionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onTap = action.onTap;
-    final isLoading = action.isLoading;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: isLoading ? null : onTap,
+        onTap: action.onTap,
         borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (isLoading)
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: action.iconColor ?? defaultColor,
-                  ),
-                )
-              else
-                Icon(
-                  action.icon,
-                  size: 22,
-                  color: action.iconColor ?? defaultColor,
-                ),
+              Icon(
+                action.icon,
+                size: 22,
+                color: action.iconColor ?? defaultColor,
+              ),
               if (action.count != null) ...[
                 const SizedBox(width: 6),
                 Text(
