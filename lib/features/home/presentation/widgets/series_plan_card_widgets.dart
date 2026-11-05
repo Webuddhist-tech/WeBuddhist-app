@@ -1,38 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/widgets/plan_progress_bar.dart';
 import 'package:flutter_pecha/features/home/domain/entities/series.dart';
 import 'package:flutter_pecha/features/plans/data/utils/plan_date_format.dart';
 
+/// Full-width plan progress bar for a series card. Check [hasProgress]
+/// before showing it.
 class SeriesPlanProgressBar extends StatelessWidget {
   const SeriesPlanProgressBar({super.key, required this.progress});
 
   final SeriesProgress progress;
 
+  static bool hasProgress(Series series) =>
+      series.progress != null && series.progress!.totalDayCount > 0;
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final trackColor =
-        isDark ? AppColors.grey800.withValues(alpha: 0.6) : AppColors.greyLight;
-
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: FractionallySizedBox(
-        widthFactor: 0.5,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress.fraction,
-            minHeight: 6,
-            backgroundColor: trackColor,
-            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-          ),
-        ),
-      ),
+    return SizedBox(
+      width: double.infinity,
+      child: PlanProgressBar(value: progress.fraction),
     );
   }
 }

@@ -53,6 +53,9 @@ class AppColors {
   static const Color goldLight = Color(0xFFFBF9F4); // MG 50
   static const Color goldAccent = Color(0xFFF6F3E9); // MG 100
 
+  /// Fill for plan progress bars (plan cards, day-complete sheet).
+  static const Color planProgress = Color(0xFFFFBB47);
+
   // ============ Grey Scale ============
   static const Color greyLight = Color(0xFFEDEDED); // MGS 100
   static const Color greyMedium = Color(
