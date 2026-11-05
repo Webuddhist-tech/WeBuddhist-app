@@ -66,28 +66,7 @@ class PracticePlanListTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (series.partner != null) ...[
-                      if (series.progress != null &&
-                          series.progress!.totalDayCount > 0) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: SeriesPlanProgressBar(
-                                progress: series.progress!,
-                              ),
-                            ),
-                            if (series.enrolledCount > 0) ...[
-                              const SizedBox(width: 12),
-                              SeriesPlanEnrolledCount(
-                                count: series.enrolledCount,
-                                fontSize: _metaFontSize,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ] else if (series.enrolledCount > 0) ...[
+                      if (series.enrolledCount > 0) ...[
                         const SizedBox(height: 4),
                         Align(
                           alignment: Alignment.centerRight,
@@ -97,19 +76,17 @@ class PracticePlanListTile extends StatelessWidget {
                           ),
                         ),
                       ],
-                    ] else ...[
-                      if (dateRange != null || series.enrolledCount > 0) ...[
-                        const SizedBox(height: 4),
-                        SeriesPlanMetaRow(
-                          series: series,
-                          fontSize: _metaFontSize,
-                        ),
-                      ],
-                      if (series.progress != null &&
-                          series.progress!.totalDayCount > 0) ...[
-                        const SizedBox(height: 8),
-                        SeriesPlanProgressBar(progress: series.progress!),
-                      ],
+                    ] else if (dateRange != null ||
+                        series.enrolledCount > 0) ...[
+                      const SizedBox(height: 4),
+                      SeriesPlanMetaRow(
+                        series: series,
+                        fontSize: _metaFontSize,
+                      ),
+                    ],
+                    if (SeriesPlanProgressBar.hasProgress(series)) ...[
+                      const SizedBox(height: 8),
+                      SeriesPlanProgressBar(progress: series.progress!),
                     ],
                   ],
                 ),

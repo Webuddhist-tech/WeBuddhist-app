@@ -246,27 +246,6 @@ class _FeaturedPlanListItem extends StatelessWidget {
                           ],
                         ],
                       ),
-                    ] else if (series.progress != null &&
-                        series.progress!.totalDayCount > 0) ...[
-                      SizedBox(height: titleDateGap + 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: SeriesPlanProgressBar(
-                              progress: series.progress!,
-                            ),
-                          ),
-                          if (series.enrolledCount > 0) ...[
-                            const SizedBox(width: 12),
-                            SeriesPlanEnrolledCount(
-                              count: series.enrolledCount,
-                              fontSize: dateFontSize,
-                            ),
-                          ],
-                        ],
-                      ),
                     ] else if (series.enrolledCount > 0) ...[
                       SizedBox(height: titleDateGap),
                       Align(
@@ -276,6 +255,10 @@ class _FeaturedPlanListItem extends StatelessWidget {
                           fontSize: dateFontSize,
                         ),
                       ),
+                    ],
+                    if (SeriesPlanProgressBar.hasProgress(series)) ...[
+                      SizedBox(height: titleDateGap + 4),
+                      SeriesPlanProgressBar(progress: series.progress!),
                     ],
                   ],
                 ),
