@@ -2955,13 +2955,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get calendar_subtitle => TolgeeBridge.get(
-    localeName,
-    'calendar_subtitle',
-    () => _fallback.calendar_subtitle,
-  );
-
-  @override
   String get calendar_today => TolgeeBridge.get(
     localeName,
     'calendar_today',

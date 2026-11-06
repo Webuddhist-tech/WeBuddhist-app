@@ -1541,9 +1541,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get calendar_title => 'Хуанли';
 
   @override
-  String get calendar_subtitle => 'Tibetan(Phugpa)';
-
-  @override
   String get calendar_today => 'Today';
 
   @override

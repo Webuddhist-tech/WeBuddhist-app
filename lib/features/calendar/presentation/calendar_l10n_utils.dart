@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/calendar/domain/models/moon_phase.dart';
 import 'package:flutter_pecha/features/calendar/domain/models/personal_calendar_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_time_format.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_repeats_sheet.dart';
+import 'package:intl/intl.dart';
 
 /// A locale name safe to pass to `intl`'s [DateFormat] (and `table_calendar`).
 String dateFormatLocale(BuildContext context) => intlFormatLocaleOf(context);
@@ -91,6 +92,14 @@ String eventDetailLine(BuildContext context, CalendarEvent event) {
   final end = event.endDate;
   if (start != null && end != null && !DateUtils.isSameDay(start, end)) {
     return formatGroupEventDayRange(start, end, locale, separator: ' – ');
+  }
+  // A one-day space event shows its date as well, e.g. "8 November 2026 · 7:00 pm".
+  if (event.kind == CalendarEventKind.group &&
+      !event.allDay &&
+      startsAt != null) {
+    final day = DateFormat('d MMMM y', locale).format(startsAt);
+    final time = DateFormat.jm(locale).format(startsAt).toLowerCase();
+    return '$day · $time';
   }
   return when;
 }

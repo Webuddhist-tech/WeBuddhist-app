@@ -1544,9 +1544,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get calendar_title => 'ပြက္ခဒိန်';
 
   @override
-  String get calendar_subtitle => 'Tibetan(Phugpa)';
-
-  @override
   String get calendar_today => 'Today';
 
   @override

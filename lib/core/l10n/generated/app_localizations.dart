@@ -2789,12 +2789,6 @@ abstract class AppLocalizations {
   /// **'Calendar'**
   String get calendar_title;
 
-  /// No description provided for @calendar_subtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Tibetan(Phugpa)'**
-  String get calendar_subtitle;
-
   /// No description provided for @calendar_today.
   ///
   /// In en, this message translates to:

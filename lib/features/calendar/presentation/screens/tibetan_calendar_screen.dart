@@ -106,25 +106,14 @@ class _TibetanCalendarScreenState extends ConsumerState<TibetanCalendarScreen>
             }
           },
         ),
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              l10n.calendar_title,
-              strutStyle: context.tibetanStrutStyle(
-                theme.textTheme.titleLarge?.fontSize ?? 22,
-              ),
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            Text(
-              l10n.calendar_subtitle,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
+        title: Text(
+          l10n.calendar_title,
+          strutStyle: context.tibetanStrutStyle(
+            theme.textTheme.titleLarge?.fontSize ?? 22,
+          ),
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
         actions: [
           IconButton(

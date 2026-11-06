@@ -1545,9 +1545,6 @@ class AppLocalizationsNe extends AppLocalizations {
   String get calendar_title => 'क्यालेन्डर';
 
   @override
-  String get calendar_subtitle => 'Tibetan(Phugpa)';
-
-  @override
   String get calendar_today => 'Today';
 
   @override

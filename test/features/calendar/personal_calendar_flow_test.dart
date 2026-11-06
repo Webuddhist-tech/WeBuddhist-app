@@ -432,7 +432,7 @@ void main() {
     );
 
     expect(find.text('Tara club'), findsOneWidget);
-    expect(find.text('7 am'), findsOneWidget);
+    expect(find.text('20 February 2026 · 7:00 am'), findsOneWidget);
     await tester.tap(find.text('Morning puja'));
     await tester.pumpAndSettle();
     expect(pushed, '/home/events/evt-1');
