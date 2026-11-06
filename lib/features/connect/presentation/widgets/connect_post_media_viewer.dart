@@ -408,9 +408,18 @@ class _ConnectPostMediaViewerActionsState
                 ),
                 if (likeCount > 0) ...[
                   const SizedBox(width: 4),
-                  Text(
-                    '$likeCount',
-                    style: const TextStyle(fontSize: 13, color: Colors.white),
+                  Transform.translate(
+                    offset: const Offset(0, 1),
+                    child: Text(
+                      '$likeCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        height: 1,
+                        leadingDistribution: TextLeadingDistribution.even,
+                      ),
+                    ),
                   ),
                 ],
               ],

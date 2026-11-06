@@ -116,16 +116,14 @@ class VerseOfDayLikesNotifier extends StateNotifier<VerseOfDayLikesState> {
 }
 
 /// Re-created on login/logout so `liked_by_me` reflects the current user.
-final verseOfDayLikesProvider = StateNotifierProvider.autoDispose
-    .family<VerseOfDayLikesNotifier, VerseOfDayLikesState, String>((
-      ref,
-      verseId,
-    ) {
-      ref.watch(
-        authProvider.select((state) => state.isLoggedIn && !state.isGuest),
-      );
-      return VerseOfDayLikesNotifier(ref: ref, verseId: verseId);
-    });
+final verseOfDayLikesProvider = StateNotifierProvider.autoDispose.family<
+  VerseOfDayLikesNotifier,
+  VerseOfDayLikesState,
+  String
+>((ref, verseId) {
+  ref.watch(authProvider.select((state) => state.isLoggedIn && !state.isGuest));
+  return VerseOfDayLikesNotifier(ref: ref, verseId: verseId);
+});
 
 class VerseOfDayLikersState {
   final List<VerseOfDayLiker> likers;
@@ -173,7 +171,9 @@ class VerseOfDayLikersNotifier extends StateNotifier<VerseOfDayLikersState> {
       (page) {
         _skip += page.likers.length;
         final seen = state.likers.map((liker) => liker.userId).toSet();
-        final fresh = page.likers.where((liker) => !seen.contains(liker.userId));
+        final fresh = page.likers.where(
+          (liker) => !seen.contains(liker.userId),
+        );
         state = VerseOfDayLikersState(
           likers: [...state.likers, ...fresh],
           hasMore: page.hasMore && page.likers.isNotEmpty,
@@ -560,13 +560,11 @@ class VerseOfDayCommentsNotifier
 }
 
 /// Re-created on login/logout so `liked_by_me` reflects the current user.
-final verseOfDayCommentsProvider = StateNotifierProvider.autoDispose
-    .family<VerseOfDayCommentsNotifier, VerseOfDayCommentsState, String>((
-      ref,
-      verseId,
-    ) {
-      ref.watch(
-        authProvider.select((state) => state.isLoggedIn && !state.isGuest),
-      );
-      return VerseOfDayCommentsNotifier(ref: ref, verseId: verseId);
-    });
+final verseOfDayCommentsProvider = StateNotifierProvider.autoDispose.family<
+  VerseOfDayCommentsNotifier,
+  VerseOfDayCommentsState,
+  String
+>((ref, verseId) {
+  ref.watch(authProvider.select((state) => state.isLoggedIn && !state.isGuest));
+  return VerseOfDayCommentsNotifier(ref: ref, verseId: verseId);
+});

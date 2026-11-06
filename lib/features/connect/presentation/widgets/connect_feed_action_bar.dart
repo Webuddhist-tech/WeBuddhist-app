@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 
 typedef ConnectFeedAction =
-    ({
-      IconData icon,
-      Color? iconColor,
-      int? count,
-      VoidCallback? onTap,
-    });
+    ({IconData icon, Color? iconColor, int? count, VoidCallback? onTap});
 
 /// Shared engagement row for Connect feed cards.
 class ConnectFeedActionBar extends StatelessWidget {
@@ -63,12 +58,17 @@ class _ActionChip extends StatelessWidget {
               ),
               if (action.count != null) ...[
                 const SizedBox(width: 6),
-                Text(
-                  '${action.count}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: defaultColor,
+                Transform.translate(
+                  offset: const Offset(0, 1),
+                  child: Text(
+                    '${action.count}',
+                    style: TextStyle(
+                      color: defaultColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      height: 1,
+                      leadingDistribution: TextLeadingDistribution.even,
+                    ),
                   ),
                 ),
               ],
