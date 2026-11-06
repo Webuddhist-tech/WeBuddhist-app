@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
@@ -157,7 +158,7 @@ void main() {
         'phonetic',
       );
       await tester.pump();
-      expect(find.text('Original · Roman'), findsOneWidget);
+      expect(find.text('Original · Tibetan (Roman)'), findsOneWidget);
       expect(find.text('Literata'), findsOneWidget);
       expect(find.text('Noto Serif Tibetan'), findsNothing);
     });
@@ -203,7 +204,7 @@ void main() {
       expect(find.text('Text size'), findsOneWidget);
       expect(find.textContaining('Original ·'), findsNothing);
       expect(find.text('Source Serif 4'), findsNothing);
-      expect(find.text('Background'), findsOneWidget);
+      expect(find.byTooltip('Gold'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Smaller text'));
       await tester.pump();
@@ -213,16 +214,107 @@ void main() {
     });
   });
 
+  group('the original\'s name', () {
+    final l10n = lookupAppLocalizations(const Locale('en'));
+
+    test('its language, as written', () {
+      expect(
+        readerOriginalTitle(l10n, language: 'Tibetan'),
+        'Original · Tibetan',
+      );
+    });
+
+    test('its language and the script it is shown in', () {
+      expect(
+        readerOriginalTitle(l10n, language: 'Tibetan', script: 'Roman'),
+        'Original · Tibetan (Roman)',
+      );
+    });
+  });
+
+  group('the space under a sheet\'s last row', () {
+    test('on an iPhone, clear of the home indicator, not the whole inset', () {
+      expect(
+        readerSheetBottomGap(
+          padding: 0,
+          inset: 34,
+          platform: TargetPlatform.iOS,
+        ),
+        14,
+      );
+      // No inset (a phone with a home button): the sheet's own padding.
+      expect(
+        readerSheetBottomGap(
+          padding: 6,
+          inset: 0,
+          platform: TargetPlatform.iOS,
+        ),
+        6,
+      );
+    });
+
+    test('on Android, past the navigation bar', () {
+      expect(
+        readerSheetBottomGap(
+          padding: 6,
+          inset: 48,
+          platform: TargetPlatform.android,
+        ),
+        54,
+      );
+    });
+  });
+
   group('More settings', () {
-    testWidgets('the title: at the start over a rule in English, centred '
-        'with no rule in a Tibetan or Chinese interface', (tester) async {
-      for (final (locale, centred) in [('en', false), ('bo', true), ('zh', true)]) {
+    testWidgets('Display has no header; More settings keeps ← and its '
+        'title, with no ✕', (tester) async {
+      for (final locale in ['en', 'bo', 'zh']) {
         await _open(tester, locale: locale);
         final sheet = tester.widget<ReaderSheet>(find.byType(ReaderSheet));
-        expect(sheet.centerTitle, centred, reason: locale);
-        expect(sheet.headerRule, !centred, reason: locale);
+        expect(sheet.title, isNull, reason: locale);
+        expect(sheet.semanticLabel, isNotEmpty, reason: locale);
+        expect(find.byType(IconButton), findsNothing, reason: locale);
         await tester.pumpWidget(const SizedBox());
       }
+
+      await _open(tester);
+      await tester.tap(find.text('More settings'));
+      await tester.pumpAndSettle();
+      final more = tester.widget<ReaderSheet>(find.byType(ReaderSheet));
+      expect(more.title, 'More settings');
+      expect(find.byTooltip('Back'), findsOneWidget);
+      expect(find.byTooltip('Close'), findsNothing);
+      // The title stays centred with ← on one side only.
+      final sheetCentre = tester.getCenter(find.byType(ReaderSheet)).dx;
+      expect(
+        tester.getCenter(find.text('More settings')).dx,
+        moreOrLessEquals(sheetCentre, epsilon: 0.5),
+      );
+    });
+
+    testWidgets('on an iPhone each sheet ends 14 under its last row', (
+      tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      tester.view.viewPadding = const FakeViewPadding(bottom: 34 * 3);
+      tester.view.padding = const FakeViewPadding(bottom: 34 * 3);
+      await _open(tester, onChangeLanguages: () {});
+
+      double gapUnder(String label) {
+        final sheetBottom = tester.getBottomLeft(find.byType(ReaderSheet)).dy;
+        final row = find.ancestor(
+          of: find.text(label),
+          matching: find.byType(InkWell),
+        );
+        return sheetBottom - tester.getBottomLeft(row.first).dy;
+      }
+
+      expect(gapUnder('More settings'), 14);
+      await tester.tap(find.text('More settings'));
+      await tester.pumpAndSettle();
+      expect(gapUnder('Change languages'), 14);
+      debugDefaultTargetPlatformOverride = null;
     });
 
     testWidgets('every tap target is at least 44 x 44, here and on Display', (
@@ -242,7 +334,7 @@ void main() {
       await tester.tap(find.text('More settings'));
       await tester.pumpAndSettle();
       expect(find.text('Line spacing'), findsOneWidget);
-      expect(find.text('Background'), findsNothing);
+      expect(find.byTooltip('Gold'), findsNothing);
       // Ritual instructions wait for texts that mark their directions.
       expect(find.text('Ritual instructions'), findsNothing);
 
@@ -260,7 +352,7 @@ void main() {
 
       await tester.tap(find.byTooltip('Back'));
       await tester.pumpAndSettle();
-      expect(find.text('Background'), findsOneWidget);
+      expect(find.byTooltip('Gold'), findsOneWidget);
       expect(find.text('Line spacing'), findsNothing);
     });
 

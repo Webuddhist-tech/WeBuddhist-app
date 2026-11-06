@@ -122,7 +122,8 @@ class SecondaryReaderState {
   }
 
   /// True when the translation has been read around [segmentNumber] and has
-  /// no line for it, so a page showing only the translation leaves it out.
+  /// no line for it, so a page showing only the translation says "Not
+  /// translated" in its place.
   /// Never after a failure or before anything loaded: the original shows.
   bool lacks(int segmentNumber) =>
       loadedSegments.isNotEmpty &&

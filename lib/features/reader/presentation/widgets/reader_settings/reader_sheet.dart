@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -46,8 +48,8 @@ TextStyle readerSheetText(
 }) {
   final fontWeight = weight ?? role.weight;
   final language = Localizations.maybeLocaleOf(context)?.languageCode;
-  // A label in a script the reader has no sizes for (Sinhala, Bengali…)
-  // is set as Latin, not as the interface's script.
+  // A label is sized by the script its own letters are in (a script's name
+  // in a Tibetan interface, "සිංහල" in an English one), not the interface's.
   script ??=
       label == null
           ? ReaderScript.ofLanguage(language)
@@ -155,29 +157,60 @@ class _ReaderSheetRoute<T> extends ModalBottomSheetRoute<T> {
   Color get barrierColor => Colors.black.withValues(alpha: _dim);
 }
 
+/// The space under a [ReaderSheet.tightBottom] sheet's last row, given the
+/// sheet's own bottom [padding] and the screen's bottom [inset].
+///
+/// An iPhone's 34 inset is mostly empty margin: the home indicator is drawn
+/// in its lowest 13, so the sheet ends [readerSheetHomeIndicatorClearance]
+/// above the bottom rather than the whole inset. Elsewhere the inset may be
+/// a navigation bar drawn over the page, so the sheet stays clear of it.
+double readerSheetBottomGap({
+  required double padding,
+  required double inset,
+  required TargetPlatform platform,
+}) =>
+    platform == TargetPlatform.iOS
+        ? math.max(padding, inset - readerSheetHomeIndicatorClearance)
+        : inset + padding;
+
+/// How much of an iPhone's bottom inset a [ReaderSheet.tightBottom] sheet
+/// may take: the 34 inset less this leaves 14 under the last row, clear of
+/// the home indicator.
+const double readerSheetHomeIndicatorClearance = 20;
+
 /// A sheet over the reader: a handle, its [title] with ✕ (and ← when
 /// [onBack] is set), then [child], in the drawer colours of the reader's
 /// background.
 ///
-/// The title is centred, as on most of the design's sheets; Display sets it
-/// at the start with a rule under the header ([centerTitle] false,
-/// [headerRule] true). [child] scrolls when the sheet would be too tall; a
-/// child that scrolls on its own (a list) sets [scrolls] to false and is
-/// given the room left.
+/// The title is centred, as on most of the design's sheets; a sheet may set
+/// it at the start with a rule under the header ([centerTitle] false,
+/// [headerRule] true). With no [title] the sheet has no header, only its
+/// handle, and screen readers get [semanticLabel]; it closes on a drag down
+/// or a tap outside. [showClose] false leaves out the ✕ ("More settings"
+/// keeps only ←). [child] scrolls when the sheet would be too tall; a child
+/// that scrolls on its own (a list) sets [scrolls] to false and is given the
+/// room left.
 class ReaderSheet extends ConsumerWidget {
   const ReaderSheet({
     super.key,
-    required this.title,
     required this.child,
+    this.title,
+    this.semanticLabel,
     this.subtitle,
     this.onBack,
+    this.showClose = true,
     this.centerTitle = true,
     this.headerRule = false,
     this.scrolls = true,
+    this.tightBottom = false,
     this.padding = const EdgeInsets.fromLTRB(16, 4, 16, 16),
   });
 
-  final String title;
+  /// Null for a sheet with no header.
+  final String? title;
+
+  /// What screen readers call a sheet with no [title].
+  final String? semanticLabel;
 
   /// A line under the title, in the muted colour.
   final Widget? subtitle;
@@ -185,30 +218,34 @@ class ReaderSheet extends ConsumerWidget {
 
   /// Shows ← before the title, which calls this.
   final VoidCallback? onBack;
+  final bool showClose;
   final bool centerTitle;
   final bool headerRule;
   final bool scrolls;
+
+  /// Ends the sheet [readerSheetBottomGap] under its last row, rather than
+  /// the bottom [padding] on top of the whole safe-area inset.
+  final bool tightBottom;
   final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = ReaderPalette.resolve(Theme.of(context), ref);
-    final l10n = context.l10n;
-    final body = Padding(padding: padding, child: child);
-    // ← sits in a slot of its own; a centred title keeps the slot empty
-    // without one so it stays in the middle.
-    final leading =
-        onBack != null
-            ? _SheetIconButton(
-              icon: AppAssets.arrowLeft,
-              tooltip: l10n.back,
-              color: palette.ink,
-              onPressed: onBack!,
-            )
-            : centerTitle
-            ? const SizedBox(width: readerSheetTapTarget)
-            : null;
-    return Material(
+    final title = this.title;
+    final body = Padding(
+      padding:
+          tightBottom
+              ? padding.copyWith(
+                bottom: readerSheetBottomGap(
+                  padding: padding.bottom,
+                  inset: MediaQuery.viewPaddingOf(context).bottom,
+                  platform: Theme.of(context).platform,
+                ),
+              )
+              : padding,
+      child: child,
+    );
+    final sheet = Material(
       color: palette.drawerBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -216,6 +253,7 @@ class ReaderSheet extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: SafeArea(
         top: false,
+        bottom: !tightBottom,
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.85,
@@ -235,57 +273,7 @@ class ReaderSheet extends ConsumerWidget {
                   ),
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.only(
-                  left: leading == null ? 20 : 6,
-                  right: centerTitle ? 6 : 10,
-                ),
-                child: Row(
-                  children: [
-                    if (leading != null) leading,
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                            centerTitle
-                                ? CrossAxisAlignment.center
-                                : CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            textAlign:
-                                centerTitle ? TextAlign.center : TextAlign.start,
-                            // By its own letters: a title not yet
-                            // translated stays the English size.
-                            style: readerSheetText(
-                              context,
-                              ReaderSheetTextRole.title,
-                              color: palette.ink,
-                              label: title,
-                            ),
-                          ),
-                          if (subtitle != null)
-                            DefaultTextStyle.merge(
-                              style: readerSheetText(
-                                context,
-                                ReaderSheetTextRole.chip,
-                                color: palette.sheetMuted,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              child: subtitle!,
-                            ),
-                        ],
-                      ),
-                    ),
-                    _SheetIconButton(
-                      icon: AppAssets.x,
-                      tooltip: l10n.close,
-                      color: palette.ink,
-                      onPressed: () => Navigator.of(context).maybePop(),
-                    ),
-                  ],
-                ),
-              ),
+              if (title != null) _header(context, palette, title),
               if (headerRule)
                 Divider(height: 1, thickness: 1, color: palette.drawerDivider),
               Flexible(
@@ -293,6 +281,91 @@ class ReaderSheet extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+    if (title != null) return sheet;
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      label: semanticLabel,
+      child: sheet,
+    );
+  }
+
+  /// The title row: ← (when [onBack] is set), the title, and ✕.
+  Widget _header(BuildContext context, ReaderPalette palette, String title) {
+    final l10n = context.l10n;
+    // ← sits in a slot of its own; a centred title keeps the slot empty
+    // without one so it stays in the middle.
+    final leading =
+        onBack != null
+            ? _SheetIconButton(
+              icon: AppAssets.arrowLeft,
+              tooltip: l10n.back,
+              color: palette.ink,
+              onPressed: onBack!,
+            )
+            : centerTitle
+            ? const SizedBox(width: readerSheetTapTarget)
+            : null;
+    // With no ✕, a centred title keeps an empty slot on the right to match.
+    final trailing =
+        showClose
+            ? _SheetIconButton(
+              icon: AppAssets.x,
+              tooltip: l10n.close,
+              color: palette.ink,
+              onPressed: () => Navigator.of(context).maybePop(),
+            )
+            : centerTitle
+            ? const SizedBox(width: readerSheetTapTarget)
+            : null;
+    return Padding(
+      padding: EdgeInsets.only(
+        left: leading == null ? 20 : 6,
+        right: centerTitle ? 6 : 10,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: readerSheetTapTarget),
+        child: Row(
+          children: [
+            if (leading != null) leading,
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    centerTitle
+                        ? CrossAxisAlignment.center
+                        : CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    textAlign: centerTitle ? TextAlign.center : TextAlign.start,
+                    // By its own letters: a title not yet translated stays
+                    // the English size.
+                    style: readerSheetText(
+                      context,
+                      ReaderSheetTextRole.title,
+                      color: palette.ink,
+                      label: title,
+                    ),
+                  ),
+                  if (subtitle != null)
+                    DefaultTextStyle.merge(
+                      style: readerSheetText(
+                        context,
+                        ReaderSheetTextRole.chip,
+                        color: palette.sheetMuted,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      child: subtitle!,
+                    ),
+                ],
+              ),
+            ),
+            if (trailing != null) trailing,
+          ],
         ),
       ),
     );
@@ -763,6 +836,17 @@ class ReaderSheetSizeStep extends ConsumerWidget {
     ReaderScript.devanagari => (letter: 'अ', small: 14, large: 24, height: 42),
     ReaderScript.cyrillic => (letter: 'А', small: 14, large: 24, height: 35),
     ReaderScript.latin => (letter: 'A', small: 14, large: 24, height: 35),
+    // The transliteration scripts' first letter, with room for its marks.
+    ReaderScript.bengali => (letter: 'অ', small: 14, large: 24, height: 42),
+    ReaderScript.gurmukhi => (letter: 'ਅ', small: 14, large: 24, height: 42),
+    ReaderScript.gujarati => (letter: 'અ', small: 14, large: 24, height: 42),
+    ReaderScript.telugu => (letter: 'అ', small: 14, large: 24, height: 42),
+    ReaderScript.kannada => (letter: 'ಅ', small: 14, large: 24, height: 42),
+    ReaderScript.malayalam => (letter: 'അ', small: 14, large: 24, height: 42),
+    ReaderScript.sinhala => (letter: 'අ', small: 14, large: 24, height: 42),
+    ReaderScript.thai => (letter: 'ก', small: 14, large: 24, height: 42),
+    ReaderScript.myanmar => (letter: 'က', small: 14, large: 24, height: 48),
+    ReaderScript.khmer => (letter: 'ក', small: 14, large: 24, height: 48),
   };
 
   @override

@@ -28,6 +28,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
   );
 }
 
+/// What the Display and Languages sheets call the original: its [language],
+/// and the [script] it is shown in when that is not the one it is written
+/// in ("Original · Tibetan", "Original · Tibetan (Roman)").
+String readerOriginalTitle(
+  AppLocalizations l10n, {
+  required String language,
+  String? script,
+}) =>
+    script == null
+        ? '${l10n.reader_original_label} · $language'
+        : '${l10n.reader_original_label} · $language ($script)';
+
 /// The reader's Display sheet (Aa): for each line on screen, its size step
 /// and font; then the page background.
 ///
@@ -57,6 +69,9 @@ class ReaderDisplaySheet extends ConsumerStatefulWidget {
 }
 
 class _ReaderDisplaySheetState extends ConsumerState<ReaderDisplaySheet> {
+  /// The space above and below each group, around its rule.
+  static const double _groupGap = 10;
+
   bool _moreSettings = false;
 
   /// More settings dims the page more than Display (WF19, WF17).
@@ -96,10 +111,14 @@ class _ReaderDisplaySheetState extends ConsumerState<ReaderDisplaySheet> {
       if (shown.original) {
         final language =
             widget.originalLanguage ?? settings.primary.languageCode;
-        final original = _originalScript(context, ref, scope, language);
+        final original = _originalScript(ref, scope, language);
         groups.add(
           _LineGroup(
-            title: '${l10n.reader_original_label} · ${original.name}',
+            title: readerOriginalTitle(
+              l10n,
+              language: getLanguageName(language, context),
+              script: original.scriptName,
+            ),
             step: size.originalStep,
             onStep: sizes.setOriginalStep,
             line: ReaderFontLine.original,
@@ -118,40 +137,33 @@ class _ReaderDisplaySheetState extends ConsumerState<ReaderDisplaySheet> {
             onStep: sizes.setTranslationStep,
             line: ReaderFontLine.translation,
             script: ReaderScript.ofLanguage(language),
-            // Under an original a Latin or Cyrillic translation is italic.
-            italic: shown.original,
           ),
         );
       }
     }
 
-    // As WF17: the title at the start with a rule under the header, and a
-    // rule after each group. A Tibetan or Chinese interface centres the
-    // title with no rule under it, as WF28 and WF33 draw it.
-    final interface = ReaderScript.ofLanguage(
-      Localizations.maybeLocaleOf(context)?.languageCode,
-    );
-    final centred =
-        interface == ReaderScript.tibetan || interface == ReaderScript.chinese;
+    // No header: the handle, then the groups with a rule after each, kept
+    // short so the page shows above it while sizes and fonts change.
     return ReaderSheet(
-      title: l10n.reader_display_title,
-      centerTitle: centred,
-      headerRule: !centred,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      semanticLabel: l10n.reader_display_title,
+      tightBottom: true,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final group in groups) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: _groupGap),
             group,
-            const SizedBox(height: 12),
+            const SizedBox(height: _groupGap),
             const ReaderSheetDivider(),
           ],
-          const SizedBox(height: 14),
-          ReaderSheetGroupTitle(l10n.reader_background),
-          const SizedBox(height: 12),
-          const _BackgroundTiles(),
-          const SizedBox(height: 18),
+          const SizedBox(height: _groupGap),
+          Semantics(
+            container: true,
+            label: l10n.reader_background,
+            child: const _BackgroundTiles(),
+          ),
+          const SizedBox(height: _groupGap),
           if (scope != null) ...[
             const ReaderSheetDivider(),
             ReaderSheetRow(
@@ -165,10 +177,9 @@ class _ReaderDisplaySheetState extends ConsumerState<ReaderDisplaySheet> {
     );
   }
 
-  /// The script the original is shown in, and what to call it: the picked
-  /// transliteration's name, else the language's.
-  static ({ReaderScript script, String name}) _originalScript(
-    BuildContext context,
+  /// The script the original is shown in, and the picked transliteration's
+  /// name; no name when it is shown as written.
+  static ({ReaderScript script, String? scriptName}) _originalScript(
     WidgetRef ref,
     ReaderSettingsScope scope,
     String language,
@@ -185,16 +196,13 @@ class _ReaderDisplaySheetState extends ConsumerState<ReaderDisplaySheet> {
             );
     final picked = converter?.scriptById(scriptId);
     if (picked == null) {
-      return (
-        script: ReaderScript.ofLanguage(language),
-        name: getLanguageName(language, context),
-      );
+      return (script: ReaderScript.ofLanguage(language), scriptName: null);
     }
     final fontLanguage = service.fontLanguageFor(language, scriptId!);
     return (
       // A script's name is written in it.
       script: ReaderScript.of(picked.label, language: fontLanguage ?? language),
-      name: picked.label,
+      scriptName: picked.label,
     );
   }
 }
@@ -218,7 +226,9 @@ class _MoreSettingsPage extends ConsumerWidget {
     return ReaderSheet(
       title: l10n.reader_more_settings,
       onBack: onBack,
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+      showClose: false,
+      tightBottom: true,
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -273,7 +283,6 @@ class _LineGroup extends ConsumerWidget {
     required this.onStep,
     this.line,
     this.script,
-    this.italic = false,
   });
 
   final String title;
@@ -283,9 +292,6 @@ class _LineGroup extends ConsumerWidget {
   /// The line and script whose font the pills pick; no pills without them.
   final ReaderFontLine? line;
   final ReaderScript? script;
-
-  /// The line is set in italic where its script has one (Latin, Cyrillic).
-  final bool italic;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -303,7 +309,6 @@ class _LineGroup extends ConsumerWidget {
         script == null ||
         script == ReaderScript.latin ||
         script == ReaderScript.cyrillic;
-    final style = italic && latin ? FontStyle.italic : FontStyle.normal;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -324,8 +329,7 @@ class _LineGroup extends ConsumerWidget {
               for (final font in fonts)
                 ReaderSheetChip(
                   label: font.label,
-                  fontFamily: latin ? font.family(style: style) : null,
-                  fontStyle: latin ? style : null,
+                  fontFamily: latin ? font.family() : null,
                   selected: font.id == picked?.id,
                   onTap:
                       () => ref

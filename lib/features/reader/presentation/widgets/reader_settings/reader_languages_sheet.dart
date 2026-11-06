@@ -14,7 +14,7 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_sett
 import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_secondary_version.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart'
-    show readerShownLines;
+    show readerOriginalTitle, readerShownLines;
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/picker_state_views.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -276,14 +276,29 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
     final originalLanguage = getLanguageName(primary.languageCode, context);
     final secondary = settings.secondary;
 
+    final shownScript =
+        converter
+            ?.scriptById(
+              activeScriptRow(
+                selectedScriptId: selectedScript,
+                sourceScriptId: sourceScript,
+              ),
+            )
+            ?.label;
+
     return ReaderSheet(
-      title: l10n.reader_languages_title,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      semanticLabel: l10n.reader_languages_title,
+      tightBottom: true,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ReaderSheetGroupTitle(
-            '${l10n.reader_original_label} · $originalLanguage',
+            readerOriginalTitle(
+              l10n,
+              language: originalLanguage,
+              script: shownScript,
+            ),
             trailing: ReaderSheetSwitch(
               value: shown.original,
               // At least one line stays on.

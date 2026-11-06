@@ -54,7 +54,12 @@ class ReaderTextMetrics {
 }
 
 /// The space between lines and verses at one size step, in pixels.
-typedef ReaderGaps = ({double verse, double pair, double inPair});
+typedef ReaderGaps = ({
+  double verse,
+  double pair,
+  double inPair,
+  double number,
+});
 
 /// Sizes, font families and line heights of the reader page.
 ///
@@ -79,7 +84,12 @@ class ReaderTypography {
     fonts: ref.watch(readerFontsProvider),
   );
 
-  /// Sizes at step 3, by role and script.
+  /// Sizes at step 3, by role and script. The transliteration scripts' are
+  /// set from how much of its size each one's letters fill, against Latin's
+  /// half: Gujarati, Thai and Khmer draw smaller per point, Telugu and
+  /// Kannada larger. Myanmar's letters fill about what Latin's do (0.51 in
+  /// Noto Serif Myanmar against Source Serif's 0.49), so it takes Latin's
+  /// sizes. Starting values, to be checked by eye.
   static const Map<ReaderTextRole, Map<ReaderScript, double>> baseSizes = {
     ReaderTextRole.originalAlone: {
       ReaderScript.latin: 18,
@@ -87,22 +97,55 @@ class ReaderTypography {
       ReaderScript.chinese: 19,
       ReaderScript.devanagari: 18,
       ReaderScript.cyrillic: 18,
+      ReaderScript.bengali: 18,
+      ReaderScript.gurmukhi: 18,
+      ReaderScript.gujarati: 19,
+      ReaderScript.telugu: 17,
+      ReaderScript.kannada: 17,
+      ReaderScript.malayalam: 18,
+      ReaderScript.sinhala: 18,
+      ReaderScript.thai: 19,
+      ReaderScript.myanmar: 18,
+      ReaderScript.khmer: 20,
     },
     // The original gets smaller under a translation, so it does not
-    // overpower it.
+    // overpower it. Tibetan draws about 0.34 of its size against English's
+    // 0.5, so at 24 its letters stand level with a 16 English translation.
     ReaderTextRole.originalWithTranslation: {
       ReaderScript.latin: 18,
-      ReaderScript.tibetan: 22,
+      ReaderScript.tibetan: 24,
       ReaderScript.chinese: 18,
       ReaderScript.devanagari: 18,
       ReaderScript.cyrillic: 18,
+      ReaderScript.bengali: 18,
+      ReaderScript.gurmukhi: 18,
+      ReaderScript.gujarati: 19,
+      ReaderScript.telugu: 17,
+      ReaderScript.kannada: 17,
+      ReaderScript.malayalam: 18,
+      ReaderScript.sinhala: 18,
+      ReaderScript.thai: 19,
+      ReaderScript.myanmar: 18,
+      ReaderScript.khmer: 20,
     },
+    // Chinese characters fill their size: at 16 they read as large as the
+    // other translations.
     ReaderTextRole.translationUnder: {
       ReaderScript.latin: 16,
       ReaderScript.tibetan: 19,
-      ReaderScript.chinese: 17,
+      ReaderScript.chinese: 16,
       ReaderScript.devanagari: 17,
       ReaderScript.cyrillic: 16,
+      ReaderScript.bengali: 16,
+      ReaderScript.gurmukhi: 16,
+      ReaderScript.gujarati: 17,
+      ReaderScript.telugu: 15,
+      ReaderScript.kannada: 15,
+      ReaderScript.malayalam: 16,
+      ReaderScript.sinhala: 16,
+      ReaderScript.thai: 17,
+      ReaderScript.myanmar: 16,
+      ReaderScript.khmer: 18,
     },
     ReaderTextRole.translationAlone: {
       ReaderScript.latin: 17,
@@ -110,6 +153,16 @@ class ReaderTypography {
       ReaderScript.chinese: 19,
       ReaderScript.devanagari: 18,
       ReaderScript.cyrillic: 17,
+      ReaderScript.bengali: 17,
+      ReaderScript.gurmukhi: 17,
+      ReaderScript.gujarati: 18,
+      ReaderScript.telugu: 16,
+      ReaderScript.kannada: 16,
+      ReaderScript.malayalam: 17,
+      ReaderScript.sinhala: 17,
+      ReaderScript.thai: 18,
+      ReaderScript.myanmar: 17,
+      ReaderScript.khmer: 19,
     },
   };
 
@@ -120,12 +173,54 @@ class ReaderTypography {
     _ => 0.9,
   };
 
+  /// A heading's size multiplier at [step]: the verse text's up to the
+  /// default step, then half its growth (×1.375 rather than ×1.75 at 7).
+  static double headingStepScale(int step) {
+    final scale = ReaderTextSize.scaleOf(step);
+    return scale <= 1 ? scale : 1 + (scale - 1) / 2;
+  }
+
   static const double instructionScale = 0.85;
   static const double verseNumberScale = 0.6;
   static const double minVerseNumberSize = 10;
 
   /// Tibetan at Compact keeps a fixed 1.5 rather than 1.9 × 0.9.
   static const double tibetanCompactRatio = 1.5;
+
+  /// From this step up, line heights taper by [largeStepTaper]: big text
+  /// needs less room between its lines, as Apple's and Material's type
+  /// scales tighten as they grow.
+  static const int largeStepFrom = 6;
+  static const double largeStepTaper = 0.1;
+
+  /// [script]'s line height as a multiple of its size, at size [step].
+  static double lineHeightRatio(ReaderScript script, int step) =>
+      script.lineHeightRatio -
+      (ReaderTextSize.clampStep(step) >= largeStepFrom ? largeStepTaper : 0);
+
+  /// The line box a verse line in [script] is laid out in, or null for its
+  /// font's own.
+  ///
+  /// Myanmar fonts declare a descent of 1.26 em for marks that reach about
+  /// 0.53 em below the line, so their own box leaves a deep empty band under
+  /// the letters, and trimming a line's box down to its descent, as a verse
+  /// pair does, makes that band deeper still. A Myanmar line takes a box
+  /// shaped like the Latin reading font's instead: the same height
+  /// ([metrics]), its baseline as low as a Latin line's. The room is then
+  /// above the letters, between pairs, and the lowest marks dip about
+  /// 0.08 em into the space above the line under them.
+  static StrutStyle? lineStrut(
+    ReaderScript script,
+    ReaderTextMetrics metrics,
+  ) =>
+      script.hasDeepDescent
+          ? StrutStyle(
+            fontFamily: ReaderFonts.sourceSerif4.family(),
+            fontSize: metrics.fontSize,
+            height: metrics.height,
+            forceStrutHeight: true,
+          )
+          : null;
 
   /// A line in [role] written in [script].
   ReaderTextMetrics line(ReaderTextRole role, ReaderScript script) {
@@ -135,27 +230,30 @@ class ReaderTypography {
     return ReaderTextMetrics(
       fontSize: metrics.fontSize,
       lineHeight: metrics.lineHeight,
+      // A Latin or Cyrillic original leads its translation by one weight;
+      // translations are upright and regular in every script.
       fontWeight: switch (role) {
         ReaderTextRole.originalAlone || ReaderTextRole.originalWithTranslation
-            when script == ReaderScript.latin => FontWeight.w600,
+            when script == ReaderScript.latin ||
+                script == ReaderScript.cyrillic =>
+          ReaderFonts.originalWeight,
         _ => null,
       },
-      fontStyle:
-          role == ReaderTextRole.translationUnder &&
-                  (script == ReaderScript.latin ||
-                      script == ReaderScript.cyrillic)
-              ? FontStyle.italic
-              : null,
     );
   }
 
   /// A section heading [depth] levels down, written in [script]. Headings
-  /// follow the original line's size step.
+  /// follow the original line's size step, growing at half its rate above
+  /// the default ([headingStepScale]) so a title stays a title on screen.
   ReaderTextMetrics heading(int depth, ReaderScript script) {
+    final step = settings.originalStep;
     final metrics = _metrics(
-      _alone(script) * headingScale(depth),
+      _alone(script) *
+          headingScale(depth) *
+          headingStepScale(step) /
+          ReaderTextSize.scaleOf(step),
       script,
-      settings.originalStep,
+      step,
     );
     return ReaderTextMetrics(
       fontSize: metrics.fontSize,
@@ -181,14 +279,15 @@ class ReaderTypography {
     );
   }
 
-  /// Size of a verse number whose numerals are in [script].
-  double verseNumberSize([ReaderScript script = ReaderScript.latin]) =>
+  /// Size of a verse number whose numerals are in [script], under a line at
+  /// size [step] (the original's by default).
+  double verseNumberSize([ReaderScript script = ReaderScript.latin, int? step]) =>
       math.max(
         minVerseNumberSize,
         _round(
           _alone(script) *
               verseNumberScale *
-              ReaderTextSize.scaleOf(settings.originalStep),
+              ReaderTextSize.scaleOf(step ?? settings.originalStep),
         ),
       );
 
@@ -196,8 +295,8 @@ class ReaderTypography {
   double sectionNumberSize(ReaderScript script) =>
       _round(_alone(script) * 0.9 * ReaderTextSize.scaleOf(settings.originalStep));
 
-  /// The space between lines and verses when the topmost line shown has
-  /// size [step].
+  /// The space between lines and verses when the larger line shown has size
+  /// [step] ([pairGapStep]).
   ReaderGaps gaps(int step) {
     final scale = ReaderTextSize.scaleOf(step);
     final spacing = settings.spacing;
@@ -205,8 +304,19 @@ class ReaderTypography {
       verse: _round(spacing.verseGap * scale),
       pair: _round(spacing.pairGap * scale),
       inPair: _round(spacing.inPairGap * scale),
+      number: _round(spacing.numberGap * scale),
     );
   }
+
+  /// The step a verse's gaps follow: the larger of its lines' steps, so a
+  /// small original keeps its distance from the big translation above it
+  /// and reads with its own.
+  int pairGapStep({required bool original, required bool translation}) =>
+      original && translation
+          ? math.max(settings.originalStep, settings.translationStep)
+          : original
+          ? settings.originalStep
+          : settings.translationStep;
 
   /// Size of authored plan text, which has no original or translation of
   /// its own: the old default scaled by the original line's step.
@@ -240,11 +350,14 @@ class ReaderTypography {
 
   /// The family for a line in [language]: the font picked for [role]'s line
   /// in [script], which defaults to [language]'s. Verse numbers, the pill
-  /// and the sheet follow the original's pick.
+  /// and the sheet follow the original's pick. [weight] is the line's own,
+  /// so a downloaded font draws that weight's file rather than a thickened
+  /// regular.
   String family(
     String language, {
     ReaderTextRole role = ReaderTextRole.originalAlone,
     ReaderScript? script,
+    FontWeight weight = FontWeight.w400,
   }) =>
       fonts
           .fontFor(
@@ -253,7 +366,7 @@ class ReaderTypography {
                 : ReaderFontLine.original,
             script ?? ReaderScript.ofLanguage(language),
           )
-          .family();
+          .family(weight: weight);
 
   /// The family for a section heading in [script]: Latin and Cyrillic
   /// headings are in [ReaderFonts.latinHeading] at
@@ -280,7 +393,7 @@ class ReaderTypography {
     final lineHeight =
         script == ReaderScript.tibetan && spacing == ReaderSpacing.compact
             ? scaled * tibetanCompactRatio
-            : scaled * script.lineHeightRatio * spacing.lineHeight;
+            : scaled * lineHeightRatio(script, step) * spacing.lineHeight;
     return (fontSize: _round(scaled), lineHeight: _round(lineHeight));
   }
 

@@ -2,15 +2,28 @@ import 'package:equatable/equatable.dart';
 
 /// How much room the reader leaves between lines and verses.
 enum ReaderSpacing {
-  compact(lineHeight: 0.9, verseGap: 16, pairGap: 8, inPairGap: 0),
-  normal(lineHeight: 1.0, verseGap: 24, pairGap: 12, inPairGap: 2),
-  relaxed(lineHeight: 1.15, verseGap: 32, pairGap: 16, inPairGap: 6);
+  compact(
+    lineHeight: 0.9,
+    verseGap: 16,
+    pairGap: 8,
+    inPairGap: 0,
+    numberGap: 0,
+  ),
+  normal(lineHeight: 1.0, verseGap: 24, pairGap: 12, inPairGap: 0, numberGap: 2),
+  relaxed(
+    lineHeight: 1.15,
+    verseGap: 32,
+    pairGap: 16,
+    inPairGap: 3,
+    numberGap: 6,
+  );
 
   const ReaderSpacing({
     required this.lineHeight,
     required this.verseGap,
     required this.pairGap,
     required this.inPairGap,
+    required this.numberGap,
   });
 
   /// Multiplies every line height.
@@ -23,7 +36,13 @@ enum ReaderSpacing {
   final double pairGap;
 
   /// Between the lines of one pair or block: an original and its translation.
+  /// The empty line box under the original and over the translation is
+  /// trimmed, so at Normal the letters stand about 8 apart against about
+  /// 24 between pairs, and each pair reads as one.
   final double inPairGap;
+
+  /// Above a verse's number, under its last line.
+  final double numberGap;
 
   static ReaderSpacing fromName(String? name) => ReaderSpacing.values
       .firstWhere((s) => s.name == name, orElse: () => ReaderSpacing.normal);
@@ -43,8 +62,9 @@ class ReaderTextSize extends Equatable {
   final int translationStep;
   final ReaderSpacing spacing;
 
-  /// Size multipliers of steps 1 to 7.
-  static const List<double> stepScales = [0.8, 0.9, 1.0, 1.15, 1.3, 1.5, 1.75];
+  /// Size multipliers of steps 1 to 7. Step 1 keeps a 16 translation at 14,
+  /// still comfortable to chant from.
+  static const List<double> stepScales = [0.85, 0.9, 1.0, 1.15, 1.3, 1.5, 1.75];
   static const int minStep = 1;
   static const int maxStep = 7;
   static const int defaultStep = 3;
