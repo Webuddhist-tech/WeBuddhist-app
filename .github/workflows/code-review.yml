@@ -45,5 +45,5 @@ jobs:
         timeout-minutes: 18
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # model: claude-haiku-5-5   # uncomment for a cheaper review
+          model: claude-opus-5-5      # action default is claude-sonnet-5-5
           # min_severity: medium      # fewer, higher-signal comments
