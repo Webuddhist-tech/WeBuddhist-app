@@ -301,10 +301,14 @@ class _GroupAccumulatorLeaderboardListState
             padding: const EdgeInsets.only(bottom: 16),
             child: Row(
               children: [
-                SizedBox(
-                  width: 24,
+                // Min width fits 2 digits so ranks 1–99 stay aligned;
+                // 3+ digit ranks grow on one line and push the row right.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 24),
                   child: Text(
                     '${memberIndex + 1}',
+                    maxLines: 1,
+                    softWrap: false,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -328,6 +332,8 @@ class _GroupAccumulatorLeaderboardListState
                 ),
                 Text(
                   numberFormat.format(_countOf(member)),
+                  maxLines: 1,
+                  softWrap: false,
                   style: _nameStyle(widget.isDark),
                 ),
               ],

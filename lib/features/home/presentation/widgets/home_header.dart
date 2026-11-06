@@ -35,16 +35,25 @@ class HomeTabAppBar extends ConsumerWidget implements PreferredSizeWidget {
   static const double _toolbarHeight = 44;
   static const double _actionsReserveWidth = 148;
   static const double _tibetanNameLineSpacing = 2;
+  // A very long name wraps onto this many lines, as in the home header design.
+  static const int _maxGreetingLines = 3;
+  // AppBar clamps the title scale. Measure with the same cap.
+  static const double _titleMaxTextScale = 1.34;
 
-  static double toolbarHeightFor({
-    required BuildContext context,
-    required bool hasName,
-  }) {
-    final isTwoLineTibetanGreeting = context.isTibetanLocale && hasName;
-    if (!isTwoLineTibetanGreeting) {
-      return _toolbarHeight;
-    }
+  static double _greetingMaxWidth(BuildContext context) {
+    final width =
+        MediaQuery.sizeOf(context).width -
+        MainTabAppBar.titleSpacing -
+        _actionsReserveWidth;
+    return width < 0 ? 0 : width;
+  }
 
+  static String? _wrappedDisplayName(String? firstName) {
+    if (firstName == null || firstName.isEmpty) return null;
+    return withDisplayLineBreakOpportunities(firstName);
+  }
+
+  static double _tibetanSingleNameToolbarHeight(BuildContext context) {
     final fontSize = getLocalizedFontSize(AppTextSize.body);
     final lineHeightPx = fontSize * AppFontConfig.tibetanCompactLineHeight;
     return tibetanGreetingTopPadding +
@@ -53,8 +62,89 @@ class HomeTabAppBar extends ConsumerWidget implements PreferredSizeWidget {
         lineHeightPx;
   }
 
+  static double _singleLineToolbarHeight(
+    BuildContext context,
+    String? firstName,
+  ) {
+    final hasName = firstName?.isNotEmpty ?? false;
+    if (context.isTibetanLocale && hasName) {
+      return _tibetanSingleNameToolbarHeight(context);
+    }
+    return _toolbarHeight;
+  }
+
+  /// Height for [firstName]. One line keeps today's bar height, so the gap
+  /// under a short name stays put. Wrapped lines add only their own height.
+  static double toolbarHeightFor({
+    required BuildContext context,
+    required String? firstName,
+  }) {
+    final displayName = _wrappedDisplayName(firstName);
+    final singleLineHeight = _singleLineToolbarHeight(context, firstName);
+    if (displayName == null) return singleLineHeight;
+
+    final text =
+        context.isTibetanLocale
+            ? displayName
+            : '${AppLocalizations.of(context)!.home_hello_prefix}$displayName';
+    final wrapped = _textBlock(
+      context,
+      text: text,
+      maxLines: _maxGreetingLines,
+    );
+    if (wrapped.lines <= 1) return singleLineHeight;
+
+    final oneLine = _textBlock(context, text: text, maxLines: 1);
+    return singleLineHeight + (wrapped.height - oneLine.height);
+  }
+
+  static ({double height, int lines}) _textBlock(
+    BuildContext context, {
+    required String text,
+    required int maxLines,
+  }) {
+    final isTibetan = context.isTibetanLocale;
+    final fontSize = getLocalizedFontSize(
+      isTibetan ? AppTextSize.body : AppTextSize.title,
+    );
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: MainTabAppBar.titleStyle(
+          context,
+        ).copyWith(fontSize: fontSize),
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(
+        context,
+      ).clamp(maxScaleFactor: _titleMaxTextScale),
+      locale: Localizations.localeOf(context),
+      maxLines: maxLines,
+      ellipsis: '\u2026',
+      strutStyle: context.tibetanStrutStyle(fontSize, compact: true),
+      textHeightBehavior: DefaultTextHeightBehavior.maybeOf(context),
+    )..layout(maxWidth: _greetingMaxWidth(context));
+    return (height: painter.height, lines: painter.computeLineMetrics().length);
+  }
+
   @override
   Size get preferredSize => Size.fromHeight(toolbarHeight);
+
+  /// Keeps calendar and streak on the first line when the name wraps.
+  Widget _pinToFirstLine(BuildContext context, Widget child) {
+    final anchorHeight = _singleLineToolbarHeight(context, firstName);
+    if ((toolbarHeight - anchorHeight).abs() < 0.5) return child;
+    return SizedBox(
+      height: toolbarHeight,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: SizedBox(
+          height: anchorHeight,
+          child: Center(child: child),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -69,21 +159,21 @@ class HomeTabAppBar extends ConsumerWidget implements PreferredSizeWidget {
       toolbarHeight: toolbarHeight,
       titleWidget: _Greeting(
         firstName: firstName,
-        maxWidth:
-            MediaQuery.sizeOf(context).width -
-            MainTabAppBar.titleSpacing -
-            HomeTabAppBar._actionsReserveWidth,
+        maxWidth: _greetingMaxWidth(context),
       ),
       actions: [
-        IconButton(
-          onPressed: () => context.push(AppRoutes.calendar),
-          icon: Icon(
-            AppAssets.calendarDots,
-            size: 24,
-            color: Theme.of(context).colorScheme.onSurface,
+        _pinToFirstLine(
+          context,
+          IconButton(
+            onPressed: () => context.push(AppRoutes.calendar),
+            icon: Icon(
+              AppAssets.calendarDots,
+              size: 24,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
         ),
-        _StreakBadge(count: streakCount),
+        _pinToFirstLine(context, _StreakBadge(count: streakCount)),
         const SizedBox(width: 8),
       ],
     );
@@ -180,7 +270,7 @@ class _Greeting extends StatelessWidget {
       greetingFontSize,
       compact: true,
     );
-    final displayName = firstName?.isNotEmpty == true ? firstName : null;
+    final displayName = HomeTabAppBar._wrappedDisplayName(firstName);
 
     final Widget greetingContent;
     if (context.isTibetanLocale) {
@@ -202,7 +292,8 @@ class _Greeting extends StatelessWidget {
               displayName,
               style: greetingStyle,
               strutStyle: strutStyle,
-              maxLines: 1,
+              softWrap: true,
+              maxLines: HomeTabAppBar._maxGreetingLines,
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -217,7 +308,8 @@ class _Greeting extends StatelessWidget {
         greeting,
         style: greetingStyle,
         strutStyle: strutStyle,
-        maxLines: 2,
+        softWrap: true,
+        maxLines: HomeTabAppBar._maxGreetingLines,
         overflow: TextOverflow.ellipsis,
       );
     }

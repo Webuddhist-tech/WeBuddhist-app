@@ -100,7 +100,7 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
             groupId: widget.showGroupLink ? post.groupId : null,
             timestamp: timestamp,
             stackTimestamp: true,
-            trailing: _buildHeaderActions(post, isDark),
+            trailing: _buildHeaderMenu(isDark),
           ),
           if (caption.isNotEmpty)
             Padding(
@@ -177,15 +177,19 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
                             ? AppColors.textSecondaryDark
                             : AppColors.textSecondary),
                 count: _likeCount,
-                isLoading: _likeState.isSubmitting,
                 onTap: _toggleLike,
               ),
               (
                 icon: AppAssets.chatCircle,
                 iconColor: null,
                 count: post.commentCount,
-                isLoading: false,
                 onTap: _openDetail,
+              ),
+              (
+                icon: AppAssets.readerShare,
+                iconColor: null,
+                count: null,
+                onTap: () => _sharePost(post),
               ),
             ],
           ),
@@ -194,33 +198,18 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
     );
   }
 
-  Widget _buildHeaderActions(ConnectPost post, bool isDark) {
-    final iconColor =
-        isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
-    final share = IconButton(
-      onPressed: () => _sharePost(post),
-      icon: Icon(AppAssets.readerShare, size: 20, color: iconColor),
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-    );
-    if (widget.onEdit == null && widget.onDelete == null) return share;
+  Widget? _buildHeaderMenu(bool isDark) {
+    if (widget.onEdit == null && widget.onDelete == null) return null;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        share,
-        ConnectActionMenu(
-          onEdit: widget.onEdit,
-          onDelete: widget.onDelete,
-          iconColor: iconColor,
-          style: IconButton.styleFrom(
-            padding: EdgeInsets.zero,
-            minimumSize: const Size(36, 36),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-        ),
-      ],
+    return ConnectActionMenu(
+      onEdit: widget.onEdit,
+      onDelete: widget.onDelete,
+      iconColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+      style: IconButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(36, 36),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
     );
   }
 

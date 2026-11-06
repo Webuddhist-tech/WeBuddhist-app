@@ -8,7 +8,7 @@ import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_
 import 'package:flutter_pecha/features/home/presentation/widgets/verse_likers_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Like and comment counts for the verse card, with the share action at the end.
+/// Like and comment on the left of the verse card, share on the right.
 class VerseOfDayEngagementBar extends ConsumerWidget {
   const VerseOfDayEngagementBar({
     super.key,
@@ -53,10 +53,13 @@ class VerseOfDayEngagementBar extends ConsumerWidget {
     final defaultColor =
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
     final likes = ref.watch(verseOfDayLikesProvider(verseId));
+    // Only the count matters here, so posting or paging comments does not
+    // rebuild the bar.
     final commentCount = ref.watch(
-      verseOfDayCommentsProvider(verseId).select((state) => state.total),
+      verseOfDayCommentsProvider(verseId).select(
+        (state) => state.hasLoaded && state.total > 0 ? state.total : null,
+      ),
     );
-    // Like Instagram, a count shows only once there is at least one.
     final likeCount =
         likes.isLoaded && likes.likeCount > 0 ? likes.likeCount : null;
 
@@ -70,12 +73,12 @@ class VerseOfDayEngagementBar extends ConsumerWidget {
           onTap: () => _toggleLike(context, ref),
           onCountTap: () => _showLikers(context, ref),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 16),
         _ActionButton(
           icon: AppAssets.chatCircle,
           iconColor: defaultColor,
           countColor: defaultColor,
-          count: commentCount > 0 ? commentCount : null,
+          count: commentCount,
           onTap: onCommentTap,
         ),
         const Spacer(),
@@ -101,45 +104,41 @@ class _ActionButton extends StatelessWidget {
   final int? count;
   final VoidCallback onTap;
 
-  /// When set, the count gets its own tap target beside the icon. Null
-  /// [count] hides the number (still loading, failed, or zero).
+  /// When set, the count gets its own tap target beside the icon.
   final VoidCallback? onCountTap;
+
+  /// Kept even while the count is still loading or zero, so Comment and
+  /// Share do not slide when the number appears. Larger counts grow the
+  /// slot on one line instead of wrapping.
+  static const _minCountWidth = 24.0;
 
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(20);
-    final iconWidget = Icon(icon, size: 22, color: iconColor);
-    final countLabel =
-        count == null
-            ? null
-            : Text(
-              '$count',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: countColor,
+    final countLabel = ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: _minCountWidth),
+      child:
+          count == null
+              ? null
+              : Align(
+                alignment: Alignment.centerLeft,
+                child: Transform.translate(
+                  offset: const Offset(0, 1),
+                  child: Text(
+                    '$count',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(
+                      color: countColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      height: 1,
+                      leadingDistribution: TextLeadingDistribution.even,
+                    ),
+                  ),
+                ),
               ),
-            );
-
-    if (onCountTap == null || countLabel == null) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: radius,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              iconWidget,
-              if (countLabel != null) ...[
-                const SizedBox(width: 6),
-                countLabel,
-              ],
-            ],
-          ),
-        ),
-      );
-    }
+    );
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -148,15 +147,15 @@ class _ActionButton extends StatelessWidget {
           onTap: onTap,
           borderRadius: radius,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 4, 3, 4),
-            child: iconWidget,
+            padding: const EdgeInsets.fromLTRB(4, 4, 2, 4),
+            child: Icon(icon, size: 22, color: iconColor),
           ),
         ),
         InkWell(
-          onTap: onCountTap,
+          onTap: count == null ? null : (onCountTap ?? onTap),
           borderRadius: radius,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(3, 4, 10, 4),
+            padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
             child: countLabel,
           ),
         ),

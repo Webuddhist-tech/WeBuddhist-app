@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/features/poems/presentation/widgets/poem_preview_card.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class PoemsSectionSkeleton extends StatelessWidget {
@@ -41,12 +42,22 @@ class PoemsSectionSkeleton extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Bone(
-                  width: double.infinity,
-                  height: 160,
-                  borderRadius: BorderRadius.circular(0),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Bone(
+                      width: double.infinity,
+                      height: PoemPreviewCard.coverHeightFor(
+                        constraints.maxWidth,
+                      ),
+                      borderRadius: BorderRadius.circular(0),
+                    );
+                  },
                 ),
-                Padding(
+                // Same height as the card's text area, so the section does
+                // not jump when the poems load.
+                Container(
+                  height: PoemPreviewCard.textAreaHeight,
+                  alignment: Alignment.topCenter,
                   padding: const EdgeInsets.fromLTRB(
                     _horizontalPadding,
                     14,

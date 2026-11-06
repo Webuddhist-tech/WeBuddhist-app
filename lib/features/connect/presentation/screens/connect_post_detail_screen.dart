@@ -479,7 +479,7 @@ class _ConnectPostDetailPanelState
                 count: commentCount,
                 onTap: () => _commentFocusNode.requestFocus(),
               ),
-              const Spacer(),
+              const SizedBox(width: 20),
               _PostActionButton(icon: AppAssets.readerShare, onTap: _sharePost),
             ],
           ),
@@ -590,12 +590,17 @@ class _PostActionButton extends StatelessWidget {
               Icon(icon, size: 20, color: iconColor ?? defaultColor),
             if (count != null) ...[
               const SizedBox(width: 6),
-              Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: defaultColor,
+              Transform.translate(
+                offset: const Offset(0, 1),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    color: defaultColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    height: 1,
+                    leadingDistribution: TextLeadingDistribution.even,
+                  ),
                 ),
               ),
             ],
