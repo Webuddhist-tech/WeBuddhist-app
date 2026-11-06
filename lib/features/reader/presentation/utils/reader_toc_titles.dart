@@ -57,6 +57,70 @@ String readerTitleInScript(
   );
 }
 
+/// The closing words of a Tibetan title page ("…is contained herein"),
+/// with the shads after them.
+final _titleClosing = RegExp(r'[་\s]*བཞུགས[་\s]*སོ[་།༎\s]*$');
+
+/// Shads, full stops and spaces that end a title.
+final _titleEnd = RegExp(r'[།༎\s.]+$');
+
+/// [title] reduced to what tells it from another: no head marks, no closing
+/// "bzhugs so" or shads, no case, single spaces.
+String _titleKey(String title) => stripTitleMarks(title)
+    .replaceFirst(_titleClosing, '')
+    .replaceFirst(_titleEnd, '')
+    .replaceAll(RegExp(r'\s+'), ' ')
+    .toLowerCase()
+    .trim();
+
+/// Whether [a] and [b] are the same title as a reader sees it: a text's
+/// title page ("…ལེའུ་བཞུགས་སོ།།") and its first heading ("…ལེའུ།") name
+/// it once, not twice.
+bool readerSameTitle(String a, String b) {
+  final key = _titleKey(a);
+  return key.isNotEmpty && key == _titleKey(b);
+}
+
+/// A text's title as its page heads it: [original], in the script its
+/// original is shown in, with the [translation]'s title once under it while
+/// both lines show. With the original hidden the translation's title heads
+/// the page alone, or the original's when it has none.
+({
+  String title,
+  String language,
+  String? translation,
+  String? translationLanguage,
+})
+readerTitlePair({
+  required ({String title, String language}) original,
+  ({String title, String language})? translation,
+  required bool showOriginal,
+}) {
+  final translated =
+      translation == null || translation.title.trim().isEmpty
+          ? null
+          : translation;
+  if (!showOriginal) {
+    final head = translated ?? original;
+    return (
+      title: head.title,
+      language: head.language,
+      translation: null,
+      translationLanguage: null,
+    );
+  }
+  final under =
+      translated == null || readerSameTitle(translated.title, original.title)
+          ? null
+          : translated;
+  return (
+    title: original.title,
+    language: original.language,
+    translation: under?.title,
+    translationLanguage: under?.language,
+  );
+}
+
 /// The translation's title for each section of the [original], by the
 /// original section's id. Library tables of contents hold titles only in
 /// their own edition's language, so the translation's sections are matched

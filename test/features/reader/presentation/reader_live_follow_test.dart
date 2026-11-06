@@ -450,19 +450,19 @@ Future<void> _settle(WidgetTester tester, {void Function()? onFrame}) async {
 
 void main() {
   group('where the live verse sits', () {
-    test('its middle is held two thirds down', () {
+    test('its middle is held a third of the way down', () {
       final target = liveScrollTarget(index: 8, heightFraction: 0.1)!;
       expect(target.index, 8);
-      expect(target.alignment, closeTo(2 / 3 - 0.05, 1e-9));
+      expect(target.alignment, closeTo(1 / 3 - 0.05, 1e-9));
     });
 
     test('a verse not laid out yet is placed by its top', () {
-      expect(liveScrollTarget(index: 8)!.alignment, closeTo(2 / 3, 1e-9));
+      expect(liveScrollTarget(index: 8)!.alignment, closeTo(1 / 3, 1e-9));
     });
 
-    test('a long verse still fits on screen', () {
+    test('a long verse starts at the top, so all of it is on screen', () {
       final target = liveScrollTarget(index: 8, heightFraction: 0.8)!;
-      expect(target.alignment, closeTo(0.2, 1e-9));
+      expect(target.alignment, closeTo(0, 1e-9));
     });
 
     test('a verse taller than the screen is aligned by its top', () {
@@ -474,7 +474,7 @@ void main() {
 
     test('near the start the list stays at its top', () {
       expect(
-        liveScrollTarget(index: 2, heightFraction: 0.1, distanceFromStart: 0.3),
+        liveScrollTarget(index: 2, heightFraction: 0.1, distanceFromStart: 0.2),
         (index: 0, alignment: 0.0),
       );
       // Far enough down, the verse is held in its place.
@@ -493,7 +493,7 @@ void main() {
         liveScrollTarget(
           index: 12,
           heightFraction: 0.1,
-          currentTop: 0.3,
+          currentTop: 0.2,
           afterSectionJump: true,
         ),
         isNull,
@@ -990,7 +990,7 @@ void main() {
         onFrame: () => shown.add(_shownAt(tester, 'C verse 10.')),
       );
 
-      // Every frame that shows the list shows the live verse ⅔ down.
+      // Every frame that shows the list shows the live verse ⅓ down.
       final visible = shown.whereType<double>().toList();
       expect(visible, isNotEmpty);
       expect(shown.last, isNotNull);

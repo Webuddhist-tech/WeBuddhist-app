@@ -32,6 +32,11 @@ class SectionHeader extends ConsumerWidget {
   /// Appended to the overline after a "·", e.g. the live round.
   final String? overlineTrailing;
 
+  /// The translation's title, once under the title (a text's title while
+  /// both lines show), in [translationLanguage].
+  final String? translation;
+  final String? translationLanguage;
+
   const SectionHeader({
     super.key,
     required this.section,
@@ -42,6 +47,8 @@ class SectionHeader extends ConsumerWidget {
     this.numeralLanguage,
     this.subtitle,
     this.overlineTrailing,
+    this.translation,
+    this.translationLanguage,
   });
 
   /// Size of the overline in Latin; other scripts scale it like the chrome.
@@ -54,8 +61,6 @@ class SectionHeader extends ConsumerWidget {
 
     final style = ReaderStyle.of(context, ref);
     final script = ReaderScript.of(title, language: language);
-    final fontFamily = style.type.headingFamily(language, script);
-    final metrics = style.type.heading(depth, script);
     final place = this.place;
     final subtitle = this.subtitle;
     final numeralScript = ReaderScript.ofLanguage(numeralLanguage ?? language);
@@ -98,15 +103,12 @@ class SectionHeader extends ConsumerWidget {
                 color: style.palette.verseNumber,
               ),
             ),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: metrics.fontSize,
-              fontWeight: metrics.fontWeight,
-              fontFamily: fontFamily,
-              color: style.palette.heading,
-              height: metrics.height,
-            ),
+          ReaderHeadingTitle(
+            title: title,
+            language: language,
+            depth: depth,
+            translation: translation,
+            translationLanguage: translationLanguage,
           ),
           if (subtitle != null && subtitle.isNotEmpty)
             Padding(
@@ -125,6 +127,121 @@ class SectionHeader extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// A heading's title at [depth], and the translation's title once under it
+/// in the translation lines' style. A title in a script that breaks lines
+/// at spaces is set smaller when its longest word is wider than the page,
+/// so no word is split.
+class ReaderHeadingTitle extends ConsumerWidget {
+  const ReaderHeadingTitle({
+    super.key,
+    required this.title,
+    required this.language,
+    this.depth = 0,
+    this.translation,
+    this.translationLanguage,
+  });
+
+  final String title;
+  final String language;
+  final int depth;
+  final String? translation;
+  final String? translationLanguage;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final style = ReaderStyle.of(context, ref);
+    final script = ReaderScript.of(title, language: language);
+    final metrics = style.type.heading(depth, script);
+    final headingStyle = TextStyle(
+      fontSize: metrics.fontSize,
+      fontWeight: metrics.fontWeight,
+      fontFamily: style.type.headingFamily(language, script),
+      color: style.palette.heading,
+      height: metrics.height,
+    );
+    final translation = this.translation;
+    final translationLanguage = this.translationLanguage ?? language;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scaler = MediaQuery.textScalerOf(context);
+        Text fitted(String text, TextStyle textStyle, ReaderScript script) =>
+            Text(
+              text,
+              style: textStyle.copyWith(
+                fontSize:
+                    script.breaksAtSpaces
+                        ? readerHeadingFitSize(
+                          text,
+                          textStyle,
+                          constraints.maxWidth,
+                          textScaler: scaler,
+                        )
+                        : textStyle.fontSize,
+              ),
+            );
+        if (translation == null || translation.isEmpty) {
+          return fitted(title, headingStyle, script);
+        }
+        final translationScript = ReaderScript.of(
+          translation,
+          language: translationLanguage,
+        );
+        final line = style.type.line(
+          ReaderTextRole.translationUnder,
+          translationScript,
+        );
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            fitted(title, headingStyle, script),
+            const SizedBox(height: 6),
+            fitted(
+              translation,
+              TextStyle(
+                fontSize: line.fontSize,
+                fontFamily: style.type.family(
+                  translationLanguage,
+                  role: ReaderTextRole.translationUnder,
+                  script: translationScript,
+                ),
+                color: style.palette.translation,
+                height: line.height,
+              ),
+              translationScript,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// The size to set [text] in [style] at so its widest word fits
+/// [maxWidth]: [style]'s own, or less. Words are what lies between spaces.
+double readerHeadingFitSize(
+  String text,
+  TextStyle style,
+  double maxWidth, {
+  TextScaler textScaler = TextScaler.noScaling,
+}) {
+  final size = style.fontSize ?? 14;
+  if (!maxWidth.isFinite || maxWidth <= 0) return size;
+  var widest = 0.0;
+  for (final word in text.split(RegExp(r'\s+'))) {
+    if (word.isEmpty) continue;
+    final painter = TextPainter(
+      text: TextSpan(text: word, style: style),
+      textDirection: TextDirection.ltr,
+      textScaler: textScaler,
+      maxLines: 1,
+    )..layout();
+    if (painter.width > widest) widest = painter.width;
+    painter.dispose();
+  }
+  if (widest <= maxWidth) return size;
+  return (size * maxWidth / widest).floorToDouble();
 }
 
 /// The overline's text: [label] ("Section 5 / 15") in capitals, its digits

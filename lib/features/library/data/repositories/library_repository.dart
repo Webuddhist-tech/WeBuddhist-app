@@ -538,6 +538,31 @@ class LibraryRepository {
     return -1;
   }
 
+  /// The share of [originalEditionId]'s verses that [translationEditionId]
+  /// has a counterpart for: by the library's alignment between them, else
+  /// by verse number. A translation of one homage line covers a few percent
+  /// of a sutra; a full translation nearly all of it.
+  Future<double> editionCoverage(
+    String originalEditionId,
+    String translationEditionId,
+  ) async {
+    final original = await getEditionSegments(originalEditionId);
+    if (original.isEmpty) return 1;
+    final aligned = await _alignedIds(originalEditionId, translationEditionId);
+    final int covered;
+    if (aligned.isNotEmpty) {
+      covered =
+          original
+              .where((s) => (aligned[s.id] ?? const <String>[]).isNotEmpty)
+              .length;
+    } else {
+      final numbers =
+          segmentNumbers(await getEditionSegments(translationEditionId)).toSet();
+      covered = segmentNumbers(original).where(numbers.contains).length;
+    }
+    return covered / original.length;
+  }
+
   /// Ids in [targetId] aligned to each segment of [sourceId]. The library
   /// stores a pair one way round, so the reverse is read when that is it.
   Future<Map<String, List<String>>> _alignedIds(
