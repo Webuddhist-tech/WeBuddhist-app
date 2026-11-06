@@ -8,6 +8,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intent
 import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
@@ -227,12 +228,21 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
       return const Left(NotFoundFailure('Prayer request not found'));
     }
     _mutations++;
+    // Read before the await: `ref` is unusable once this notifier is torn down,
+    // and a confirmed change still has to be counted then.
+    final analytics = ref.read(groupChatAnalyticsProvider);
     final result = await _repository.setMessageCompleted(
       request.roomId,
       messageId: messageId,
       isCompleted: isCompleted,
     );
     return result.map((updated) {
+      if (isCompleted) {
+        analytics.prayerRequestCompleted(
+          roomId: request.roomId,
+          messageId: messageId,
+        );
+      }
       if (!mounted) return unit;
       final completed = updated?.isCompleted ?? isCompleted;
       _update(

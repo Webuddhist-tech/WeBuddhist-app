@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.d
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_tile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -83,6 +84,9 @@ class _RandomPrayerOverlayState extends ConsumerState<RandomPrayerOverlay> {
   @override
   void initState() {
     super.initState();
+    ref
+        .read(groupChatAnalyticsProvider)
+        .prayerRandomOpened(scope: widget.scope);
     // While the overlay is open only a deletion clears the spotlight, so a
     // shown card leaving it means the request is gone: pick another.
     ref.listenManual(prayerRequestsProvider(widget.scope), (previous, next) {

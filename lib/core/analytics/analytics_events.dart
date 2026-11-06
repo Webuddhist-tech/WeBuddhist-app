@@ -127,6 +127,17 @@ abstract final class AnalyticsEvents {
   static const String groupMessageReacted = 'group_message_reacted';
   static const String groupMessageReplied = 'group_message_replied';
   static const String groupMessageReported = 'group_message_reported';
+
+  // Prayer requests
+  static const String prayerRequestCreated = 'prayer_request_created';
+  static const String prayerRequestPrayed = 'prayer_request_prayed';
+  static const String prayerRequestCompleted = 'prayer_request_completed';
+  static const String prayerSupportersViewed = 'prayer_supporters_viewed';
+  static const String prayerRandomOpened = 'prayer_random_opened';
+
+  // Help & contact, which is also where feedback is sent from
+  static const String helpContactOpened = 'help_contact_opened';
+  static const String helpMessageSent = 'help_message_sent';
 }
 
 /// Shared analytics property keys.
@@ -157,6 +168,13 @@ abstract final class AnalyticsProperties {
   static const String emoji = 'emoji';
   static const String action = 'action';
   static const String source = 'source';
+
+  // Prayer requests
+  static const String prayerCount = 'prayer_count';
+
+  // Help & contact
+  static const String topic = 'topic';
+  static const String imageCount = 'image_count';
 
   // Series
   static const String seriesId = 'series_id';

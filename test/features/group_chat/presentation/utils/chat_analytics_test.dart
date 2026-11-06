@@ -1,4 +1,5 @@
 import 'package:flutter_pecha/core/analytics/analytics_events.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -163,6 +164,90 @@ void main() {
       // Would fail the test as an unhandled async error if it escaped.
       throwing.messageDeleted(roomId: 'room-1', messageId: 'm1');
       await Future<void>.delayed(Duration.zero);
+    });
+  });
+
+  group('prayer request events', () {
+    const group = PrayerRoomScope.group('g1');
+    const event = PrayerRoomScope.event('e1');
+
+    test('a space or an event names itself, and only ids are sent', () {
+      analytics.prayerRequestCreated(
+        scope: group,
+        roomId: 'room-1',
+        messageId: 'm1',
+      );
+      analytics.prayerRequestCreated(
+        scope: event,
+        roomId: 'room-2',
+        messageId: 'm2',
+      );
+
+      expect(service.eventNames, [
+        AnalyticsEvents.prayerRequestCreated,
+        AnalyticsEvents.prayerRequestCreated,
+      ]);
+      expect(service.events.first.properties, {
+        'group_id': 'g1',
+        'event_id': null,
+        'room_id': 'room-1',
+        'message_id': 'm1',
+      });
+      expect(service.events.last.properties, {
+        'group_id': null,
+        'event_id': 'e1',
+        'room_id': 'room-2',
+        'message_id': 'm2',
+      });
+    });
+
+    test('a pray call carries how many prayers it took', () {
+      analytics.prayerRequestPrayed(
+        scope: group,
+        roomId: 'room-1',
+        messageId: 'm1',
+        prayerCount: 3,
+      );
+
+      expect(service.eventNames, [AnalyticsEvents.prayerRequestPrayed]);
+      expect(service.events.single.properties, {
+        'group_id': 'g1',
+        'event_id': null,
+        'room_id': 'room-1',
+        'message_id': 'm1',
+        'prayer_count': 3,
+      });
+    });
+
+    test('completed and supporters work with no room scope', () {
+      analytics.prayerRequestCompleted(roomId: 'room-1', messageId: 'm1');
+      analytics.prayerSupportersViewed(
+        roomId: 'room-1',
+        messageId: 'm1',
+        prayerCount: 12,
+      );
+
+      expect(service.eventNames, [
+        AnalyticsEvents.prayerRequestCompleted,
+        AnalyticsEvents.prayerSupportersViewed,
+      ]);
+      expect(service.events.first.properties, {
+        'group_id': null,
+        'event_id': null,
+        'room_id': 'room-1',
+        'message_id': 'm1',
+      });
+      expect(service.events.last.properties['prayer_count'], 12);
+    });
+
+    test('the random prayer overlay names its room scope', () {
+      analytics.prayerRandomOpened(scope: event);
+
+      expect(service.eventNames, [AnalyticsEvents.prayerRandomOpened]);
+      expect(service.events.single.properties, {
+        'group_id': null,
+        'event_id': 'e1',
+      });
     });
   });
 

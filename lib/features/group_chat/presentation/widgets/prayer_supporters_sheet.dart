@@ -9,6 +9,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.d
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_tile.dart';
@@ -53,6 +54,14 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    ref
+        .read(groupChatAnalyticsProvider)
+        .prayerSupportersViewed(
+          scope: widget.scope,
+          roomId: widget.request.roomId,
+          messageId: widget.request.id,
+          prayerCount: widget.request.prayerCount,
+        );
   }
 
   @override

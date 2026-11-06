@@ -6,6 +6,7 @@ import 'package:flutter_pecha/core/services/app_share/app_share_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/feedback/domain/entities/help_topic.dart';
 import 'package:flutter_pecha/features/feedback/presentation/screens/help_contact_screen.dart';
+import 'package:flutter_pecha/features/feedback/presentation/utils/help_contact_analytics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -48,6 +49,7 @@ class HomeSharePrompt extends ConsumerWidget {
                 () => HelpContactScreen.open(
                   context,
                   ref,
+                  source: HelpContactSource.homePrompt,
                   topic: HelpTopic.ideaFeedback,
                 ),
           ),

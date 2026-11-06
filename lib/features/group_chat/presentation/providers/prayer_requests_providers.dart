@@ -16,6 +16,7 @@ import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_fir
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
@@ -24,6 +25,7 @@ import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat
 import 'package:flutter_pecha/features/group_chat/presentation/providers/chat_room_live_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/pending_prayer_sends.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
@@ -123,11 +125,35 @@ class _Leftover {
   DateTime? notBefore;
 }
 
+/// Counts one answered pray call for both senders, the sheet's own and the
+/// drain after it closes. A request the answer no longer lists is not live any
+/// more, so it took none of these prayers.
+void _trackPrayed(
+  GroupChatAnalytics analytics,
+  Either<Failure, List<ChatPrayerSummaryDTO>> result, {
+  required PrayerRoomScope scope,
+  required String roomId,
+  required String messageId,
+  required int count,
+}) {
+  result.fold((_) {}, (summaries) {
+    if (!summaries.any((summary) => summary.messageId == messageId)) return;
+    analytics.prayerRequestPrayed(
+      scope: scope,
+      roomId: roomId,
+      messageId: messageId,
+      prayerCount: count,
+    );
+  });
+}
+
 /// Sends the leftovers paced like the live flush: every ready request goes
 /// out in the same window, and a 429 holds back only its own request.
 class _Drain {
   _Drain({
     required this.repository,
+    required this.analytics,
+    required this.scope,
     required this.roomId,
     required this.pacing,
     required this.sends,
@@ -137,6 +163,8 @@ class _Drain {
   });
 
   final GroupChatRepository repository;
+  final GroupChatAnalytics analytics;
+  final PrayerRoomScope scope;
   final String roomId;
   final PrayerPacing pacing;
   final PendingPrayerSends sends;
@@ -214,6 +242,14 @@ class _Drain {
     final result = await repository.prayFor(
       roomId,
       messageIds: [messageId],
+      count: count,
+    );
+    _trackPrayed(
+      analytics,
+      result,
+      scope: scope,
+      roomId: roomId,
+      messageId: messageId,
       count: count,
     );
     result.fold(
@@ -357,6 +393,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     : _repository = ref.read(groupChatRepositoryProvider),
       _pacing = ref.read(prayerPacingProvider),
       _sends = ref.read(pendingPrayerSendsProvider),
+      _analytics = ref.read(groupChatAnalyticsProvider),
       super(_seed(ref, scope)) {
     // A seeded list keeps quiet about a failed re-read, like a stored one.
     _seededFromStore = state.requests.isNotEmpty;
@@ -409,6 +446,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   final GroupChatRepository _repository;
   final PrayerPacing _pacing;
   final PendingPrayerSends _sends;
+
+  /// Held here because `ref` is unusable once the sheet has closed, and a
+  /// confirmed action still has to be counted then.
+  final GroupChatAnalytics _analytics;
 
   /// Requests with taps queued or a pray call in flight.
   final Map<String, _PendingPrayers> _pending = {};
@@ -477,6 +518,8 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     if (roomId == null) return;
     _drain = _Drain(
       repository: _repository,
+      analytics: _analytics,
+      scope: scope,
       roomId: roomId,
       pacing: _pacing,
       sends: _sends,
@@ -984,6 +1027,14 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
               messageType: ChatMessageDTO.typePrayer,
               intention: intention,
             );
+    result.fold(
+      (_) {},
+      (message) => _analytics.prayerRequestCreated(
+        scope: scope,
+        roomId: message.roomId,
+        messageId: message.id,
+      ),
+    );
     if (!mounted) return result;
     result.fold(
       (_) {},
@@ -1145,6 +1196,13 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       isCompleted: isCompleted,
     );
     return result.map((updated) {
+      if (isCompleted) {
+        _analytics.prayerRequestCompleted(
+          scope: scope,
+          roomId: roomId,
+          messageId: messageId,
+        );
+      }
       if (!mounted) return unit;
       final completed = updated?.isCompleted ?? isCompleted;
       _update(
@@ -1357,6 +1415,14 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     final result = await _repository.prayFor(
       roomId,
       messageIds: [messageId],
+      count: count,
+    );
+    _trackPrayed(
+      _analytics,
+      result,
+      scope: scope,
+      roomId: roomId,
+      messageId: messageId,
       count: count,
     );
     if (!mounted) {

@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/analytics/analytics_events.dart';
 import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
 import 'package:flutter_pecha/core/analytics/analytics_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _logger = AppLogger('GroupChatAnalytics');
@@ -148,6 +149,78 @@ class GroupChatAnalytics {
       AnalyticsProperties.reason: reason,
     });
   }
+
+  /// The server accepted a new prayer request. Its text and intention are
+  /// personal, so only the ids are sent.
+  void prayerRequestCreated({
+    required PrayerRoomScope scope,
+    required String roomId,
+    required String messageId,
+  }) {
+    _track(AnalyticsEvents.prayerRequestCreated, {
+      ..._scopeProperties(scope),
+      AnalyticsProperties.roomId: roomId,
+      AnalyticsProperties.messageId: messageId,
+    });
+  }
+
+  /// The server confirmed a pray call. Taps are sent in batches, so
+  /// [prayerCount] says how many prayers this call carried: add it up rather
+  /// than counting events.
+  void prayerRequestPrayed({
+    required PrayerRoomScope scope,
+    required String roomId,
+    required String messageId,
+    required int prayerCount,
+  }) {
+    _track(AnalyticsEvents.prayerRequestPrayed, {
+      ..._scopeProperties(scope),
+      AnalyticsProperties.roomId: roomId,
+      AnalyticsProperties.messageId: messageId,
+      AnalyticsProperties.prayerCount: prayerCount,
+    });
+  }
+
+  /// The owner marked their request accomplished. [scope] is null from "My
+  /// prayer requests", which lists requests across every room.
+  void prayerRequestCompleted({
+    PrayerRoomScope? scope,
+    required String roomId,
+    required String messageId,
+  }) {
+    _track(AnalyticsEvents.prayerRequestCompleted, {
+      ..._scopeProperties(scope),
+      AnalyticsProperties.roomId: roomId,
+      AnalyticsProperties.messageId: messageId,
+    });
+  }
+
+  /// The owner opened who is praying for their request. [prayerCount] is the
+  /// request's total when opened. [scope] is null as for
+  /// [prayerRequestCompleted].
+  void prayerSupportersViewed({
+    PrayerRoomScope? scope,
+    required String roomId,
+    required String messageId,
+    required int prayerCount,
+  }) {
+    _track(AnalyticsEvents.prayerSupportersViewed, {
+      ..._scopeProperties(scope),
+      AnalyticsProperties.roomId: roomId,
+      AnalyticsProperties.messageId: messageId,
+      AnalyticsProperties.prayerCount: prayerCount,
+    });
+  }
+
+  /// "A prayer for you" opened, which deals a random request to pray for.
+  void prayerRandomOpened({required PrayerRoomScope scope}) {
+    _track(AnalyticsEvents.prayerRandomOpened, _scopeProperties(scope));
+  }
+
+  Map<String, Object?> _scopeProperties(PrayerRoomScope? scope) => {
+    AnalyticsProperties.groupId: scope?.groupId,
+    AnalyticsProperties.eventId: scope?.eventId,
+  };
 
   void _track(String event, Map<String, Object?> properties) {
     unawaited(

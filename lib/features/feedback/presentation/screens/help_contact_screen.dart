@@ -13,6 +13,7 @@ import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.da
 import 'package:flutter_pecha/features/feedback/domain/entities/help_topic.dart';
 import 'package:flutter_pecha/features/feedback/presentation/providers/feedback_providers.dart';
 import 'package:flutter_pecha/features/feedback/presentation/utils/feedback_failure_message.dart';
+import 'package:flutter_pecha/features/feedback/presentation/utils/help_contact_analytics.dart';
 import 'package:flutter_pecha/features/feedback/presentation/utils/help_topic_l10n.dart';
 import 'package:flutter_pecha/features/feedback/presentation/widgets/feedback_image_tiles.dart';
 import 'package:flutter_pecha/features/feedback/presentation/widgets/help_topic_chip.dart';
@@ -44,12 +45,14 @@ class HelpContactScreen extends ConsumerStatefulWidget {
   static Future<void> open(
     BuildContext context,
     WidgetRef ref, {
+    required HelpContactSource source,
     HelpTopic? topic,
   }) async {
     if (!canSend(ref.read(authProvider))) {
       await LoginDrawer.show(context, ref, feature: 'feedback');
       return;
     }
+    ref.read(helpContactAnalyticsProvider).opened(source: source, topic: topic);
     final result = await context.push<HelpContactResult>(
       AppRoutes.helpContact,
       extra: topic,
@@ -164,12 +167,15 @@ class _HelpContactScreenState extends ConsumerState<HelpContactScreen> {
     final l10n = context.l10n;
     final message = _messageController.text.trim();
     final topic = _topic;
+    final imageCount = _images.length;
+    final analytics = ref.read(helpContactAnalyticsProvider);
     try {
       final receipt = await ref.read(sendFeedbackProvider)(
         message: message,
         imagePaths: [for (final image in _images) image.path],
         topic: topic,
       );
+      analytics.messageSent(topic: topic, imageCount: imageCount);
       if (!mounted) return;
       context.pop(
         HelpContactResult(

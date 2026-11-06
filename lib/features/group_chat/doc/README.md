@@ -45,7 +45,7 @@ group_chat/
 | Room lookup | `domain/usecases/resolve_group_chat_room.dart`, `data/datasource/group_chat_room_cache.dart` |
 | Prayer requests | `providers/prayer_requests_providers.dart`, `widgets/prayer_requests_sheet.dart`, `new_prayer_request_sheet.dart` |
 | DI | `providers/group_chat_providers.dart` |
-| Analytics | `utils/chat_analytics.dart` (`groupChatAnalyticsProvider`) |
+| Analytics | `utils/chat_analytics.dart` (`groupChatAnalyticsProvider`), covering group chat and prayer requests. Prayer text and intentions are never sent |
 
 ## State management
 

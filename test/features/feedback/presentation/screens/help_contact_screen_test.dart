@@ -1,6 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
+import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
+import 'package:flutter_pecha/core/analytics/analytics_service.dart';
+import 'package:flutter_pecha/core/analytics/no_op_analytics_service.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -17,11 +21,14 @@ import 'package:flutter_pecha/features/feedback/domain/entities/help_topic.dart'
 import 'package:flutter_pecha/features/feedback/domain/repositories/feedback_repository.dart';
 import 'package:flutter_pecha/features/feedback/presentation/providers/feedback_providers.dart';
 import 'package:flutter_pecha/features/feedback/presentation/screens/help_contact_screen.dart';
+import 'package:flutter_pecha/features/feedback/presentation/utils/help_contact_analytics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+
+import '../../../../core/analytics/recording_analytics_service.dart';
 
 class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
   _SignedInAuth() : super(const AuthState(isLoggedIn: true));
@@ -74,6 +81,7 @@ Future<void> _pumpApp(
   WidgetTester tester,
   _FakeRepository repository, {
   HelpTopic? topic,
+  AnalyticsService analytics = const NoOpAnalyticsService(),
 }) async {
   tester.view.physicalSize = const Size(480, 1400);
   tester.view.devicePixelRatio = 1.0;
@@ -92,6 +100,7 @@ Future<void> _pumpApp(
                           () => HelpContactScreen.open(
                             context,
                             ref,
+                            source: HelpContactSource.settings,
                             topic: topic,
                           ),
                       child: const Text(_openLabel),
@@ -124,6 +133,7 @@ Future<void> _pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        analyticsServiceProvider.overrideWithValue(analytics),
         authProvider.overrideWith((ref) => _SignedInAuth()),
         userProvider.overrideWith((ref) => _Tenzin()),
         feedbackRepositoryProvider.overrideWithValue(repository),
@@ -251,6 +261,52 @@ void main() {
 
     expect(find.text('Message sent'), findsNothing);
     expect(find.text('direct chat dm-1'), findsOneWidget);
+  });
+
+  testWidgets('opening and a sent message are tracked, never its words', (
+    tester,
+  ) async {
+    final analytics = RecordingAnalyticsService();
+    await _pumpApp(
+      tester,
+      _FakeRepository(),
+      topic: HelpTopic.ideaFeedback,
+      analytics: analytics,
+    );
+
+    await tester.enterText(find.byType(TextField), 'Private words');
+    await tester.pump();
+    await tester.tap(find.text('Send'));
+    await tester.pumpAndSettle();
+
+    expect(analytics.eventNames, [
+      AnalyticsEvents.helpContactOpened,
+      AnalyticsEvents.helpMessageSent,
+    ]);
+    expect(analytics.events.first.properties, {
+      'source': 'settings',
+      'topic': 'idea_feedback',
+    });
+    expect(analytics.events.last.properties, {
+      'topic': 'idea_feedback',
+      'image_count': 0,
+    });
+  });
+
+  testWidgets('a failed send is not tracked as sent', (tester) async {
+    final analytics = RecordingAnalyticsService();
+    await _pumpApp(
+      tester,
+      _FakeRepository(const NetworkFailure('offline')),
+      analytics: analytics,
+    );
+
+    await tester.enterText(find.byType(TextField), 'Hello');
+    await tester.pump();
+    await tester.tap(find.text('Send'));
+    await tester.pumpAndSettle();
+
+    expect(analytics.eventNames, [AnalyticsEvents.helpContactOpened]);
   });
 
   testWidgets('a failed send stays on the form with the reason', (

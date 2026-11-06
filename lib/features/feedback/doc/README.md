@@ -35,11 +35,12 @@ No local storage, no barrel file.
 | Sent sheet | `presentation/widgets/message_sent_sheet.dart` |
 | Chat context line | `domain/help_context_line.dart` |
 | Errors | `presentation/utils/feedback_failure_message.dart`, `FeedbackFailure` enum |
+| Analytics | `presentation/utils/help_contact_analytics.dart` (topic and image count only, never the message) |
 | Tests | `test/features/feedback/`, `test/core/config/protected_routes_feedback_test.dart` |
 
 ## Data flow
 
-1. `HelpContactScreen.open(context, ref, {topic})` — guests get `LoginDrawer` instead (the backend has no anonymous feedback). Entry points: Settings ("Help & contact" row) and the home share prompt's Feedback button (`HelpTopic.ideaFeedback`).
+1. `HelpContactScreen.open(context, ref, {source, topic})` — guests get `LoginDrawer` instead (the backend has no anonymous feedback). Entry points: Settings ("Help & contact" row) and the home share prompt's Feedback button (`HelpTopic.ideaFeedback`).
 2. `SendFeedback` builds a `FeedbackReport` with app version (`packageInfoProvider`) and `Platform.operatingSystem{,Version}`, calls the repository, and throws `FeedbackException(FeedbackFailure)` on failure.
 3. `FeedbackRemoteDatasource.submit` checks total image size (≤ 10 MB, `tooLargeCode`), then posts multipart: `content`, `platform`, `app_version`, optional `topic` (slug), and one `images` part per file (`feedback_{n}.{ext}`).
 4. The screen pops with a `HelpContactResult`; `open` then shows `MessageSentSheet`.

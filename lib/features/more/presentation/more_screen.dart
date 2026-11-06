@@ -16,6 +16,7 @@ import 'package:flutter_pecha/shared/widgets/app_toggle_switch.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/feedback/presentation/screens/help_contact_screen.dart';
+import 'package:flutter_pecha/features/feedback/presentation/utils/help_contact_analytics.dart';
 import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -106,7 +107,12 @@ class MoreScreen extends ConsumerWidget {
               context,
               icon: AppAssets.feedback,
               title: localizations.settings_help_contact_row,
-              onTap: () => HelpContactScreen.open(context, ref),
+              onTap:
+                  () => HelpContactScreen.open(
+                    context,
+                    ref,
+                    source: HelpContactSource.settings,
+                  ),
             ),
             const SizedBox(height: 24),
 
