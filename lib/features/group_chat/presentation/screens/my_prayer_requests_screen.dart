@@ -170,7 +170,10 @@ class _MyPrayerRequestsScreenState
       child: ListView.builder(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        // Explicit padding replaces ListView's automatic safe padding, so the
+        // system bar has to be added here or the last card cannot scroll
+        // clear of the navigation buttons.
+        padding: EdgeInsets.fromLTRB(16, 4, 16, _listBottomPadding(context)),
         itemCount: rows.length + (state.isLoadingMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index >= rows.length) {
@@ -202,6 +205,27 @@ class _MyPrayerRequestsScreenState
       ),
     );
   }
+}
+
+/// Space under the last card: the usual 24px gap, plus whatever is actually
+/// covering the bottom of the screen.
+///
+/// On some Android builds the 3-button bar is not in [MediaQueryData.padding],
+/// so [SafeArea] adds nothing and the list stops with the card still behind
+/// the buttons. [MediaQueryData.viewPadding] and the gesture inset still
+/// describe that bar. When none of them are reported, leave room for a
+/// 48px bar anyway.
+double _listBottomPadding(BuildContext context) {
+  final media = MediaQuery.of(context);
+  var inset = media.viewPadding.bottom;
+  if (media.padding.bottom > inset) inset = media.padding.bottom;
+  if (media.systemGestureInsets.bottom > inset) {
+    inset = media.systemGestureInsets.bottom;
+  }
+  if (inset == 0 && Theme.of(context).platform == TargetPlatform.android) {
+    inset = 48;
+  }
+  return 24 + inset;
 }
 
 sealed class _Row {}
