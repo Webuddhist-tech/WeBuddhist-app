@@ -25,6 +25,7 @@ class TibetanCalendarGrid extends ConsumerWidget {
     final eventDays =
         ref
             .watch(monthEventsProvider(focusedMonth))
+            .where(showsInUpcomingEvents)
             .map((e) => dateOnly(e.date))
             .toSet();
 
@@ -49,16 +50,16 @@ class TibetanCalendarGrid extends ConsumerWidget {
         daysOfWeekHeight: 28,
         locale: dateFormatLocale(context),
         selectedDayPredicate: (day) => isSameDay(day, selectedDay),
-        // TODO: Uncomment this when we have a way to select a day.
-        // onDaySelected: (selected, focused) {
-        //   ref.read(selectedCalendarDayProvider.notifier).state = dateOnly(
-        //     selected,
-        //   );
-        //   final month = DateTime(focused.year, focused.month, 1);
-        //   if (month != focusedMonth) {
-        //     ref.read(focusedCalendarMonthProvider.notifier).state = month;
-        //   }
-        // },
+        onDaySelected: (selected, focused) {
+          ref.read(selectedCalendarDayProvider.notifier).state = dateOnly(
+            selected,
+          );
+          ref.read(hasPickedCalendarDayProvider.notifier).state = true;
+          final month = DateTime(focused.year, focused.month, 1);
+          if (month != focusedMonth) {
+            ref.read(focusedCalendarMonthProvider.notifier).state = month;
+          }
+        },
         onPageChanged: (focused) {
           ref.read(focusedCalendarMonthProvider.notifier).state = DateTime(
             focused.year,

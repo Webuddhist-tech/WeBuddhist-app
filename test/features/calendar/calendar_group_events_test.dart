@@ -57,14 +57,14 @@ void main() {
       ],
     });
 
-    test('keep only joined-space events but count every row for paging', () {
-      expect(page.events.map((e) => e.eventId), ['g1']);
+    test('leave lunar days to the app but count every row for paging', () {
+      expect(page.events.map((e) => e.eventId), ['p1', 'g1']);
       expect(page.rowCount, 3);
       expect(page.hasMore, isTrue);
     });
 
     test('carry the space and the times', () {
-      final event = page.events.single;
+      final event = page.events.last;
       expect(event.kind, CalendarEventKind.group);
       expect(event.date, DateTime(2026, 2, 4));
       expect(event.sourceName, 'Tara club');

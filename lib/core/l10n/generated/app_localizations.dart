@@ -2789,6 +2789,60 @@ abstract class AppLocalizations {
   /// **'Calendar'**
   String get calendar_title;
 
+  /// No description provided for @calendar_today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get calendar_today;
+
+  /// No description provided for @calendar_no_events.
+  ///
+  /// In en, this message translates to:
+  /// **'No events'**
+  String get calendar_no_events;
+
+  /// No description provided for @calendar_add_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Add event'**
+  String get calendar_add_event;
+
+  /// No description provided for @calendar_event_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Event name'**
+  String get calendar_event_name;
+
+  /// No description provided for @calendar_event_name_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an event to your calendar'**
+  String get calendar_event_name_hint;
+
+  /// No description provided for @calendar_delete_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete event'**
+  String get calendar_delete_event;
+
+  /// No description provided for @calendar_delete_event_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete event?'**
+  String get calendar_delete_event_title;
+
+  /// No description provided for @calendar_delete_event_body.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{title}\" will be removed from your calendar. This can’t be undone.'**
+  String calendar_delete_event_body(String title);
+
+  /// No description provided for @calendar_event_deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Event deleted'**
+  String get calendar_event_deleted;
+
   /// No description provided for @calendar_source_lunar.
   ///
   /// In en, this message translates to:

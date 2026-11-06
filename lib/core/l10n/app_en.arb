@@ -721,6 +721,22 @@
   "legal_privacy_policy": "Privacy policy",
   "follow": "Follow",
   "calendar_title": "Calendar",
+  "calendar_today": "Today",
+  "calendar_no_events": "No events",
+  "calendar_add_event": "Add event",
+  "calendar_event_name": "Event name",
+  "calendar_event_name_hint": "Add an event to your calendar",
+  "calendar_delete_event": "Delete event",
+  "calendar_delete_event_title": "Delete event?",
+  "calendar_delete_event_body": "\"{title}\" will be removed from your calendar. This can’t be undone.",
+  "@calendar_delete_event_body": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "calendar_event_deleted": "Event deleted",
   "calendar_source_lunar": "Lunar calendar",
   "calendar_repeat_weekly": "Weekly",
   "calendar_repeat_monthly": "Monthly",

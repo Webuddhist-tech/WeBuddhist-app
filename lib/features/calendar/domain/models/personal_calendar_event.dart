@@ -19,3 +19,16 @@ enum PersonalRepeat {
     return null;
   }
 }
+
+/// An all-day event the user added to their own calendar.
+class PersonalCalendarEvent {
+  final String id;
+  final String title;
+  final DateTime startDate;
+
+  const PersonalCalendarEvent({
+    required this.id,
+    required this.title,
+    required this.startDate,
+  });
+}

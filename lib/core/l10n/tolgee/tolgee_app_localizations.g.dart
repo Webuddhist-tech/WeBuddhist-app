@@ -2955,6 +2955,70 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get calendar_today => TolgeeBridge.get(
+    localeName,
+    'calendar_today',
+    () => _fallback.calendar_today,
+  );
+
+  @override
+  String get calendar_no_events => TolgeeBridge.get(
+    localeName,
+    'calendar_no_events',
+    () => _fallback.calendar_no_events,
+  );
+
+  @override
+  String get calendar_add_event => TolgeeBridge.get(
+    localeName,
+    'calendar_add_event',
+    () => _fallback.calendar_add_event,
+  );
+
+  @override
+  String get calendar_event_name => TolgeeBridge.get(
+    localeName,
+    'calendar_event_name',
+    () => _fallback.calendar_event_name,
+  );
+
+  @override
+  String get calendar_event_name_hint => TolgeeBridge.get(
+    localeName,
+    'calendar_event_name_hint',
+    () => _fallback.calendar_event_name_hint,
+  );
+
+  @override
+  String get calendar_delete_event => TolgeeBridge.get(
+    localeName,
+    'calendar_delete_event',
+    () => _fallback.calendar_delete_event,
+  );
+
+  @override
+  String get calendar_delete_event_title => TolgeeBridge.get(
+    localeName,
+    'calendar_delete_event_title',
+    () => _fallback.calendar_delete_event_title,
+  );
+
+  @override
+  String calendar_delete_event_body(String title) => TolgeeBridge.format(
+    localeName,
+    'calendar_delete_event_body',
+    <String, Object>{'title': title},
+    () => _fallback.calendar_delete_event_body(title),
+  );
+
+  @override
+  String get calendar_event_deleted => TolgeeBridge.get(
+    localeName,
+    'calendar_event_deleted',
+    () => _fallback.calendar_event_deleted,
+  );
+
+  @override
   String get calendar_source_lunar => TolgeeBridge.get(
     localeName,
     'calendar_source_lunar',

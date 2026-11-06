@@ -11,7 +11,9 @@ Tibetan lunar calendar: Gregorian grid with lunar day info and moon phases (scre
 - Full calendar screen with month grid (`TibetanCalendarScreen`, route `AppRoutes.calendar` = `/home/calendar`)
 - Header card for the selected day: "Day {lunarDay}", lunar-month label, moon-phase icon
 - Month navigation (chevrons + horizontal swipe) with a lunar-month subtitle; padded leading/trailing days
-- "Upcoming events" list: moon-phase and joined-space events in the focused month from today on, collapsed to 2 with Show more/less. A space event appears once, on its next date, and opens `/home/events/:id`
+- "Upcoming events" list: moon-phase, personal and joined-space events in the focused month from today on, collapsed to 2 with Show more/less. A space event appears once, on its next date, and opens `/home/events/:id`
+- Tapping a day replaces that list with the day's events; Today goes back
+- **+** adds a personal event on the selected day. Tapping a personal card edits or deletes it
 - "Today" sync on open and when the app resumes on a new calendar day
 - Day tapping is currently disabled (`onDaySelected` commented out in `tibetan_calendar_grid.dart`), so the selected day is always today
 
@@ -56,7 +58,7 @@ calendar/
 
 - **home** — `home_header.dart` pushes `AppRoutes.calendar`. (`CalendarBannerCard` in home is a stateless widget that is not currently rendered and does not read calendar providers.)
 - **group_profile** — `group_event_repeats_sheet.dart` / `group_event_schedule_utils.dart` use `TibetanCalendarService` (Phugpa) for lunar recurrence
-- **Personal Calendar API** — `calendarFeedProvider` reads `GET /users/me/calendar` a month at a time and keeps joined-space events. Moon-phase events stay computed locally so guests and offline users keep them
+- **Personal Calendar API** — `calendarFeedProvider` reads `GET /users/me/calendar` a month at a time (personal and joined-space events). `PersonalCalendarController` creates, edits and deletes through `/users/me/calendar-events`. Moon-phase events stay computed locally so guests and offline users keep them
 - **core** — `dioProvider`, l10n, router
 
 ## Hybrid resolution pattern

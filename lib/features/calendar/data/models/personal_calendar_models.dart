@@ -7,9 +7,8 @@ String formatApiDate(DateTime date) =>
     '${date.month.toString().padLeft(2, '0')}-'
     '${date.day.toString().padLeft(2, '0')}';
 
-/// `GET /users/me/calendar` rows, keeping joined-space events. Lunar days are
-/// left out because the app works those out itself, so guests and offline users
-/// still see them.
+/// `GET /users/me/calendar` rows. Lunar days are left out: the app works those
+/// out itself so guests and offline users still see them.
 CalendarFeedPage calendarFeedPageFromJson(Map<String, dynamic> json) {
   final rows =
       (json['items'] as List? ?? const []).cast<Map<String, dynamic>>();
@@ -21,14 +20,19 @@ CalendarFeedPage calendarFeedPageFromJson(Map<String, dynamic> json) {
 }
 
 CalendarEvent? _eventFromJson(Map<String, dynamic> json) {
+  final kind = switch (json['kind']) {
+    'PERSONAL' => CalendarEventKind.personal,
+    'GROUP_EVENT' => CalendarEventKind.group,
+    _ => null,
+  };
   final id = json['id'] as String?;
-  if (json['kind'] != 'GROUP_EVENT' || id == null) return null;
+  if (kind == null || id == null) return null;
   final source = json['source'] as Map<String, dynamic>?;
   return CalendarEvent(
     date: DateTime.parse(json['date'] as String),
     lunarDay: (json['lunar_day'] as num?)?.toInt(),
     title: json['title'] as String? ?? '',
-    kind: CalendarEventKind.group,
+    kind: kind,
     eventId: id,
     sourceName: source?['name'] as String?,
     sourceAvatarUrl: source?['avatar_url'] as String?,
@@ -43,3 +47,11 @@ CalendarEvent? _eventFromJson(Map<String, dynamic> json) {
 
 DateTime? _parseLocal(Object? value) =>
     value is String ? DateTime.tryParse(value)?.toLocal() : null;
+
+PersonalCalendarEvent personalEventFromJson(Map<String, dynamic> json) {
+  return PersonalCalendarEvent(
+    id: json['id'] as String,
+    title: json['title'] as String,
+    startDate: DateTime.parse(json['start_date'] as String),
+  );
+}

@@ -4,19 +4,68 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/calendar/domain/models/calendar_event.dart';
 import 'package:flutter_pecha/features/calendar/presentation/calendar_l10n_utils.dart';
+import 'package:flutter_pecha/features/calendar/presentation/providers/calendar_event_sources_providers.dart';
+import 'package:flutter_pecha/features/calendar/presentation/widgets/personal_event_sheet.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 /// One event: its date, where it came from, its title and when it happens.
-/// Space events open their page; lunar events have nowhere to go, so they take
-/// no taps and show no chevron.
-class CalendarEventCard extends StatelessWidget {
+/// Space events open their page and personal events their edit sheet; lunar
+/// events have nowhere to go, so they take no taps and show no chevron.
+class CalendarEventCard extends ConsumerStatefulWidget {
   const CalendarEventCard({super.key, required this.event});
 
   final CalendarEvent event;
 
   @override
+  ConsumerState<CalendarEventCard> createState() => _CalendarEventCardState();
+}
+
+class _CalendarEventCardState extends ConsumerState<CalendarEventCard> {
+  /// True while a personal event's details load, before its sheet can open.
+  bool _opening = false;
+
+  Future<void> _open() async {
+    final event = widget.event;
+    final id = event.eventId;
+    if (id == null || _opening) return;
+    if (event.kind == CalendarEventKind.group) {
+      context.push(AppRoutes.groupEventPath(id));
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    setState(() => _opening = true);
+    // The feed row lacks the first date, which the repeat options come from.
+    final result = await ref
+        .read(personalCalendarRepositoryProvider)
+        .getEvent(id);
+    if (!mounted) return;
+    setState(() => _opening = false);
+    final personalEvent = result.fold((_) => null, (value) => value);
+    if (personalEvent == null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.something_went_wrong)),
+      );
+      return;
+    }
+    final deleted = await PersonalEventSheet.show(
+      context,
+      date: event.date,
+      event: personalEvent,
+    );
+    if (deleted == true) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.calendar_event_deleted)),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final event = widget.event;
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
     final locale = dateFormatLocale(context);
@@ -27,10 +76,7 @@ class CalendarEventCard extends StatelessWidget {
       borderRadius: radius,
       child: InkWell(
         borderRadius: radius,
-        onTap:
-            event.isTappable
-                ? () => context.push(AppRoutes.groupEventPath(event.eventId!))
-                : null,
+        onTap: event.isTappable ? _open : null,
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -69,7 +115,13 @@ class CalendarEventCard extends StatelessWidget {
               ),
               if (event.isTappable) ...[
                 const SizedBox(width: 8),
-                Icon(AppAssets.caretRight, size: 20, color: muted),
+                _opening
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : Icon(AppAssets.caretRight, size: 20, color: muted),
               ],
             ],
           ),

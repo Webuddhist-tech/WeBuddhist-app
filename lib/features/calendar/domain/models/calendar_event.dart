@@ -6,6 +6,9 @@ enum CalendarEventKind {
   /// Computed offline from the lunar day (new/quarter/full moons).
   lunarPhase,
 
+  /// Added by the viewer to their own calendar.
+  personal,
+
   /// From a space the viewer has joined.
   group,
 }
@@ -27,10 +30,10 @@ class CalendarEvent {
   /// Set for [CalendarEventKind.lunarPhase] events; null otherwise.
   final MoonPhase? phase;
 
-  /// The space event this entry opens. Null for lunar events.
+  /// The personal or space event this entry opens. Null for lunar events.
   final String? eventId;
 
-  /// The space the card credits. Null for lunar events.
+  /// Who the card credits: the space, or the viewer. Null for lunar events.
   final String? sourceName;
   final String? sourceAvatarUrl;
 

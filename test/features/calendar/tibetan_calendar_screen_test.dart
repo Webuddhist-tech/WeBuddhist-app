@@ -44,8 +44,10 @@ class _OfflineCalendarRepository implements CalendarRepository {
   Stream<Either<Failure, TibetanCalendarDay>> watchToday() =>
       Stream.fromFuture(getToday());
   @override
-  ScreenCacheSource<List<TibetanCalendarDay>>? monthSource(int year, int month) =>
-      null;
+  ScreenCacheSource<List<TibetanCalendarDay>>? monthSource(
+    int year,
+    int month,
+  ) => null;
 
   @override
   ScreenCacheSource<TibetanCalendarDay>? todaySource() => null;
@@ -64,7 +66,11 @@ void main() {
         calendarRepositoryProvider.overrideWithValue(
           _OfflineCalendarRepository(),
         ),
-        calendarViewerProvider.overrideWithValue((id: null)),
+        calendarViewerProvider.overrideWithValue((
+          id: null,
+          name: null,
+          avatarUrl: null,
+        )),
       ],
     );
     addTearDown(container.dispose);
