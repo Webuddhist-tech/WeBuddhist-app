@@ -72,14 +72,25 @@ jobs:
           fi
 
       - name: 🔐 Decode Android keystore
+        # The dev app has its own Play upload key (alias pecha-dev); every
+        # other flavor uses the shared upload key. The matching password and
+        # alias are chosen in the build step below. Each flavor's secret is
+        # required for that flavor, so a missing one fails loudly here rather
+        # than falling back to the wrong key and being rejected by Play.
         env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_BASE64:     ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_DEV_KEYSTORE_BASE64: ${{ secrets.ANDROID_DEV_KEYSTORE_BASE64 }}
         run: |
-          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "::error::ANDROID_KEYSTORE_BASE64 is not set — release build cannot be signed."
+          if [ "${{ inputs.flavor }}" = "dev" ]; then
+            KEYSTORE_BASE64="$ANDROID_DEV_KEYSTORE_BASE64"
+          else
+            KEYSTORE_BASE64="$ANDROID_KEYSTORE_BASE64"
+          fi
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::No keystore secret for the ${{ inputs.flavor }} flavor — release build cannot be signed."
             exit 1
           fi
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload-keystore.jks"
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload-keystore.jks"
           # build.gradle.kts treats a non-blank CM_KEYSTORE_PATH as "CI mode".
           echo "CM_KEYSTORE_PATH=$RUNNER_TEMP/upload-keystore.jks" >> "$GITHUB_ENV"
 
@@ -90,9 +101,9 @@ jobs:
         env:
           AIRBRIDGE_APP_NAME:   ${{ inputs.airbridge_app_name }}
           AIRBRIDGE_SDK_TOKEN:  ${{ secrets.AIRBRIDGE_SDK_TOKEN }}
-          CM_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          CM_KEY_ALIAS:         ${{ secrets.ANDROID_KEY_ALIAS }}
-          CM_KEY_PASSWORD:      ${{ secrets.ANDROID_KEY_PASSWORD }}
+          CM_KEYSTORE_PASSWORD: ${{ inputs.flavor == 'dev' && secrets.ANDROID_DEV_KEYSTORE_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
+          CM_KEY_ALIAS:         ${{ inputs.flavor == 'dev' && secrets.ANDROID_DEV_KEY_ALIAS || secrets.ANDROID_KEY_ALIAS }}
+          CM_KEY_PASSWORD:      ${{ inputs.flavor == 'dev' && secrets.ANDROID_DEV_KEY_PASSWORD || secrets.ANDROID_KEY_PASSWORD }}
         run: |
           # Prefer the CI-computed version (release-prod), else fall back to pubspec.
           VERSION_NAME="${{ inputs.version_name }}"

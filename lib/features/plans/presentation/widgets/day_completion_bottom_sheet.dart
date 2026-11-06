@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/widgets/plan_progress_bar.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/plan_day_share.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -236,21 +237,6 @@ class _DayCompletionBottomSheetState
   Widget _buildProgressBar(BuildContext context, double progress) {
     final barWidth = MediaQuery.of(context).size.width - 80;
 
-    return SizedBox(
-      width: barWidth,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        child: LinearProgressIndicator(
-          value: progress,
-          minHeight: 5,
-          backgroundColor: Theme.of(
-            context,
-          ).colorScheme.onSurface.withValues(alpha: 0.12),
-          valueColor: AlwaysStoppedAnimation<Color>(
-            Theme.of(context).colorScheme.error,
-          ),
-        ),
-      ),
-    );
+    return SizedBox(width: barWidth, child: PlanProgressBar(value: progress));
   }
 }
