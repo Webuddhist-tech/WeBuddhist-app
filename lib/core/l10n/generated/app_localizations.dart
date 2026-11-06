@@ -2789,6 +2789,12 @@ abstract class AppLocalizations {
   /// **'Calendar'**
   String get calendar_title;
 
+  /// No description provided for @calendar_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tibetan(Phugpa)'**
+  String get calendar_subtitle;
+
   /// No description provided for @calendar_today.
   ///
   /// In en, this message translates to:
@@ -2800,6 +2806,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No events'**
   String get calendar_no_events;
+
+  /// No description provided for @calendar_source_lunar.
+  ///
+  /// In en, this message translates to:
+  /// **'Lunar calendar'**
+  String get calendar_source_lunar;
 
   /// No description provided for @calendar_add_event.
   ///
@@ -2819,6 +2831,48 @@ abstract class AppLocalizations {
   /// **'Add an event to your calendar'**
   String get calendar_event_name_hint;
 
+  /// No description provided for @calendar_repeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get calendar_repeat;
+
+  /// No description provided for @calendar_does_not_repeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Does not repeat'**
+  String get calendar_does_not_repeat;
+
+  /// No description provided for @calendar_repeat_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get calendar_repeat_weekly;
+
+  /// No description provided for @calendar_repeat_monthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get calendar_repeat_monthly;
+
+  /// No description provided for @calendar_repeat_yearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get calendar_repeat_yearly;
+
+  /// No description provided for @calendar_repeat_monthly_lunar.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly ({day} lunar)'**
+  String calendar_repeat_monthly_lunar(String day);
+
+  /// No description provided for @calendar_repeat_yearly_lunar.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly (lunar date)'**
+  String get calendar_repeat_yearly_lunar;
+
   /// No description provided for @calendar_delete_event.
   ///
   /// In en, this message translates to:
@@ -2837,47 +2891,41 @@ abstract class AppLocalizations {
   /// **'\"{title}\" will be removed from your calendar. This can’t be undone.'**
   String calendar_delete_event_body(String title);
 
+  /// No description provided for @calendar_delete_repeating_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete repeating event'**
+  String get calendar_delete_repeating_title;
+
+  /// No description provided for @calendar_delete_this_event.
+  ///
+  /// In en, this message translates to:
+  /// **'This event'**
+  String get calendar_delete_this_event;
+
+  /// No description provided for @calendar_delete_this_event_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {date}. Future dates stay.'**
+  String calendar_delete_this_event_hint(String date);
+
+  /// No description provided for @calendar_delete_all_events.
+  ///
+  /// In en, this message translates to:
+  /// **'All events'**
+  String get calendar_delete_all_events;
+
+  /// No description provided for @calendar_delete_all_events_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Every occurrence: {repeat}'**
+  String calendar_delete_all_events_hint(String repeat);
+
   /// No description provided for @calendar_event_deleted.
   ///
   /// In en, this message translates to:
   /// **'Event deleted'**
   String get calendar_event_deleted;
-
-  /// No description provided for @calendar_source_lunar.
-  ///
-  /// In en, this message translates to:
-  /// **'Lunar calendar'**
-  String get calendar_source_lunar;
-
-  /// No description provided for @calendar_repeat_weekly.
-  ///
-  /// In en, this message translates to:
-  /// **'Weekly'**
-  String get calendar_repeat_weekly;
-
-  /// No description provided for @calendar_repeat_monthly.
-  ///
-  /// In en, this message translates to:
-  /// **'Monthly'**
-  String get calendar_repeat_monthly;
-
-  /// No description provided for @calendar_repeat_monthly_lunar.
-  ///
-  /// In en, this message translates to:
-  /// **'Monthly ({day} lunar)'**
-  String calendar_repeat_monthly_lunar(String day);
-
-  /// No description provided for @calendar_repeat_yearly.
-  ///
-  /// In en, this message translates to:
-  /// **'Yearly'**
-  String get calendar_repeat_yearly;
-
-  /// No description provided for @calendar_repeat_yearly_lunar.
-  ///
-  /// In en, this message translates to:
-  /// **'Yearly (lunar date)'**
-  String get calendar_repeat_yearly_lunar;
 
   /// No description provided for @calendar_upcoming_events.
   ///

@@ -5,19 +5,24 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/calendar/domain/models/personal_calendar_event.dart';
 import 'package:flutter_pecha/features/calendar/presentation/calendar_l10n_utils.dart';
 import 'package:flutter_pecha/features/calendar/presentation/providers/calendar_event_sources_providers.dart';
+import 'package:flutter_pecha/features/calendar/presentation/widgets/personal_event_repeats_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-/// Adds a personal event on [date], or edits [event]. The delete confirmation
-/// swaps in place, so Cancel returns to an unchanged form.
+enum _Step { form, confirmDelete }
+
+enum _DeleteScope { thisEvent, allEvents }
+
+/// Adds a personal event on [date], or edits [event] opened from [date]. The
+/// delete confirmation swaps in place, so Cancel returns to an unchanged form.
 class PersonalEventSheet extends ConsumerStatefulWidget {
   const PersonalEventSheet({super.key, required this.date, this.event});
 
   final DateTime date;
   final PersonalCalendarEvent? event;
 
-  /// Completes with true when the event was deleted.
+  /// Completes with true when the event, or one date of it, was deleted.
   static Future<bool?> show(
     BuildContext context, {
     required DateTime date,
@@ -37,9 +42,15 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
   late final TextEditingController _name = TextEditingController(
     text: widget.event?.title,
   );
-  bool _confirmingDelete = false;
+  late PersonalRepeat _repeat = widget.event?.repeat ?? PersonalRepeat.none;
+  late int? _repeatDay = widget.event?.day;
   bool _busy = false;
   bool _failed = false;
+  _Step _step = _Step.form;
+  _DeleteScope _deleteScope = _DeleteScope.thisEvent;
+
+  /// Repeat options always come from the event's first date.
+  DateTime get _firstDate => widget.event?.startDate ?? widget.date;
 
   bool get _canSave => !_busy && _name.text.trim().isNotEmpty;
 
@@ -54,7 +65,7 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
 
   /// Runs [action], keeping the sheet open with a message if it fails.
   Future<void> _submit(
-    Future<Object?> Function() action, {
+    Future<Failure?> Function() action, {
     required bool deleted,
   }) async {
     setState(() {
@@ -79,20 +90,40 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
     _submit(
       () =>
           event == null
-              ? _controller.add(title: title, startDate: widget.date)
-              : _controller.edit(event.id, title: title),
+              ? _controller.add(
+                title: title,
+                startDate: _firstDate,
+                repeat: _repeat,
+              )
+              : _controller.edit(event, title: title, repeat: _repeat),
       deleted: false,
     );
   }
 
   void _delete() {
-    _submit(() => _controller.delete(widget.event!.id), deleted: true);
+    final event = widget.event!;
+    _submit(() async {
+      if (event.isRepeating && _deleteScope == _DeleteScope.thisEvent) {
+        await _controller.skipDate(event.id, widget.date);
+        return null;
+      }
+      return _controller.delete(event.id);
+    }, deleted: true);
   }
 
-  void _setConfirming(bool value) => setState(() {
-    _failed = false;
-    _confirmingDelete = value;
-  });
+  Future<void> _pickRepeat() async {
+    final choice = await PersonalEventRepeatsSheet.show(
+      context,
+      firstDate: _firstDate,
+      selected: _repeat,
+    );
+    if (choice != null && mounted) {
+      setState(() {
+        _repeat = choice.repeat;
+        _repeatDay = choice.day;
+      });
+    }
+  }
 
   /// Shown above a sheet's buttons after a failed save or delete.
   Widget _errorMessage(BuildContext context) {
@@ -110,21 +141,23 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
   @override
   Widget build(BuildContext context) {
     final event = widget.event;
-    return _confirmingDelete && event != null
-        ? _buildConfirmDelete(context, event)
-        : _buildForm(context);
+    if (_step == _Step.confirmDelete && event != null) {
+      return event.isRepeating
+          ? _buildDeleteRepeating(context, event)
+          : _buildDeleteOneOff(context, event);
+    }
+    return _buildForm(context);
   }
 
   Widget _buildForm(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final locale = dateFormatLocale(context);
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
     final event = widget.event;
 
     return GroupEventSheet(
-      title: DateFormat(
-        'EEE d MMM',
-        dateFormatLocale(context),
-      ).format(widget.date),
+      title: DateFormat('EEE d MMM', locale).format(widget.date),
       footer: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -136,10 +169,16 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
           ),
           if (event != null) ...[
             const SizedBox(height: 12),
-            _OutlineButton(
-              label: l10n.calendar_delete_event,
-              color: AppColors.error,
-              onPressed: _busy ? null : () => _setConfirming(true),
+            _DangerOutlineButton(
+              label:
+                  event.isRepeating ? l10n.delete : l10n.calendar_delete_event,
+              onPressed:
+                  _busy
+                      ? null
+                      : () => setState(() {
+                        _failed = false;
+                        _step = _Step.confirmDelete;
+                      }),
             ),
           ],
         ],
@@ -151,9 +190,7 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
           children: [
             Text(
               l10n.calendar_event_name,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
+              style: theme.textTheme.bodySmall?.copyWith(color: muted),
             ),
             const SizedBox(height: 6),
             TextField(
@@ -173,16 +210,49 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: _pickRepeat,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.calendar_repeat,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: muted,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            calendarRepeatLabel(
+                                  l10n,
+                                  _repeat,
+                                  _repeatDay,
+                                  locale,
+                                ) ??
+                                l10n.calendar_does_not_repeat,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(AppAssets.caretRight, size: 20, color: muted),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildConfirmDelete(
-    BuildContext context,
-    PersonalCalendarEvent event,
-  ) {
+  Widget _buildDeleteOneOff(BuildContext context, PersonalCalendarEvent event) {
     final l10n = context.l10n;
     return GroupEventSheet(
       title: l10n.calendar_delete_event_title,
@@ -204,11 +274,7 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
             ),
           ),
           const SizedBox(height: 12),
-          _OutlineButton(
-            label: l10n.cancel,
-            color: Theme.of(context).colorScheme.onSurface,
-            onPressed: _busy ? null : () => _setConfirming(false),
-          ),
+          _CancelButton(onPressed: _busy ? null : _backToForm),
         ],
       ),
       child: Padding(
@@ -217,17 +283,67 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
       ),
     );
   }
+
+  Widget _buildDeleteRepeating(
+    BuildContext context,
+    PersonalCalendarEvent event,
+  ) {
+    final l10n = context.l10n;
+    final locale = dateFormatLocale(context);
+    final date = DateFormat('EEE d MMM', locale).format(widget.date);
+    final repeat =
+        calendarRepeatLabel(l10n, event.repeat, event.day, locale) ?? '';
+    return GroupEventSheet(
+      title: l10n.calendar_delete_repeating_title,
+      footer: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _errorMessage(context),
+          _DangerOutlineButton(
+            label: l10n.delete,
+            onPressed: _busy ? null : _delete,
+          ),
+          const SizedBox(height: 12),
+          _CancelButton(onPressed: _busy ? null : _backToForm),
+        ],
+      ),
+      child: SingleChildScrollView(
+        child: RadioGroup<_DeleteScope>(
+          groupValue: _deleteScope,
+          onChanged: (scope) {
+            if (scope != null) setState(() => _deleteScope = scope);
+          },
+          child: Column(
+            children: [
+              RadioListTile<_DeleteScope>(
+                value: _DeleteScope.thisEvent,
+                controlAffinity: ListTileControlAffinity.trailing,
+                title: Text(l10n.calendar_delete_this_event),
+                subtitle: Text(l10n.calendar_delete_this_event_hint(date)),
+              ),
+              RadioListTile<_DeleteScope>(
+                value: _DeleteScope.allEvents,
+                controlAffinity: ListTileControlAffinity.trailing,
+                title: Text(l10n.calendar_delete_all_events),
+                subtitle: Text(l10n.calendar_delete_all_events_hint(repeat)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _backToForm() => setState(() {
+    _failed = false;
+    _step = _Step.form;
+  });
 }
 
-class _OutlineButton extends StatelessWidget {
-  const _OutlineButton({
-    required this.label,
-    required this.color,
-    required this.onPressed,
-  });
+class _DangerOutlineButton extends StatelessWidget {
+  const _DangerOutlineButton({required this.label, required this.onPressed});
 
   final String label;
-  final Color color;
   final VoidCallback? onPressed;
 
   @override
@@ -237,11 +353,34 @@ class _OutlineButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          foregroundColor: color,
+          foregroundColor: AppColors.error,
           side: BorderSide(color: Theme.of(context).colorScheme.outline),
           shape: const StadiumBorder(),
         ),
         child: Text(label),
+      ),
+    );
+  }
+}
+
+class _CancelButton extends StatelessWidget {
+  const _CancelButton({required this.onPressed});
+
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 48,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: colors.onSurface,
+          side: BorderSide(color: colors.outline),
+          shape: const StadiumBorder(),
+        ),
+        child: Text(context.l10n.cancel),
       ),
     );
   }

@@ -27,9 +27,7 @@ class CalendarDayCell extends StatelessWidget {
     final dark = theme.brightness == Brightness.dark;
 
     final Color fill;
-    if (isSelected) {
-      fill = AppColors.primary.withValues(alpha: 0.18);
-    } else if (isOutside) {
+    if (isOutside) {
       fill = Colors.transparent;
     } else {
       fill = dark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite;
@@ -49,9 +47,7 @@ class CalendarDayCell extends StatelessWidget {
         color: fill,
         borderRadius: BorderRadius.circular(10),
         border:
-            (isToday && !isSelected)
-                ? Border.all(color: AppColors.primary.withValues(alpha: 0.6))
-                : null,
+            isSelected ? Border.all(color: theme.colorScheme.onSurface) : null,
       ),
       child: Stack(
         children: [
@@ -63,7 +59,11 @@ class CalendarDayCell extends StatelessWidget {
                   '$gregorianDay',
                   style: theme.textTheme.titleSmall?.copyWith(
                     color: primaryText,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight:
+                        isSelected || isToday
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                    decoration: isToday ? TextDecoration.underline : null,
                   ),
                 ),
                 const SizedBox(height: 1),

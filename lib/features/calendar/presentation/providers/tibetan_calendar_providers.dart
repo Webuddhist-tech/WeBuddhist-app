@@ -233,14 +233,15 @@ const _phaseDays = <int>{1, 8, 15, 30};
 
 /// Every event in the Gregorian [month]: moon phases derived from the resolved
 /// days (so they always match what the grid shows, even offline or as a guest),
-/// then personal and joined-space events from the server's feed. Ordered by
-/// date, then kind.
+/// then personal and joined-space events from the server's feed, minus any date
+/// hidden on this device. Ordered by date, then kind.
 final monthEventsProvider = Provider.family<List<CalendarEvent>, DateTime>((
   ref,
   month,
 ) {
   final days = ref.watch(resolvedMonthDaysProvider(month));
   final feed = ref.watch(calendarFeedProvider(month)).valueOrNull ?? const [];
+  final skips = ref.watch(personalEventSkipsProvider);
   final viewer = ref.watch(calendarViewerProvider);
   final lastDay = DateTime(month.year, month.month + 1, 0);
 
@@ -262,7 +263,7 @@ final monthEventsProvider = Provider.family<List<CalendarEvent>, DateTime>((
   for (final event in feed) {
     if (event.kind != CalendarEventKind.personal) {
       events.add(event);
-    } else {
+    } else if (skips[event.eventId]?.contains(dateOnly(event.date)) != true) {
       events.add(
         event.sourceName != null
             ? event

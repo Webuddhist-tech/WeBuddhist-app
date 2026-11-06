@@ -43,6 +43,7 @@ class PersonalCalendarRemoteDatasource {
   Future<PersonalCalendarEvent> createEvent({
     required String title,
     required DateTime startDate,
+    required PersonalRepeat repeat,
   }) async {
     final response = await dio.post(
       _eventsPath,
@@ -50,6 +51,7 @@ class PersonalCalendarRemoteDatasource {
         'title': title,
         'start_date': formatApiDate(startDate),
         'timezone': await IanaTimezone.resolve(),
+        'repeat': repeat.apiValue,
       },
     );
     return personalEventFromJson(response.data as Map<String, dynamic>);
@@ -59,15 +61,25 @@ class PersonalCalendarRemoteDatasource {
   Future<PersonalCalendarEvent> updateEvent(
     String id, {
     required String title,
+    required PersonalRepeat repeat,
   }) async {
     final response = await dio.patch(
       '$_eventsPath/$id',
-      data: {'title': title},
+      data: {'title': title, 'repeat': repeat.apiValue},
     );
     return personalEventFromJson(response.data as Map<String, dynamic>);
   }
 
   Future<void> deleteEvent(String id) async {
     await dio.delete('$_eventsPath/$id');
+  }
+
+  Future<List<PersonalRepeatOption>> fetchRepeatOptions(DateTime date) async {
+    final response = await dio.get(
+      '$_eventsPath/repeat-options',
+      queryParameters: {'date': formatApiDate(date)},
+      options: _noCache,
+    );
+    return repeatOptionsFromJson(response.data as Map<String, dynamic>);
   }
 }

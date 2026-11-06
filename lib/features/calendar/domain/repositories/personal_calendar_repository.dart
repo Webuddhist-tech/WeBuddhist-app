@@ -19,12 +19,20 @@ abstract class PersonalCalendarRepository {
   Future<Either<Failure, PersonalCalendarEvent>> createEvent({
     required String title,
     required DateTime startDate,
+    required PersonalRepeat repeat,
   });
 
+  /// Changes the title and repeat of every date of the event.
   Future<Either<Failure, PersonalCalendarEvent>> updateEvent(
     String id, {
     required String title,
+    required PersonalRepeat repeat,
   });
 
+  /// Removes the event and all of its dates.
   Future<Either<Failure, void>> deleteEvent(String id);
+
+  Future<Either<Failure, List<PersonalRepeatOption>>> getRepeatOptions(
+    DateTime date,
+  );
 }

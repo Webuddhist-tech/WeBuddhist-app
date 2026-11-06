@@ -44,15 +44,25 @@ class PersonalCalendarRepositoryImpl implements PersonalCalendarRepository {
   Future<Either<Failure, PersonalCalendarEvent>> createEvent({
     required String title,
     required DateTime startDate,
-  }) => _guard(() => _remote.createEvent(title: title, startDate: startDate));
+    required PersonalRepeat repeat,
+  }) => _guard(
+    () =>
+        _remote.createEvent(title: title, startDate: startDate, repeat: repeat),
+  );
 
   @override
   Future<Either<Failure, PersonalCalendarEvent>> updateEvent(
     String id, {
     required String title,
-  }) => _guard(() => _remote.updateEvent(id, title: title));
+    required PersonalRepeat repeat,
+  }) => _guard(() => _remote.updateEvent(id, title: title, repeat: repeat));
 
   @override
   Future<Either<Failure, void>> deleteEvent(String id) =>
       _guard(() => _remote.deleteEvent(id));
+
+  @override
+  Future<Either<Failure, List<PersonalRepeatOption>>> getRepeatOptions(
+    DateTime date,
+  ) => _guard(() => _remote.fetchRepeatOptions(date));
 }

@@ -1,4 +1,5 @@
-/// How a calendar event repeats, as the Personal Calendar API sends it.
+/// How a personal event repeats. Each option is worked out by the server from
+/// the event's first date.
 enum PersonalRepeat {
   none('NONE'),
   weekly('WEEKLY'),
@@ -20,15 +21,46 @@ enum PersonalRepeat {
   }
 }
 
-/// An all-day event the user added to their own calendar.
+/// An event the user added to their own calendar.
 class PersonalCalendarEvent {
   final String id;
   final String title;
+
+  /// The first date. Repeat options are always derived from it.
   final DateTime startDate;
+  final PersonalRepeat repeat;
+
+  /// The repeating day of the month, lunar or Gregorian; null otherwise.
+  final int? day;
 
   const PersonalCalendarEvent({
     required this.id,
     required this.title,
     required this.startDate,
+    this.repeat = PersonalRepeat.none,
+    this.day,
   });
+
+  bool get isRepeating => repeat != PersonalRepeat.none;
+}
+
+/// One choice in the Repeats sheet.
+class PersonalRepeatOption {
+  final PersonalRepeat repeat;
+  final int? day;
+  final int? month;
+
+  /// 0 = Monday.
+  final int? dayOfWeek;
+  final List<DateTime> nextDates;
+
+  const PersonalRepeatOption({
+    required this.repeat,
+    this.day,
+    this.month,
+    this.dayOfWeek,
+    this.nextDates = const [],
+  });
+
+  static const noRepeat = PersonalRepeatOption(repeat: PersonalRepeat.none);
 }

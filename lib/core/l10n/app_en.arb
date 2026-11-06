@@ -721,11 +721,27 @@
   "legal_privacy_policy": "Privacy policy",
   "follow": "Follow",
   "calendar_title": "Calendar",
+  "calendar_subtitle": "Tibetan(Phugpa)",
   "calendar_today": "Today",
   "calendar_no_events": "No events",
+  "calendar_source_lunar": "Lunar calendar",
   "calendar_add_event": "Add event",
   "calendar_event_name": "Event name",
   "calendar_event_name_hint": "Add an event to your calendar",
+  "calendar_repeat": "Repeat",
+  "calendar_does_not_repeat": "Does not repeat",
+  "calendar_repeat_weekly": "Weekly",
+  "calendar_repeat_monthly": "Monthly",
+  "calendar_repeat_yearly": "Yearly",
+  "calendar_repeat_monthly_lunar": "Monthly ({day} lunar)",
+  "@calendar_repeat_monthly_lunar": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "calendar_repeat_yearly_lunar": "Yearly (lunar date)",
   "calendar_delete_event": "Delete event",
   "calendar_delete_event_title": "Delete event?",
   "calendar_delete_event_body": "\"{title}\" will be removed from your calendar. This can’t be undone.",
@@ -736,20 +752,26 @@
       }
     }
   },
-  "calendar_event_deleted": "Event deleted",
-  "calendar_source_lunar": "Lunar calendar",
-  "calendar_repeat_weekly": "Weekly",
-  "calendar_repeat_monthly": "Monthly",
-  "calendar_repeat_monthly_lunar": "Monthly ({day} lunar)",
-  "@calendar_repeat_monthly_lunar": {
+  "calendar_delete_repeating_title": "Delete repeating event",
+  "calendar_delete_this_event": "This event",
+  "calendar_delete_this_event_hint": "Only {date}. Future dates stay.",
+  "@calendar_delete_this_event_hint": {
     "placeholders": {
-      "day": {
+      "date": {
         "type": "String"
       }
     }
   },
-  "calendar_repeat_yearly": "Yearly",
-  "calendar_repeat_yearly_lunar": "Yearly (lunar date)",
+  "calendar_delete_all_events": "All events",
+  "calendar_delete_all_events_hint": "Every occurrence: {repeat}",
+  "@calendar_delete_all_events_hint": {
+    "placeholders": {
+      "repeat": {
+        "type": "String"
+      }
+    }
+  },
+  "calendar_event_deleted": "Event deleted",
   "calendar_upcoming_events": "Upcoming events",
   "calendar_day_short": "DAY",
   "calendar_day_label": "Day",

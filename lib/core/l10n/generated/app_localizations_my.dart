@@ -1544,10 +1544,16 @@ class AppLocalizationsMy extends AppLocalizations {
   String get calendar_title => 'ပြက္ခဒိန်';
 
   @override
+  String get calendar_subtitle => 'Tibetan(Phugpa)';
+
+  @override
   String get calendar_today => 'Today';
 
   @override
   String get calendar_no_events => 'No events';
+
+  @override
+  String get calendar_source_lunar => 'Lunar calendar';
 
   @override
   String get calendar_add_event => 'Add event';
@@ -1557,6 +1563,29 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get calendar_event_name_hint => 'Add an event to your calendar';
+
+  @override
+  String get calendar_repeat => 'Repeat';
+
+  @override
+  String get calendar_does_not_repeat => 'Does not repeat';
+
+  @override
+  String get calendar_repeat_weekly => 'Weekly';
+
+  @override
+  String get calendar_repeat_monthly => 'Monthly';
+
+  @override
+  String get calendar_repeat_yearly => 'Yearly';
+
+  @override
+  String calendar_repeat_monthly_lunar(String day) {
+    return 'Monthly ($day lunar)';
+  }
+
+  @override
+  String get calendar_repeat_yearly_lunar => 'Yearly (lunar date)';
 
   @override
   String get calendar_delete_event => 'Delete event';
@@ -1570,27 +1599,26 @@ class AppLocalizationsMy extends AppLocalizations {
   }
 
   @override
-  String get calendar_event_deleted => 'Event deleted';
+  String get calendar_delete_repeating_title => 'Delete repeating event';
 
   @override
-  String get calendar_source_lunar => 'Lunar calendar';
+  String get calendar_delete_this_event => 'This event';
 
   @override
-  String get calendar_repeat_weekly => 'Weekly';
-
-  @override
-  String get calendar_repeat_monthly => 'Monthly';
-
-  @override
-  String calendar_repeat_monthly_lunar(String day) {
-    return 'Monthly ($day lunar)';
+  String calendar_delete_this_event_hint(String date) {
+    return 'Only $date. Future dates stay.';
   }
 
   @override
-  String get calendar_repeat_yearly => 'Yearly';
+  String get calendar_delete_all_events => 'All events';
 
   @override
-  String get calendar_repeat_yearly_lunar => 'Yearly (lunar date)';
+  String calendar_delete_all_events_hint(String repeat) {
+    return 'Every occurrence: $repeat';
+  }
+
+  @override
+  String get calendar_event_deleted => 'Event deleted';
 
   @override
   String get calendar_upcoming_events => 'လာမည့် ပွဲများ';

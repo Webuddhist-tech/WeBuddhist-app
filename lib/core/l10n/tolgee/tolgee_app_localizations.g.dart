@@ -2955,6 +2955,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get calendar_subtitle => TolgeeBridge.get(
+    localeName,
+    'calendar_subtitle',
+    () => _fallback.calendar_subtitle,
+  );
+
+  @override
   String get calendar_today => TolgeeBridge.get(
     localeName,
     'calendar_today',
@@ -2966,6 +2973,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'calendar_no_events',
     () => _fallback.calendar_no_events,
+  );
+
+  @override
+  String get calendar_source_lunar => TolgeeBridge.get(
+    localeName,
+    'calendar_source_lunar',
+    () => _fallback.calendar_source_lunar,
   );
 
   @override
@@ -2987,6 +3001,56 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'calendar_event_name_hint',
     () => _fallback.calendar_event_name_hint,
+  );
+
+  @override
+  String get calendar_repeat => TolgeeBridge.get(
+    localeName,
+    'calendar_repeat',
+    () => _fallback.calendar_repeat,
+  );
+
+  @override
+  String get calendar_does_not_repeat => TolgeeBridge.get(
+    localeName,
+    'calendar_does_not_repeat',
+    () => _fallback.calendar_does_not_repeat,
+  );
+
+  @override
+  String get calendar_repeat_weekly => TolgeeBridge.get(
+    localeName,
+    'calendar_repeat_weekly',
+    () => _fallback.calendar_repeat_weekly,
+  );
+
+  @override
+  String get calendar_repeat_monthly => TolgeeBridge.get(
+    localeName,
+    'calendar_repeat_monthly',
+    () => _fallback.calendar_repeat_monthly,
+  );
+
+  @override
+  String get calendar_repeat_yearly => TolgeeBridge.get(
+    localeName,
+    'calendar_repeat_yearly',
+    () => _fallback.calendar_repeat_yearly,
+  );
+
+  @override
+  String calendar_repeat_monthly_lunar(String day) => TolgeeBridge.format(
+    localeName,
+    'calendar_repeat_monthly_lunar',
+    <String, Object>{'day': day},
+    () => _fallback.calendar_repeat_monthly_lunar(day),
+  );
+
+  @override
+  String get calendar_repeat_yearly_lunar => TolgeeBridge.get(
+    localeName,
+    'calendar_repeat_yearly_lunar',
+    () => _fallback.calendar_repeat_yearly_lunar,
   );
 
   @override
@@ -3012,53 +3076,47 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get calendar_delete_repeating_title => TolgeeBridge.get(
+    localeName,
+    'calendar_delete_repeating_title',
+    () => _fallback.calendar_delete_repeating_title,
+  );
+
+  @override
+  String get calendar_delete_this_event => TolgeeBridge.get(
+    localeName,
+    'calendar_delete_this_event',
+    () => _fallback.calendar_delete_this_event,
+  );
+
+  @override
+  String calendar_delete_this_event_hint(String date) => TolgeeBridge.format(
+    localeName,
+    'calendar_delete_this_event_hint',
+    <String, Object>{'date': date},
+    () => _fallback.calendar_delete_this_event_hint(date),
+  );
+
+  @override
+  String get calendar_delete_all_events => TolgeeBridge.get(
+    localeName,
+    'calendar_delete_all_events',
+    () => _fallback.calendar_delete_all_events,
+  );
+
+  @override
+  String calendar_delete_all_events_hint(String repeat) => TolgeeBridge.format(
+    localeName,
+    'calendar_delete_all_events_hint',
+    <String, Object>{'repeat': repeat},
+    () => _fallback.calendar_delete_all_events_hint(repeat),
+  );
+
+  @override
   String get calendar_event_deleted => TolgeeBridge.get(
     localeName,
     'calendar_event_deleted',
     () => _fallback.calendar_event_deleted,
-  );
-
-  @override
-  String get calendar_source_lunar => TolgeeBridge.get(
-    localeName,
-    'calendar_source_lunar',
-    () => _fallback.calendar_source_lunar,
-  );
-
-  @override
-  String get calendar_repeat_weekly => TolgeeBridge.get(
-    localeName,
-    'calendar_repeat_weekly',
-    () => _fallback.calendar_repeat_weekly,
-  );
-
-  @override
-  String get calendar_repeat_monthly => TolgeeBridge.get(
-    localeName,
-    'calendar_repeat_monthly',
-    () => _fallback.calendar_repeat_monthly,
-  );
-
-  @override
-  String calendar_repeat_monthly_lunar(String day) => TolgeeBridge.format(
-    localeName,
-    'calendar_repeat_monthly_lunar',
-    <String, Object>{'day': day},
-    () => _fallback.calendar_repeat_monthly_lunar(day),
-  );
-
-  @override
-  String get calendar_repeat_yearly => TolgeeBridge.get(
-    localeName,
-    'calendar_repeat_yearly',
-    () => _fallback.calendar_repeat_yearly,
-  );
-
-  @override
-  String get calendar_repeat_yearly_lunar => TolgeeBridge.get(
-    localeName,
-    'calendar_repeat_yearly_lunar',
-    () => _fallback.calendar_repeat_yearly_lunar,
   );
 
   @override

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/core/storage/storage_service.dart';
 import 'package:flutter_pecha/features/calendar/domain/entities/tibetan_calendar_day.dart';
 import 'package:flutter_pecha/features/calendar/domain/models/calendar_event.dart';
 import 'package:flutter_pecha/features/calendar/domain/models/personal_calendar_event.dart';
@@ -45,14 +47,17 @@ class _OfflineCalendar implements CalendarRepository {
   ScreenCacheSource<TibetanCalendarDay>? todaySource() => null;
 }
 
-/// Stands in for the server: a personal event falls on its start date.
+/// Stands in for the server: a personal event falls on its start date, or on
+/// every date in [recurringDates] when it repeats.
 class _FakeServer implements PersonalCalendarRepository {
   _FakeServer({
     List<PersonalCalendarEvent> events = const [],
+    this.recurringDates = const [],
     this.groupRows = const [],
   }) : events = [...events];
 
   List<PersonalCalendarEvent> events;
+  final List<DateTime> recurringDates;
   final List<CalendarEvent> groupRows;
   bool failWrites = false;
   int feedReads = 0;
@@ -71,12 +76,15 @@ class _FakeServer implements PersonalCalendarRepository {
     final rows = <CalendarEvent>[
       ...groupRows,
       for (final event in events)
-        CalendarEvent(
-          date: event.startDate,
-          title: event.title,
-          kind: CalendarEventKind.personal,
-          eventId: event.id,
-        ),
+        for (final date
+            in event.isRepeating ? recurringDates : [event.startDate])
+          CalendarEvent(
+            date: date,
+            title: event.title,
+            kind: CalendarEventKind.personal,
+            eventId: event.id,
+            repeat: event.repeat,
+          ),
     ];
     return Right(
       CalendarFeedPage(events: rows, rowCount: rows.length, hasMore: false),
@@ -91,12 +99,14 @@ class _FakeServer implements PersonalCalendarRepository {
   Future<Either<Failure, PersonalCalendarEvent>> createEvent({
     required String title,
     required DateTime startDate,
+    required PersonalRepeat repeat,
   }) async {
     if (failWrites) return _failure;
     final event = PersonalCalendarEvent(
       id: 'new',
       title: title,
       startDate: startDate,
+      repeat: repeat,
     );
     events.add(event);
     return Right(event);
@@ -106,6 +116,7 @@ class _FakeServer implements PersonalCalendarRepository {
   Future<Either<Failure, PersonalCalendarEvent>> updateEvent(
     String id, {
     required String title,
+    required PersonalRepeat repeat,
   }) async {
     if (failWrites) return _failure;
     final old = events.firstWhere((event) => event.id == id);
@@ -113,6 +124,7 @@ class _FakeServer implements PersonalCalendarRepository {
       id: id,
       title: title,
       startDate: old.startDate,
+      repeat: repeat,
     );
     events = [
       for (final e in events)
@@ -127,6 +139,42 @@ class _FakeServer implements PersonalCalendarRepository {
     events = events.where((event) => event.id != id).toList();
     return const Right(null);
   }
+
+  @override
+  Future<Either<Failure, List<PersonalRepeatOption>>> getRepeatOptions(
+    DateTime date,
+  ) async => Right([
+    PersonalRepeatOption.noRepeat,
+    PersonalRepeatOption(
+      repeat: PersonalRepeat.weekly,
+      dayOfWeek: 4,
+      nextDates: [DateTime(2026, 2, 27)],
+    ),
+    const PersonalRepeatOption(repeat: PersonalRepeat.monthlyLunar, day: 3),
+  ]);
+}
+
+class _MemoryStorage implements StorageService {
+  final values = <String, Object?>{};
+
+  @override
+  Future<T?> get<T>(String key) async => values[key] as T?;
+  @override
+  Future<bool> set<T>(String key, T value) async {
+    values[key] = value;
+    return true;
+  }
+
+  @override
+  Future<bool> delete(String key) async => values.remove(key) != null;
+  @override
+  Future<bool> clear() async {
+    values.clear();
+    return true;
+  }
+
+  @override
+  Future<bool> containsKey(String key) async => values.containsKey(key);
 }
 
 void main() {
@@ -137,11 +185,13 @@ void main() {
 
   // 20 Feb 2026 is lunar day 3, so the day holds only what a test adds.
   final day = DateTime(2026, 2, 20);
+  final nextFriday = DateTime(2026, 2, 27);
   final month = DateTime(2026, 2, 1);
 
   Future<ProviderContainer> pump(
     WidgetTester tester, {
     _FakeServer? server,
+    _MemoryStorage? storage,
     void Function(String path)? onPush,
   }) async {
     final container = ProviderContainer(
@@ -155,6 +205,7 @@ void main() {
         personalCalendarRepositoryProvider.overrideWithValue(
           server ?? _FakeServer(),
         ),
+        storageServiceProvider.overrideWithValue(storage ?? _MemoryStorage()),
       ],
     );
     addTearDown(container.dispose);
@@ -221,6 +272,7 @@ void main() {
 
     final save = find.widgetWithText(ElevatedButton, 'Save');
     expect(tester.widget<ElevatedButton>(save).onPressed, isNull);
+    expect(find.text('Does not repeat'), findsOneWidget);
     expect(find.text('Delete event'), findsNothing);
 
     await tester.enterText(find.byType(TextField), 'Rinpoche birthday');
@@ -258,6 +310,31 @@ void main() {
     expect(server.events, isEmpty);
   });
 
+  testWidgets('the Repeats sheet offers the server options and saves one', (
+    tester,
+  ) async {
+    final server = _FakeServer();
+    await pump(tester, server: server);
+    final context = tester.element(find.byType(CalendarEventsSection));
+
+    PersonalEventSheet.show(context, date: day);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Puja');
+    await tester.tap(find.text('Does not repeat'));
+    await tester.pumpAndSettle();
+
+    // "Does not repeat" appears once, from the app, not again from the server.
+    expect(find.text('Does not repeat'), findsNWidgets(2)); // Sheet and row.
+    expect(find.text('Monthly on the 3rd lunar day'), findsOneWidget);
+    await tester.tap(find.text('Weekly on Friday'));
+    await tester.pumpAndSettle();
+    expect(find.text('Weekly'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+    await tester.pumpAndSettle();
+    expect(server.events.single.repeat, PersonalRepeat.weekly);
+  });
+
   testWidgets('deleting a one-off confirms, can cancel, and shows a toast', (
     tester,
   ) async {
@@ -287,6 +364,51 @@ void main() {
     expect(server.events, isEmpty);
     expect(find.text('Event deleted'), findsOneWidget);
     expect(find.text('No events'), findsOneWidget);
+  });
+
+  testWidgets('"This event" hides one date, "All events" deletes the event', (
+    tester,
+  ) async {
+    final storage = _MemoryStorage();
+    final server = _FakeServer(
+      events: [
+        PersonalCalendarEvent(
+          id: 'a',
+          title: 'Puja',
+          startDate: DateTime(2026, 2, 6),
+          repeat: PersonalRepeat.weekly,
+        ),
+      ],
+      recurringDates: [day, nextFriday],
+    );
+    final container = await pump(tester, server: server, storage: storage);
+
+    Future<void> openDelete() async {
+      await tester.tap(find.text('Puja'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete repeating event'), findsOneWidget);
+    }
+
+    await openDelete();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    // The server keeps the event; this device stops showing that one date.
+    expect(server.events, hasLength(1));
+    expect(find.text('No events'), findsOneWidget);
+    expect(storage.values.values.single, contains('2026-02-20'));
+
+    container.read(selectedCalendarDayProvider.notifier).state = nextFriday;
+    await tester.pumpAndSettle();
+    await openDelete();
+    await tester.tap(find.text('All events'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
+    await tester.pumpAndSettle();
+    expect(server.events, isEmpty);
+    expect(container.read(personalEventSkipsProvider), isEmpty);
   });
 
   testWidgets('a space card opens its event page', (tester) async {

@@ -53,5 +53,33 @@ PersonalCalendarEvent personalEventFromJson(Map<String, dynamic> json) {
     id: json['id'] as String,
     title: json['title'] as String,
     startDate: DateTime.parse(json['start_date'] as String),
+    repeat:
+        PersonalRepeat.fromApi(json['repeat'] as String?) ??
+        PersonalRepeat.none,
+    day: (json['day'] as num?)?.toInt(),
   );
+}
+
+/// `GET /users/me/calendar-events/repeat-options`. Options the app doesn't know
+/// are dropped, since it couldn't save them back.
+List<PersonalRepeatOption> repeatOptionsFromJson(Map<String, dynamic> json) {
+  final options = <PersonalRepeatOption>[];
+  for (final row
+      in (json['options'] as List? ?? const []).cast<Map<String, dynamic>>()) {
+    final repeat = PersonalRepeat.fromApi(row['repeat'] as String?);
+    if (repeat == null) continue;
+    options.add(
+      PersonalRepeatOption(
+        repeat: repeat,
+        day: (row['day'] as num?)?.toInt(),
+        month: (row['month'] as num?)?.toInt(),
+        dayOfWeek: (row['day_of_week'] as num?)?.toInt(),
+        nextDates: [
+          for (final date in row['next_dates'] as List? ?? const [])
+            DateTime.parse(date as String),
+        ],
+      ),
+    );
+  }
+  return options;
 }
