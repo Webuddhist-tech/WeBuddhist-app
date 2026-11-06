@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
+import 'package:flutter_pecha/core/analytics/analytics_service.dart';
 import 'package:flutter_pecha/core/analytics/no_op_analytics_service.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/network/connectivity_service.dart';
@@ -33,8 +35,28 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
+import '../../../../core/analytics/recording_analytics_service.dart';
 import '../../../reader/fakes/fake_local_storage.dart';
 import 'auth_notifier_test.mocks.dart';
+
+/// Records what the app tells analytics about who the user is.
+class _IdentityRecorder extends RecordingAnalyticsService {
+  final List<Map<String, Object?>?> identifyProperties = [];
+  final List<Map<String, Object?>> superProperties = [];
+
+  @override
+  Future<void> identify({
+    required String userId,
+    Map<String, Object?>? properties,
+  }) async {
+    identifyProperties.add(properties);
+  }
+
+  @override
+  Future<void> setSuperProperties(Map<String, Object?> properties) async {
+    superProperties.add(properties);
+  }
+}
 
 @GenerateMocks([
   LoginUseCase,
@@ -93,14 +115,13 @@ void main() {
   /// Builds the notifier and waits for the launch restore to settle.
   Future<AuthState> restore({
     Duration stepBudget = const Duration(seconds: 10),
+    AnalyticsService analytics = const NoOpAnalyticsService(),
   }) async {
     container = ProviderContainer(
       overrides: [
         localStorageServiceProvider.overrideWithValue(storage),
         connectivityServiceProvider.overrideWithValue(connectivity),
-        analyticsServiceProvider.overrideWithValue(
-          const NoOpAnalyticsService(),
-        ),
+        analyticsServiceProvider.overrideWithValue(analytics),
         onboardingRepositoryProvider.overrideWithValue(onboardingRepo),
         userProvider.overrideWith(
           (ref) => UserNotifier(
@@ -166,6 +187,36 @@ void main() {
     final state = await restore();
 
     expect(state.isLoading, isFalse);
+  });
+
+  test('a restored session sends no person properties', () async {
+    final payload = base64Url.encode(
+      utf8.encode(jsonEncode({'sub': 'auth0|u1'})),
+    );
+    when(hasValid(any)).thenAnswer((_) async => const Right(true));
+    when(getCreds(any)).thenAnswer(
+      (_) async => Right(
+        AuthCredentials(
+          accessToken: 'access',
+          idToken: 'header.$payload.signature',
+          tokenType: 'Bearer',
+          expiresIn: 3600,
+          obtainedAt: DateTime.now(),
+        ),
+      ),
+    );
+    when(
+      onboardingRepo.isOnboardingCompleted(),
+    ).thenAnswer((_) async => const Right(true));
+    when(getUser(any)).thenThrow(StateError('profile not needed here'));
+    final analytics = _IdentityRecorder();
+
+    await restore(analytics: analytics);
+
+    expect(analytics.identifyProperties, [null]);
+    expect(analytics.superProperties, [
+      {'is_guest': false},
+    ]);
   });
 
   test('a failed profile load keeps a restored session signed in', () async {

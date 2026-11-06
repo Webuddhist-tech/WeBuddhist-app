@@ -436,7 +436,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         _authAnalytics.loginFailed(
           method: connection,
           source: source,
-          reason: failure.message,
+          failureMessage: failure.message,
         );
         state = state.copyWith(
           isLoading: false,
@@ -481,6 +481,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         userId: userId,
         isGuest: false,
         epoch: epoch,
+        isLogin: true,
       );
       if (!_isAuthEpochCurrent(epoch)) return;
     }
@@ -795,12 +796,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String userId,
     required bool isGuest,
     required int epoch,
+    bool isLogin = false,
   }) async {
     _identityEpoch = epoch;
-    await _analytics.identify(
-      userId: userId,
-      properties: {AnalyticsProperties.isGuest: isGuest},
-    );
+    final guestFlag = {AnalyticsProperties.isGuest: isGuest};
+    await Future.wait([
+      // Person properties go out once, at login. A restored session already
+      // has them, and re-sending makes the Android SDK emit `$set` every start.
+      _analytics.identify(
+        userId: userId,
+        properties: isLogin ? guestFlag : null,
+      ),
+      // No `$set` here. Replaces the flag a guest session left on every event,
+      // and keeps Clarity's per-session tag on restored sessions.
+      _analytics.setSuperProperties(guestFlag),
+    ]);
   }
 
   /// Resets analytics unless the current auth attempt owns its identity.

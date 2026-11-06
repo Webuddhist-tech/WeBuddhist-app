@@ -47,6 +47,11 @@ abstract final class AnalyticsEvents {
       'recitation_collection_item_completed';
   static const String recitationCollectionCompleted =
       'recitation_collection_completed';
+  static const String groupTabViewed = 'group_tab_viewed';
+  static const String postViewed = 'post_viewed';
+  static const String postOpened = 'post_opened';
+  static const String postLinkOpened = 'post_link_opened';
+  static const String groupPostCreated = 'group_post_created';
 
   // Entry points (plan §5.1)
   static const String deepLinkOpened = 'deep_link_opened';
@@ -74,8 +79,12 @@ abstract final class AnalyticsEvents {
 
   // Home (§5.4)
   static const String homeViewed = 'home_viewed';
+  static const String tabViewed = 'tab_viewed';
   static const String seriesEnrolled = 'series_enrolled';
   static const String seriesUnenrolled = 'series_unenrolled';
+
+  // Me page
+  static const String meItemTapped = 'me_item_tapped';
 
   // Sharing, cross-cutting (§5.15): one event, `surface` says what was shared
   static const String contentShared = 'content_shared';
@@ -134,6 +143,8 @@ abstract final class AnalyticsProperties {
   // Auth
   static const String method = 'method';
   static const String reason = 'reason';
+  static const String reasonCode = 'reason_code';
+  static const String reasonDetail = 'reason_detail';
   static const String isGuest = 'is_guest';
 
   // Plans
@@ -206,6 +217,10 @@ abstract final class AnalyticsProperties {
   static const String streakCurrent = 'streak_current';
   static const String surface = 'surface';
   static const String format = 'format';
+  static const String tab = 'tab';
+
+  // Me page
+  static const String item = 'item';
 
   // Routine
   static const String itemType = 'item_type';
@@ -279,6 +294,9 @@ abstract final class AnalyticsProperties {
   static const String collectionId = 'collection_id';
   static const String completedCount = 'completed_count';
   static const String accumulatorId = 'accumulator_id';
+  static const String postId = 'post_id';
+  static const String position = 'position';
+  static const String hasMedia = 'has_media';
 
   /// PostHog's per-event group map, e.g. `{sangha: <group id>}`.
   static const String groups = r'$groups';

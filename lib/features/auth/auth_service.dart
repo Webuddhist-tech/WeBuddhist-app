@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:auth0_flutter/auth0_flutter.dart';
 import 'package:flutter/foundation.dart';
@@ -109,8 +110,18 @@ class AuthService {
       throw AuthException('Login failed: ${e.message}', code: e.code);
     } catch (e) {
       _logger.error('Unexpected login error for $connection', e);
-      throw AuthException('An unexpected error occurred during login');
+      throw AuthException(_unexpectedLoginMessage(e));
     }
+  }
+
+  /// Keeps the cause in the text, which is all that reaches `reason_code`.
+  String _unexpectedLoginMessage(Object error) {
+    // `_auth0` is only set once the startup config load has succeeded.
+    if (!_isInitialized) return 'Login is not configured';
+    if (error is SocketException || error is TimeoutException) {
+      return 'Network error during login';
+    }
+    return 'An unexpected error occurred during login';
   }
 
   Future<Credentials?> getCredentials() async {
