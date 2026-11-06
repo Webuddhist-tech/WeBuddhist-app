@@ -10,10 +10,14 @@ class PracticeMyChantsCollectionListTile extends StatelessWidget {
     super.key,
     required this.collection,
     this.onTap,
+    this.showTrailingCaret = true,
+    this.includeOuterPadding = true,
   });
 
   final MyRecitationListCollectionModel collection;
   final VoidCallback? onTap;
+  final bool showTrailingCaret;
+  final bool includeOuterPadding;
 
   static const double _thumbnailSize = 56;
   static const double _thumbnailRadius = 8;
@@ -28,51 +32,50 @@ class PracticeMyChantsCollectionListTile extends StatelessWidget {
       collection.itemCount,
     );
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: Material(
-        color: isDark ? AppColors.cardBackgroundDark : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                CachedNetworkImageWidget(
-                  imageUrl: collection.imageUrl,
-                  fallbackAsset: AppAssets.myCollectionDefault,
-                  width: _thumbnailSize,
-                  height: _thumbnailSize,
-                  fit: BoxFit.cover,
-                  borderRadius: BorderRadius.circular(_thumbnailRadius),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        collection.name,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+    final tile = Material(
+      color: isDark ? AppColors.cardBackgroundDark : Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            children: [
+              CachedNetworkImageWidget(
+                imageUrl: collection.imageUrl,
+                fallbackAsset: AppAssets.myCollectionDefault,
+                width: _thumbnailSize,
+                height: _thumbnailSize,
+                fit: BoxFit.cover,
+                borderRadius: BorderRadius.circular(_thumbnailRadius),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      collection.name,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        chantLabel,
-                        style: TextStyle(fontSize: 13, color: subtitleColor),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      chantLabel,
+                      style: TextStyle(fontSize: 13, color: subtitleColor),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
+              ),
+              if (showTrailingCaret) ...[
                 const SizedBox(width: 8),
                 Container(
                   width: 36,
@@ -91,10 +94,19 @@ class PracticeMyChantsCollectionListTile extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
+            ],
           ),
         ),
       ),
+    );
+
+    if (!includeOuterPadding) {
+      return tile;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: tile,
     );
   }
 }
