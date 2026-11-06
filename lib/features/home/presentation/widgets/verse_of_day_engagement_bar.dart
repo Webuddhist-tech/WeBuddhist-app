@@ -8,7 +8,7 @@ import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_
 import 'package:flutter_pecha/features/home/presentation/widgets/verse_likers_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Like, comment, and share for the verse card, grouped on the left.
+/// Like and comment on the left of the verse card, share on the right.
 class VerseOfDayEngagementBar extends ConsumerWidget {
   const VerseOfDayEngagementBar({
     super.key,
@@ -53,11 +53,15 @@ class VerseOfDayEngagementBar extends ConsumerWidget {
     final defaultColor =
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
     final likes = ref.watch(verseOfDayLikesProvider(verseId));
-    final comments = ref.watch(verseOfDayCommentsProvider(verseId));
+    // Only the count matters here, so posting or paging comments does not
+    // rebuild the bar.
+    final commentCount = ref.watch(
+      verseOfDayCommentsProvider(verseId).select(
+        (state) => state.hasLoaded && state.total > 0 ? state.total : null,
+      ),
+    );
     final likeCount =
         likes.isLoaded && likes.likeCount > 0 ? likes.likeCount : null;
-    final commentCount =
-        comments.hasLoaded && comments.total > 0 ? comments.total : null;
 
     return Row(
       children: [
@@ -77,7 +81,7 @@ class VerseOfDayEngagementBar extends ConsumerWidget {
           count: commentCount,
           onTap: onCommentTap,
         ),
-        const SizedBox(width: 16),
+        const Spacer(),
         trailing,
       ],
     );
@@ -104,14 +108,15 @@ class _ActionButton extends StatelessWidget {
   final VoidCallback? onCountTap;
 
   /// Kept even while the count is still loading or zero, so Comment and
-  /// Share do not slide when the number appears.
-  static const _countWidth = 24.0;
+  /// Share do not slide when the number appears. Larger counts grow the
+  /// slot on one line instead of wrapping.
+  static const _minCountWidth = 24.0;
 
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(20);
-    final countLabel = SizedBox(
-      width: _countWidth,
+    final countLabel = ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: _minCountWidth),
       child:
           count == null
               ? null
@@ -121,6 +126,8 @@ class _ActionButton extends StatelessWidget {
                   offset: const Offset(0, 1),
                   child: Text(
                     '$count',
+                    maxLines: 1,
+                    softWrap: false,
                     style: TextStyle(
                       color: countColor,
                       fontSize: 14,

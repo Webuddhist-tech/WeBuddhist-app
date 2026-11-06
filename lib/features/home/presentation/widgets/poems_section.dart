@@ -61,8 +61,7 @@ class _PoemsContentState extends State<_PoemsContent> {
   void _openViewer(BuildContext context, {String? initialPoemId}) {
     context.pushNamed(
       'home-poems',
-      extra:
-          initialPoemId != null ? {'initialPoemId': initialPoemId} : null,
+      extra: initialPoemId != null ? {'initialPoemId': initialPoemId} : null,
     );
   }
 
@@ -77,7 +76,8 @@ class _PoemsContentState extends State<_PoemsContent> {
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
     final dotColor = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final inactiveDotColor = isDark ? AppColors.grey800 : AppColors.grey300;
-    final dotTrackColor = isDark ? AppColors.surfaceDark : AppColors.surfaceWhite;
+    final dotTrackColor =
+        isDark ? AppColors.surfaceDark : AppColors.surfaceWhite;
     final dotTrackBorderColor =
         isDark ? AppColors.cardBorderDark : AppColors.grey100;
     final sectionContentGap = isTibetan ? 16.0 : 12.0;
@@ -108,7 +108,9 @@ class _PoemsContentState extends State<_PoemsContent> {
                     fontSize: sectionTitleSize,
                     fontWeight: FontWeight.w700,
                     height:
-                        isTibetan ? AppFontConfig.tibetanCompactLineHeight : 1.2,
+                        isTibetan
+                            ? AppFontConfig.tibetanCompactLineHeight
+                            : 1.2,
                     leadingDistribution:
                         isTibetan
                             ? AppFontConfig.tibetanLeadingDistribution
@@ -141,25 +143,28 @@ class _PoemsContentState extends State<_PoemsContent> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                height: 420,
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: widget.poems.length,
-                  onPageChanged: (index) {
-                    setState(() => _currentIndex = index);
-                  },
-                  itemBuilder: (context, index) {
-                    return PoemPreviewCard(
-                      poem: widget.poems[index],
-                      onTap:
-                          () => _openViewer(
-                            context,
-                            initialPoemId: widget.poems[index].id,
-                          ),
-                    );
-                  },
-                ),
+              LayoutBuilder(
+                builder:
+                    (context, constraints) => SizedBox(
+                      height: PoemPreviewCard.heightFor(constraints.maxWidth),
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemCount: widget.poems.length,
+                        onPageChanged: (index) {
+                          setState(() => _currentIndex = index);
+                        },
+                        itemBuilder: (context, index) {
+                          return PoemPreviewCard(
+                            poem: widget.poems[index],
+                            onTap:
+                                () => _openViewer(
+                                  context,
+                                  initialPoemId: widget.poems[index].id,
+                                ),
+                          );
+                        },
+                      ),
+                    ),
               ),
               const SizedBox(height: 12),
               PoemDotsIndicator(

@@ -46,15 +46,18 @@ class PoemsSectionSkeleton extends StatelessWidget {
                   builder: (context, constraints) {
                     return Bone(
                       width: double.infinity,
-                      height:
-                          constraints.maxWidth *
-                          PoemPreviewCard.coverHeight /
-                          PoemPreviewCard.coverWidth,
+                      height: PoemPreviewCard.coverHeightFor(
+                        constraints.maxWidth,
+                      ),
                       borderRadius: BorderRadius.circular(0),
                     );
                   },
                 ),
-                Padding(
+                // Same height as the card's text area, so the section does
+                // not jump when the poems load.
+                Container(
+                  height: PoemPreviewCard.textAreaHeight,
+                  alignment: Alignment.topCenter,
                   padding: const EdgeInsets.fromLTRB(
                     _horizontalPadding,
                     14,
