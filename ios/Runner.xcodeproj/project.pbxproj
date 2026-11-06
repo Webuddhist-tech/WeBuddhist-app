@@ -341,7 +341,6 @@
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				4F0890AAC5805753D772F35A /* [CP] Embed Pods Frameworks */,
 				D9A06C095248D4046E79B764 /* FlutterFire: "flutterfire upload-crashlytics-symbols" */,
-				29B92F03AEE57D480EFB3723 /* [CP] Copy Pods Resources */,
 				5648DFD272CD388FA396A53C /* [Airbridge] Copy airbridge.json */,
 				B34D2527A1AA1FDF1D8BDE84 /* [Airbridge] Create LibraryInfo.json */,
 			);
@@ -433,23 +432,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		29B92F03AEE57D480EFB3723 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		3B06AD1E1E4923F5004D2608 /* Thin Binary */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;

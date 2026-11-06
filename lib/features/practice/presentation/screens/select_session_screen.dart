@@ -16,6 +16,8 @@ import 'package:flutter_pecha/features/practice/domain/entities/practice_items_t
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_items_paginated_provider.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_recitations_paginated_provider.dart';
 import 'package:flutter_pecha/features/practice/presentation/widgets/practice_chant_list_tile.dart';
+import 'package:flutter_pecha/features/practice/presentation/widgets/practice_my_chants_collection_list_tile.dart';
+import 'package:flutter_pecha/features/recitation/data/models/my_recitation_list_collection_model.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
 import 'package:flutter_pecha/features/recitation/presentation/widgets/recitation_list_skeleton.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
@@ -103,6 +105,13 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
     ).pop<SessionSelection>(RecitationSessionSelection(recitation));
   }
 
+  void _onCollectionSelected(MyRecitationListCollectionModel collection) {
+    if (_enrollingItemId != null) return;
+    Navigator.of(
+      context,
+    ).pop<SessionSelection>(MyRecitationCollectionSessionSelection(collection));
+  }
+
   void _onMantraSelected(Mantra mantra) {
     Navigator.of(context).pop<SessionSelection>(MantraSessionSelection(mantra));
   }
@@ -177,6 +186,7 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
             scrollController: _chantsScrollController,
             enrollingItemId: _enrollingItemId,
             onRecitationSelected: _onRecitationSelected,
+            onCollectionSelected: _onCollectionSelected,
           ),
           _MalasTab(onMantraSelected: _onMantraSelected),
           _TimersTab(onTimerSelected: _onTimerSelected),
@@ -373,11 +383,14 @@ class _ChantsTab extends ConsumerWidget {
   final ScrollController scrollController;
   final String? enrollingItemId;
   final void Function(RecitationModel recitation) onRecitationSelected;
+  final void Function(MyRecitationListCollectionModel collection)
+  onCollectionSelected;
 
   const _ChantsTab({
     required this.scrollController,
     required this.enrollingItemId,
     required this.onRecitationSelected,
+    required this.onCollectionSelected,
   });
 
   @override
@@ -391,14 +404,13 @@ class _ChantsTab extends ConsumerWidget {
         .read(practiceRecitationsPaginatedProvider(languageCode).notifier)
         .refresh();
 
-    if (recitationsState.isLoading && recitationsState.recitations.isEmpty) {
+    if (recitationsState.isLoading && recitationsState.isEmpty) {
       return const RecitationListSkeleton(
         variant: RecitationListSkeletonVariant.chantTile,
       );
     }
 
-    if (recitationsState.error != null &&
-        recitationsState.recitations.isEmpty) {
+    if (recitationsState.error != null && recitationsState.isEmpty) {
       return _RefreshableScrollBody(
         onRefresh: onRefresh,
         child: _SessionTabMessage(
@@ -407,9 +419,10 @@ class _ChantsTab extends ConsumerWidget {
       );
     }
 
+    final collections = recitationsState.collections;
     final recitations = recitationsState.recitations;
 
-    if (recitations.isEmpty && !recitationsState.isLoading) {
+    if (recitationsState.isEmpty && !recitationsState.isLoading) {
       return _RefreshableScrollBody(
         onRefresh: onRefresh,
         child: _SessionTabMessage(message: context.l10n.session_no_chants),
@@ -422,9 +435,29 @@ class _ChantsTab extends ConsumerWidget {
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        itemCount: recitations.length + (recitationsState.hasMore ? 1 : 0),
+        itemCount:
+            collections.length +
+            recitations.length +
+            (recitationsState.hasMore ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index == recitations.length) {
+          if (index < collections.length) {
+            final collection = collections[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: PracticeMyChantsCollectionListTile(
+                collection: collection,
+                showTrailingCaret: false,
+                includeOuterPadding: false,
+                onTap:
+                    enrollingItemId == null
+                        ? () => onCollectionSelected(collection)
+                        : null,
+              ),
+            );
+          }
+
+          final recitationIndex = index - collections.length;
+          if (recitationIndex == recitations.length) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Center(
@@ -436,7 +469,7 @@ class _ChantsTab extends ConsumerWidget {
             );
           }
 
-          final recitation = recitations[index];
+          final recitation = recitations[recitationIndex];
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),

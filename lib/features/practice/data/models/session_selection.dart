@@ -1,6 +1,7 @@
 import 'package:flutter_pecha/features/home/domain/entities/series.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
+import 'package:flutter_pecha/features/recitation/data/models/my_recitation_list_collection_model.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 
@@ -23,6 +24,14 @@ class RecitationSessionSelection extends SessionSelection {
   final RecitationModel recitation;
 
   const RecitationSessionSelection(this.recitation);
+}
+
+/// Represents one of the user's own recitation collections picked from the
+/// Chants tab.
+class MyRecitationCollectionSessionSelection extends SessionSelection {
+  final MyRecitationListCollectionModel collection;
+
+  const MyRecitationCollectionSessionSelection(this.collection);
 }
 
 /// Represents a series selection from the session picker.
