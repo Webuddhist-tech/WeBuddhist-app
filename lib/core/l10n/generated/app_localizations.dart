@@ -2888,32 +2888,14 @@ abstract class AppLocalizations {
   /// No description provided for @calendar_delete_repeating_title.
   ///
   /// In en, this message translates to:
-  /// **'Delete repeating event'**
+  /// **'Delete repeating event?'**
   String get calendar_delete_repeating_title;
 
-  /// No description provided for @calendar_delete_this_event.
+  /// No description provided for @calendar_delete_repeating_body.
   ///
   /// In en, this message translates to:
-  /// **'This event'**
-  String get calendar_delete_this_event;
-
-  /// No description provided for @calendar_delete_this_event_hint.
-  ///
-  /// In en, this message translates to:
-  /// **'Only {date}. Future dates stay.'**
-  String calendar_delete_this_event_hint(String date);
-
-  /// No description provided for @calendar_delete_all_events.
-  ///
-  /// In en, this message translates to:
-  /// **'All events'**
-  String get calendar_delete_all_events;
-
-  /// No description provided for @calendar_delete_all_events_hint.
-  ///
-  /// In en, this message translates to:
-  /// **'Every occurrence: {repeat}'**
-  String calendar_delete_all_events_hint(String repeat);
+  /// **'Every date of \"{title}\" ({repeat}) will be removed from your calendar. This can’t be undone.'**
+  String calendar_delete_repeating_body(String title, String repeat);
 
   /// No description provided for @calendar_event_deleted.
   ///

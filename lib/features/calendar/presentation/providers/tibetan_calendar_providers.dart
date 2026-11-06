@@ -233,15 +233,14 @@ const _phaseDays = <int>{1, 8, 15, 30};
 
 /// Every event in the Gregorian [month]: moon phases derived from the resolved
 /// days (so they always match what the grid shows, even offline or as a guest),
-/// then personal and joined-space events from the server's feed, minus any date
-/// hidden on this device. Ordered by date, then kind.
+/// then personal and joined-space events from the server's feed. Ordered by
+/// date, then kind.
 final monthEventsProvider = Provider.family<List<CalendarEvent>, DateTime>((
   ref,
   month,
 ) {
   final days = ref.watch(resolvedMonthDaysProvider(month));
   final feed = ref.watch(calendarFeedProvider(month)).valueOrNull ?? const [];
-  final skips = ref.watch(personalEventSkipsProvider);
   final viewer = ref.watch(calendarViewerProvider);
   final lastDay = DateTime(month.year, month.month + 1, 0);
 
@@ -261,27 +260,26 @@ final monthEventsProvider = Provider.family<List<CalendarEvent>, DateTime>((
     );
   }
   for (final event in feed) {
-    if (event.kind != CalendarEventKind.personal) {
-      events.add(event);
-    } else if (skips[event.eventId]?.contains(dateOnly(event.date)) != true) {
-      events.add(
-        event.sourceName != null
-            ? event
-            : CalendarEvent(
-              date: event.date,
-              lunarDay: event.lunarDay,
-              title: event.title,
-              kind: event.kind,
-              eventId: event.eventId,
-              sourceName: viewer.name,
-              sourceAvatarUrl: viewer.avatarUrl,
-              allDay: event.allDay,
-              startsAt: event.startsAt,
-              repeat: event.repeat,
-              repeatDay: event.repeatDay,
-            ),
-      );
-    }
+    // Personal rows come without a source; credit them to the viewer.
+    final needsViewer =
+        event.kind == CalendarEventKind.personal && event.sourceName == null;
+    events.add(
+      needsViewer
+          ? CalendarEvent(
+            date: event.date,
+            lunarDay: event.lunarDay,
+            title: event.title,
+            kind: event.kind,
+            eventId: event.eventId,
+            sourceName: viewer.name,
+            sourceAvatarUrl: viewer.avatarUrl,
+            allDay: event.allDay,
+            startsAt: event.startsAt,
+            repeat: event.repeat,
+            repeatDay: event.repeatDay,
+          )
+          : event,
+    );
   }
   events.sort((a, b) {
     final byDate = a.date.compareTo(b.date);
@@ -306,20 +304,21 @@ final dayEventsProvider = Provider.family<List<CalendarEvent>, DateTime>((
       .toList();
 });
 
-/// The upcoming list for one month: events from [today] on. A space event that
-/// spans or repeats over many days appears once, on its next date.
+/// The upcoming list for one month: events from [today] on. A space or
+/// personal event that spans or repeats over many days appears once, on its
+/// next date. Tapping a day still lists every event on it.
 List<CalendarEvent> upcomingEventsFrom(
   List<CalendarEvent> events,
   DateTime today,
 ) {
-  final seenGroupEvents = <String?>{};
+  final seen = <(CalendarEventKind, String)>{};
   return events
       .where(showsInUpcomingEvents)
       .where((event) => !dateOnly(event.date).isBefore(today))
-      .where(
-        (event) =>
-            event.kind != CalendarEventKind.group ||
-            seenGroupEvents.add(event.eventId),
-      )
+      .where((event) {
+        final id = event.eventId;
+        // Lunar events have no id, and each one is its own date.
+        return id == null || seen.add((event.kind, id));
+      })
       .toList();
 }

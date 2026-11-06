@@ -62,7 +62,10 @@ class _UpcomingEventsListState extends ConsumerState<UpcomingEventsList> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (final event in visible) ...[
-                CalendarEventCard(event: event),
+                CalendarEventCard(
+                  key: ValueKey((event.kind, event.eventId, event.date)),
+                  event: event,
+                ),
                 const SizedBox(height: 12),
               ],
             ],

@@ -751,20 +751,13 @@
       }
     }
   },
-  "calendar_delete_repeating_title": "Delete repeating event",
-  "calendar_delete_this_event": "This event",
-  "calendar_delete_this_event_hint": "Only {date}. Future dates stay.",
-  "@calendar_delete_this_event_hint": {
+  "calendar_delete_repeating_title": "Delete repeating event?",
+  "calendar_delete_repeating_body": "Every date of \"{title}\" ({repeat}) will be removed from your calendar. This can’t be undone.",
+  "@calendar_delete_repeating_body": {
     "placeholders": {
-      "date": {
+      "title": {
         "type": "String"
-      }
-    }
-  },
-  "calendar_delete_all_events": "All events",
-  "calendar_delete_all_events_hint": "Every occurrence: {repeat}",
-  "@calendar_delete_all_events_hint": {
-    "placeholders": {
+      },
       "repeat": {
         "type": "String"
       }

@@ -12,8 +12,6 @@ import 'package:intl/intl.dart';
 
 enum _Step { form, confirmDelete }
 
-enum _DeleteScope { thisEvent, allEvents }
-
 /// Adds a personal event on [date], or edits [event] opened from [date]. The
 /// delete confirmation swaps in place, so Cancel returns to an unchanged form.
 class PersonalEventSheet extends ConsumerStatefulWidget {
@@ -22,7 +20,7 @@ class PersonalEventSheet extends ConsumerStatefulWidget {
   final DateTime date;
   final PersonalCalendarEvent? event;
 
-  /// Completes with true when the event, or one date of it, was deleted.
+  /// Completes with true when the event was deleted.
   static Future<bool?> show(
     BuildContext context, {
     required DateTime date,
@@ -47,7 +45,6 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
   bool _busy = false;
   bool _failed = false;
   _Step _step = _Step.form;
-  _DeleteScope _deleteScope = _DeleteScope.thisEvent;
 
   /// Repeat options always come from the event's first date.
   DateTime get _firstDate => widget.event?.startDate ?? widget.date;
@@ -100,15 +97,11 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
     );
   }
 
+  /// Deletes the whole event. For a repeating one that is every date: the API
+  /// has no way to remove a single date.
   void _delete() {
     final event = widget.event!;
-    _submit(() async {
-      if (event.isRepeating && _deleteScope == _DeleteScope.thisEvent) {
-        await _controller.skipDate(event.id, widget.date);
-        return null;
-      }
-      return _controller.delete(event.id);
-    }, deleted: true);
+    _submit(() => _controller.delete(event.id), deleted: true);
   }
 
   Future<void> _pickRepeat() async {
@@ -142,9 +135,7 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
   Widget build(BuildContext context) {
     final event = widget.event;
     if (_step == _Step.confirmDelete && event != null) {
-      return event.isRepeating
-          ? _buildDeleteRepeating(context, event)
-          : _buildDeleteOneOff(context, event);
+      return _buildConfirmDelete(context, event);
     }
     return _buildForm(context);
   }
@@ -170,8 +161,7 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
           if (event != null) ...[
             const SizedBox(height: 12),
             _DangerOutlineButton(
-              label:
-                  event.isRepeating ? l10n.delete : l10n.calendar_delete_event,
+              label: l10n.calendar_delete_event,
               onPressed:
                   _busy
                       ? null
@@ -252,10 +242,22 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
     );
   }
 
-  Widget _buildDeleteOneOff(BuildContext context, PersonalCalendarEvent event) {
+  Widget _buildConfirmDelete(
+    BuildContext context,
+    PersonalCalendarEvent event,
+  ) {
     final l10n = context.l10n;
+    final repeat = calendarRepeatLabel(
+      l10n,
+      event.repeat,
+      event.day,
+      dateFormatLocale(context),
+    );
     return GroupEventSheet(
-      title: l10n.calendar_delete_event_title,
+      title:
+          repeat != null
+              ? l10n.calendar_delete_repeating_title
+              : l10n.calendar_delete_event_title,
       footer: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -279,56 +281,10 @@ class _PersonalEventSheetState extends ConsumerState<PersonalEventSheet> {
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-        child: Text(l10n.calendar_delete_event_body(event.title)),
-      ),
-    );
-  }
-
-  Widget _buildDeleteRepeating(
-    BuildContext context,
-    PersonalCalendarEvent event,
-  ) {
-    final l10n = context.l10n;
-    final locale = dateFormatLocale(context);
-    final date = DateFormat('EEE d MMM', locale).format(widget.date);
-    final repeat =
-        calendarRepeatLabel(l10n, event.repeat, event.day, locale) ?? '';
-    return GroupEventSheet(
-      title: l10n.calendar_delete_repeating_title,
-      footer: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _errorMessage(context),
-          _DangerOutlineButton(
-            label: l10n.delete,
-            onPressed: _busy ? null : _delete,
-          ),
-          const SizedBox(height: 12),
-          _CancelButton(onPressed: _busy ? null : _backToForm),
-        ],
-      ),
-      child: SingleChildScrollView(
-        child: RadioGroup<_DeleteScope>(
-          groupValue: _deleteScope,
-          onChanged: (scope) {
-            if (scope != null) setState(() => _deleteScope = scope);
-          },
-          child: Column(
-            children: [
-              RadioListTile<_DeleteScope>(
-                value: _DeleteScope.thisEvent,
-                controlAffinity: ListTileControlAffinity.trailing,
-                title: Text(l10n.calendar_delete_this_event),
-                subtitle: Text(l10n.calendar_delete_this_event_hint(date)),
-              ),
-              RadioListTile<_DeleteScope>(
-                value: _DeleteScope.allEvents,
-                controlAffinity: ListTileControlAffinity.trailing,
-                title: Text(l10n.calendar_delete_all_events),
-                subtitle: Text(l10n.calendar_delete_all_events_hint(repeat)),
-              ),
-            ],
-          ),
+        child: Text(
+          repeat != null
+              ? l10n.calendar_delete_repeating_body(event.title, repeat)
+              : l10n.calendar_delete_event_body(event.title),
         ),
       ),
     );

@@ -74,7 +74,10 @@ class _SelectedDayEvents extends ConsumerWidget {
           )
         else
           for (final event in events) ...[
-            CalendarEventCard(event: event),
+            CalendarEventCard(
+              key: ValueKey((event.kind, event.eventId, event.date)),
+              event: event,
+            ),
             const SizedBox(height: 12),
           ],
       ],

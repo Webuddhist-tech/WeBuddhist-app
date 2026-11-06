@@ -1593,22 +1593,11 @@ class AppLocalizationsMn extends AppLocalizations {
   }
 
   @override
-  String get calendar_delete_repeating_title => 'Delete repeating event';
+  String get calendar_delete_repeating_title => 'Delete repeating event?';
 
   @override
-  String get calendar_delete_this_event => 'This event';
-
-  @override
-  String calendar_delete_this_event_hint(String date) {
-    return 'Only $date. Future dates stay.';
-  }
-
-  @override
-  String get calendar_delete_all_events => 'All events';
-
-  @override
-  String calendar_delete_all_events_hint(String repeat) {
-    return 'Every occurrence: $repeat';
+  String calendar_delete_repeating_body(String title, String repeat) {
+    return 'Every date of \"$title\" ($repeat) will be removed from your calendar. This can’t be undone.';
   }
 
   @override

@@ -3076,34 +3076,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get calendar_delete_this_event => TolgeeBridge.get(
-    localeName,
-    'calendar_delete_this_event',
-    () => _fallback.calendar_delete_this_event,
-  );
-
-  @override
-  String calendar_delete_this_event_hint(String date) => TolgeeBridge.format(
-    localeName,
-    'calendar_delete_this_event_hint',
-    <String, Object>{'date': date},
-    () => _fallback.calendar_delete_this_event_hint(date),
-  );
-
-  @override
-  String get calendar_delete_all_events => TolgeeBridge.get(
-    localeName,
-    'calendar_delete_all_events',
-    () => _fallback.calendar_delete_all_events,
-  );
-
-  @override
-  String calendar_delete_all_events_hint(String repeat) => TolgeeBridge.format(
-    localeName,
-    'calendar_delete_all_events_hint',
-    <String, Object>{'repeat': repeat},
-    () => _fallback.calendar_delete_all_events_hint(repeat),
-  );
+  String calendar_delete_repeating_body(String title, String repeat) =>
+      TolgeeBridge.format(
+        localeName,
+        'calendar_delete_repeating_body',
+        <String, Object>{'title': title, 'repeat': repeat},
+        () => _fallback.calendar_delete_repeating_body(title, repeat),
+      );
 
   @override
   String get calendar_event_deleted => TolgeeBridge.get(

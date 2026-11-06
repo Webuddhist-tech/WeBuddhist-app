@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_pecha/features/calendar/data/datasource/personal_calendar_remote_datasource.dart';
 import 'package:flutter_pecha/features/calendar/data/models/personal_calendar_models.dart';
 import 'package:flutter_pecha/features/calendar/domain/models/calendar_event.dart';
+import 'package:flutter_pecha/features/calendar/domain/models/moon_phase.dart';
 import 'package:flutter_pecha/features/calendar/domain/models/personal_calendar_event.dart';
 import 'package:flutter_pecha/features/calendar/presentation/providers/tibetan_calendar_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -179,24 +180,31 @@ void main() {
     });
   });
 
-  test('upcoming shows a space event once and personal dates each time', () {
-    CalendarEvent at(int day, CalendarEventKind kind) => CalendarEvent(
-      date: DateTime(2026, 2, day),
-      title: 'E',
-      kind: kind,
-      eventId: kind.name,
-    );
-    final upcoming = upcomingEventsFrom([
-      at(1, CalendarEventKind.group),
-      at(5, CalendarEventKind.group),
-      at(6, CalendarEventKind.group),
-      at(5, CalendarEventKind.personal),
-      at(6, CalendarEventKind.personal),
-    ], DateTime(2026, 2, 5));
-    expect(upcoming.map((e) => (e.date.day, e.kind)), [
-      (5, CalendarEventKind.group),
-      (5, CalendarEventKind.personal),
-      (6, CalendarEventKind.personal),
-    ]);
-  });
+  test(
+    'upcoming shows each space and personal event once, on its next date',
+    () {
+      CalendarEvent at(int day, CalendarEventKind kind) => CalendarEvent(
+        date: DateTime(2026, 2, day),
+        title: 'E',
+        kind: kind,
+        eventId: kind == CalendarEventKind.lunarPhase ? null : kind.name,
+        phase: kind == CalendarEventKind.lunarPhase ? MoonPhase.fullMoon : null,
+      );
+      final upcoming = upcomingEventsFrom([
+        at(1, CalendarEventKind.group),
+        at(5, CalendarEventKind.lunarPhase),
+        at(5, CalendarEventKind.group),
+        at(5, CalendarEventKind.personal),
+        at(6, CalendarEventKind.lunarPhase),
+        at(6, CalendarEventKind.group),
+        at(6, CalendarEventKind.personal),
+      ], DateTime(2026, 2, 5));
+      expect(upcoming.map((e) => (e.date.day, e.kind)), [
+        (5, CalendarEventKind.lunarPhase),
+        (5, CalendarEventKind.group),
+        (5, CalendarEventKind.personal),
+        (6, CalendarEventKind.lunarPhase),
+      ]);
+    },
+  );
 }

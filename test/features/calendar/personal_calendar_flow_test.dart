@@ -191,7 +191,6 @@ void main() {
   Future<ProviderContainer> pump(
     WidgetTester tester, {
     _FakeServer? server,
-    _MemoryStorage? storage,
     void Function(String path)? onPush,
   }) async {
     final container = ProviderContainer(
@@ -205,7 +204,7 @@ void main() {
         personalCalendarRepositoryProvider.overrideWithValue(
           server ?? _FakeServer(),
         ),
-        storageServiceProvider.overrideWithValue(storage ?? _MemoryStorage()),
+        storageServiceProvider.overrideWithValue(_MemoryStorage()),
       ],
     );
     addTearDown(container.dispose);
@@ -366,10 +365,9 @@ void main() {
     expect(find.text('No events'), findsOneWidget);
   });
 
-  testWidgets('"This event" hides one date, "All events" deletes the event', (
+  testWidgets('deleting a repeating event confirms and removes every date', (
     tester,
   ) async {
-    final storage = _MemoryStorage();
     final server = _FakeServer(
       events: [
         PersonalCalendarEvent(
@@ -381,34 +379,55 @@ void main() {
       ],
       recurringDates: [day, nextFriday],
     );
-    final container = await pump(tester, server: server, storage: storage);
+    final container = await pump(tester, server: server);
 
-    Future<void> openDelete() async {
-      await tester.tap(find.text('Puja'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
-      await tester.pumpAndSettle();
-      expect(find.text('Delete repeating event'), findsOneWidget);
-    }
+    await tester.tap(find.text('Puja'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete event'));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete repeating event?'), findsOneWidget);
+    expect(
+      find.text(
+        'Every date of "Puja" (Weekly) will be removed from your calendar. '
+        'This can’t be undone.',
+      ),
+      findsOneWidget,
+    );
 
-    await openDelete();
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Delete'));
     await tester.pumpAndSettle();
 
-    // The server keeps the event; this device stops showing that one date.
-    expect(server.events, hasLength(1));
+    expect(server.events, isEmpty);
+    expect(find.text('Event deleted'), findsOneWidget);
     expect(find.text('No events'), findsOneWidget);
-    expect(storage.values.values.single, contains('2026-02-20'));
-
     container.read(selectedCalendarDayProvider.notifier).state = nextFriday;
     await tester.pumpAndSettle();
-    await openDelete();
-    await tester.tap(find.text('All events'));
-    await tester.pump();
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Delete'));
-    await tester.pumpAndSettle();
-    expect(server.events, isEmpty);
-    expect(container.read(personalEventSkipsProvider), isEmpty);
+    expect(find.text('Puja'), findsNothing);
+  });
+
+  testWidgets('upcoming lists a weekly personal event once', (tester) async {
+    final server = _FakeServer(
+      events: [
+        PersonalCalendarEvent(
+          id: 'a',
+          title: 'Puja',
+          startDate: DateTime(2026, 2, 6),
+          repeat: PersonalRepeat.weekly,
+        ),
+      ],
+      recurringDates: [day, nextFriday],
+    );
+    final container = await pump(tester, server: server);
+    final upcoming = upcomingEventsFrom(
+      container.read(monthEventsProvider(month)),
+      day,
+    );
+    expect(
+      upcoming
+          .where((e) => e.kind == CalendarEventKind.personal)
+          .map((e) => e.date),
+      [day],
+    );
   });
 
   testWidgets('a space card opens its event page', (tester) async {

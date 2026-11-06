@@ -11,11 +11,10 @@ Tibetan lunar calendar: Gregorian grid with lunar day info and moon phases (scre
 - Full calendar screen with month grid (`TibetanCalendarScreen`, route `AppRoutes.calendar` = `/home/calendar`)
 - Header card for the selected day: "Day {lunarDay}", lunar-month label, moon-phase icon
 - Month navigation (chevrons + horizontal swipe) with a lunar-month subtitle; padded leading/trailing days
-- "Upcoming events" list: moon-phase, personal and joined-space events in the focused month from today on, collapsed to 2 with Show more/less. A space event appears once, on its next date
+- "Upcoming events" list: moon-phase, personal and joined-space events in the focused month from today on, collapsed to 2 with Show more/less. A space or repeating personal event appears once, on its next date
 - Tapping a day replaces that list with the day's events; Today goes back
 - **+** adds a personal event on the selected day. Tapping a personal card edits it; tapping a space card opens its event page; lunar cards don't open
 - "Today" sync on open and when the app resumes on a new calendar day
-- Day tapping is currently disabled (`onDaySelected` commented out in `tibetan_calendar_grid.dart`), so the selected day is always today
 
 ## Architecture
 
@@ -58,7 +57,7 @@ calendar/
 
 - **home** — `home_header.dart` pushes `AppRoutes.calendar`. (`CalendarBannerCard` in home is a stateless widget that is not currently rendered and does not read calendar providers.)
 - **group_profile** — `group_event_repeats_sheet.dart` / `group_event_schedule_utils.dart` use `TibetanCalendarService` (Phugpa) for lunar recurrence. Calendar space cards open `/home/events/:id`
-- **Personal Calendar API** — `calendarFeedProvider` reads `GET /users/me/calendar` (personal and joined-space events) a month at a time; `PersonalCalendarController` creates, edits and deletes through `/users/me/calendar-events`, and the Repeats sheet reads `/repeat-options`. Moon-phase events stay computed locally so guests and offline users keep them. The API can only delete a whole event, so "This event" hides one date on this device (`personalEventSkipsProvider`)
+- **Personal Calendar API** — `calendarFeedProvider` reads `GET /users/me/calendar` (personal and joined-space events) a month at a time; `PersonalCalendarController` creates, edits and deletes through `/users/me/calendar-events`, and the Repeats sheet reads `/repeat-options`. Moon-phase events stay computed locally so guests and offline users keep them. The API has no single-date exceptions, so deleting a repeating personal event removes every date
 - **core** — `dioProvider`, l10n, router
 
 ## Hybrid resolution pattern
