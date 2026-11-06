@@ -36,6 +36,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/firebase_sess
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/user_session_bootstrap.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/home_analytics.dart';
 import 'package:flutter_pecha/features/mala/data/datasources/mala_local_datasource.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
 import 'package:flutter_pecha/features/more/data/datasource/user_stats_local_datasource.dart';
@@ -361,10 +362,13 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     });
 
     // Bottom tabs are not routes, so Clarity's screen name for the home
-    // shell has to follow the selected tab from here.
+    // shell has to follow the selected tab from here, and PostHog's
+    // route-based screen events never see a tab change.
     ref.listen<int>(mainNavigationIndexProvider, (previous, next) {
       if (previous == next) return;
-      ClarityAnalyticsService.instance.setTab(MainTab.values[next].name);
+      final tab = MainTab.values[next].name;
+      ClarityAnalyticsService.instance.setTab(tab);
+      ref.read(homeAnalyticsProvider).tabViewed(tab: tab);
     });
 
     // Get the singleton router instance - same instance is reused across rebuilds
