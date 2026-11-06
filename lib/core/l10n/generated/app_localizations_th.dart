@@ -1515,6 +1515,26 @@ class AppLocalizationsTh extends AppLocalizations {
   String get calendar_title => 'ปฏิทิน';
 
   @override
+  String get calendar_source_lunar => 'Lunar calendar';
+
+  @override
+  String get calendar_repeat_weekly => 'Weekly';
+
+  @override
+  String get calendar_repeat_monthly => 'Monthly';
+
+  @override
+  String calendar_repeat_monthly_lunar(String day) {
+    return 'Monthly ($day lunar)';
+  }
+
+  @override
+  String get calendar_repeat_yearly => 'Yearly';
+
+  @override
+  String get calendar_repeat_yearly_lunar => 'Yearly (lunar date)';
+
+  @override
   String get calendar_upcoming_events => 'กิจกรรมที่กำลังจะมาถึง';
 
   @override

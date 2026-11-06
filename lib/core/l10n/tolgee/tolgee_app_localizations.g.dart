@@ -2955,6 +2955,49 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get calendar_source_lunar => TolgeeBridge.get(
+    localeName,
+    'calendar_source_lunar',
+    () => _fallback.calendar_source_lunar,
+  );
+
+  @override
+  String get calendar_repeat_weekly => TolgeeBridge.get(
+    localeName,
+    'calendar_repeat_weekly',
+    () => _fallback.calendar_repeat_weekly,
+  );
+
+  @override
+  String get calendar_repeat_monthly => TolgeeBridge.get(
+    localeName,
+    'calendar_repeat_monthly',
+    () => _fallback.calendar_repeat_monthly,
+  );
+
+  @override
+  String calendar_repeat_monthly_lunar(String day) => TolgeeBridge.format(
+    localeName,
+    'calendar_repeat_monthly_lunar',
+    <String, Object>{'day': day},
+    () => _fallback.calendar_repeat_monthly_lunar(day),
+  );
+
+  @override
+  String get calendar_repeat_yearly => TolgeeBridge.get(
+    localeName,
+    'calendar_repeat_yearly',
+    () => _fallback.calendar_repeat_yearly,
+  );
+
+  @override
+  String get calendar_repeat_yearly_lunar => TolgeeBridge.get(
+    localeName,
+    'calendar_repeat_yearly_lunar',
+    () => _fallback.calendar_repeat_yearly_lunar,
+  );
+
+  @override
   String get calendar_upcoming_events => TolgeeBridge.get(
     localeName,
     'calendar_upcoming_events',

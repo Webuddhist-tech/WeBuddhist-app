@@ -2789,6 +2789,42 @@ abstract class AppLocalizations {
   /// **'Calendar'**
   String get calendar_title;
 
+  /// No description provided for @calendar_source_lunar.
+  ///
+  /// In en, this message translates to:
+  /// **'Lunar calendar'**
+  String get calendar_source_lunar;
+
+  /// No description provided for @calendar_repeat_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get calendar_repeat_weekly;
+
+  /// No description provided for @calendar_repeat_monthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get calendar_repeat_monthly;
+
+  /// No description provided for @calendar_repeat_monthly_lunar.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly ({day} lunar)'**
+  String calendar_repeat_monthly_lunar(String day);
+
+  /// No description provided for @calendar_repeat_yearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get calendar_repeat_yearly;
+
+  /// No description provided for @calendar_repeat_yearly_lunar.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly (lunar date)'**
+  String get calendar_repeat_yearly_lunar;
+
   /// No description provided for @calendar_upcoming_events.
   ///
   /// In en, this message translates to:

@@ -11,6 +11,8 @@ import 'package:flutter_pecha/features/calendar/domain/repositories/calendar_rep
 import 'package:flutter_pecha/features/calendar/domain/tibetan_calendar_service.dart';
 import 'package:flutter_pecha/features/calendar/domain/usecases/get_calendar_month_usecase.dart';
 import 'package:flutter_pecha/features/calendar/domain/usecases/get_today_calendar_usecase.dart';
+import 'package:flutter_pecha/features/calendar/presentation/calendar_l10n_utils.dart';
+import 'package:flutter_pecha/features/calendar/presentation/providers/calendar_event_sources_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:fpdart/fpdart.dart';
@@ -208,22 +210,23 @@ final todayCalendarDayProvider = AsyncNotifierProvider<
   });
 });
 
-// ============ Events (moon phases only, derived from resolved days) ============
+// ============ Events (lunar and joined-space) ============
 
 /// Lunar days that mark new moon, first quarter, and full moon.
 const _phaseDays = <int>{1, 8, 15, 30};
 
-/// Moon-phase events within the Gregorian [month], derived from the resolved
-/// days so they always match what the grid shows. (Festival/custom events will
-/// be added here when a backend events endpoint exists.)
+/// Every event in the Gregorian [month]: moon phases derived from the resolved
+/// days (so they always match what the grid shows, even offline or as a guest),
+/// then joined-space events from the server's feed. Ordered by date, then kind.
 final monthEventsProvider = Provider.family<List<CalendarEvent>, DateTime>((
   ref,
   month,
 ) {
   final days = ref.watch(resolvedMonthDaysProvider(month));
+  final feed = ref.watch(calendarFeedProvider(month)).valueOrNull ?? const [];
   final lastDay = DateTime(month.year, month.month + 1, 0).day;
 
-  final events = <CalendarEvent>[];
+  final events = <CalendarEvent>[...feed];
   for (var d = 1; d <= lastDay; d++) {
     final date = DateTime(month.year, month.month, d);
     final day = days[dateOnly(date)];
@@ -238,6 +241,29 @@ final monthEventsProvider = Provider.family<List<CalendarEvent>, DateTime>((
       ),
     );
   }
-  events.sort((a, b) => a.date.compareTo(b.date));
+  events.sort((a, b) {
+    final byDate = a.date.compareTo(b.date);
+    if (byDate != 0) return byDate;
+    final byKind = a.kind.index.compareTo(b.kind.index);
+    return byKind != 0 ? byKind : a.title.compareTo(b.title);
+  });
   return events;
 });
+
+/// The upcoming list for one month: events from [today] on. A space event that
+/// spans or repeats over many days appears once, on its next date.
+List<CalendarEvent> upcomingEventsFrom(
+  List<CalendarEvent> events,
+  DateTime today,
+) {
+  final seenGroupEvents = <String?>{};
+  return events
+      .where(showsInUpcomingEvents)
+      .where((event) => !dateOnly(event.date).isBefore(today))
+      .where(
+        (event) =>
+            event.kind != CalendarEventKind.group ||
+            seenGroupEvents.add(event.eventId),
+      )
+      .toList();
+}

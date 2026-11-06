@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/core.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/features/calendar/domain/models/calendar_event.dart';
-import 'package:flutter_pecha/features/calendar/presentation/calendar_l10n_utils.dart';
 import 'package:flutter_pecha/features/calendar/presentation/providers/tibetan_calendar_providers.dart';
+import 'package:flutter_pecha/features/calendar/presentation/widgets/calendar_event_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 /// Number of events shown before the user taps "Show more".
 const int _kCollapsedEventCount = 2;
@@ -30,21 +28,10 @@ class _UpcomingEventsListState extends ConsumerState<UpcomingEventsList> {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final focusedMonth = ref.watch(focusedCalendarMonthProvider);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final events =
-        ref
-            .watch(monthEventsProvider(focusedMonth))
-            .where(showsInUpcomingEvents)
-            .where((event) {
-              final eventDay = DateTime(
-                event.date.year,
-                event.date.month,
-                event.date.day,
-              );
-              return !eventDay.isBefore(today);
-            })
-            .toList();
+    final events = upcomingEventsFrom(
+      ref.watch(monthEventsProvider(focusedMonth)),
+      dateOnly(DateTime.now()),
+    );
     if (events.isEmpty) return const SizedBox.shrink();
 
     final canToggle = events.length > _kCollapsedEventCount;
@@ -75,7 +62,7 @@ class _UpcomingEventsListState extends ConsumerState<UpcomingEventsList> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (final event in visible) ...[
-                _EventCard(event: event),
+                CalendarEventCard(event: event),
                 const SizedBox(height: 12),
               ],
             ],
@@ -141,113 +128,6 @@ class _ShowMoreButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _EventCard extends StatelessWidget {
-  const _EventCard({required this.event});
-
-  final CalendarEvent event;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
-    final weekday =
-        DateFormat.E(
-          dateFormatLocale(context),
-        ).format(event.date).toUpperCase();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        border: Border.all(color: theme.colorScheme.outline),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          // Gregorian date block.
-          _StackedLabel(
-            value: '${event.date.day}',
-            label: weekday,
-            theme: theme,
-          ),
-          Container(
-            width: 1,
-            height: 38,
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            color: const Color(0xFF9E9E9E).withValues(alpha: 0.3),
-          ),
-          // Title.
-          Expanded(
-            child: Text(
-              eventTitle(l10n, event),
-              strutStyle: context.tibetanStrutStyle(
-                theme.textTheme.bodyLarge?.fontSize ?? 16,
-              ),
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 38,
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            color: const Color(0xFF9E9E9E).withValues(alpha: 0.3),
-          ),
-          // Lunar day block.
-          _StackedLabel(
-            value: '${event.lunarDay}',
-            label: l10n.calendar_day_short,
-            theme: theme,
-            alignEnd: true,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A big value with a small muted caption beneath — used for both the Gregorian
-/// (date / weekday) and lunar (day / "DAY") blocks of an event card.
-class _StackedLabel extends StatelessWidget {
-  const _StackedLabel({
-    required this.value,
-    required this.label,
-    required this.theme,
-    this.alignEnd = false,
-  });
-
-  final String value;
-  final String label;
-  final ThemeData theme;
-  final bool alignEnd;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          value,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-            letterSpacing: 0.5,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/features/calendar/data/kharag_tibetan_calendar_service.dart';
 import 'package:flutter_pecha/features/calendar/domain/entities/tibetan_calendar_day.dart';
 import 'package:flutter_pecha/features/calendar/domain/repositories/calendar_repository.dart';
+import 'package:flutter_pecha/features/calendar/presentation/providers/calendar_event_sources_providers.dart';
 import 'package:flutter_pecha/features/calendar/presentation/providers/tibetan_calendar_providers.dart';
 import 'package:flutter_pecha/features/calendar/presentation/screens/tibetan_calendar_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,6 +64,7 @@ void main() {
         calendarRepositoryProvider.overrideWithValue(
           _OfflineCalendarRepository(),
         ),
+        calendarViewerProvider.overrideWithValue((id: null)),
       ],
     );
     addTearDown(container.dispose);

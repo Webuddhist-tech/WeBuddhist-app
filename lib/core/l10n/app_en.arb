@@ -721,6 +721,19 @@
   "legal_privacy_policy": "Privacy policy",
   "follow": "Follow",
   "calendar_title": "Calendar",
+  "calendar_source_lunar": "Lunar calendar",
+  "calendar_repeat_weekly": "Weekly",
+  "calendar_repeat_monthly": "Monthly",
+  "calendar_repeat_monthly_lunar": "Monthly ({day} lunar)",
+  "@calendar_repeat_monthly_lunar": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "calendar_repeat_yearly": "Yearly",
+  "calendar_repeat_yearly_lunar": "Yearly (lunar date)",
   "calendar_upcoming_events": "Upcoming events",
   "calendar_day_short": "DAY",
   "calendar_day_label": "Day",
