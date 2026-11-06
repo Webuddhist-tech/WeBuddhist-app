@@ -6,13 +6,15 @@ import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/more/domain/entities/user_stats.dart';
+import 'package:flutter_pecha/features/more/presentation/utils/me_analytics.dart';
 import 'package:flutter_pecha/features/more/presentation/widgets/me_streak_card.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_pecha/features/more/presentation/widgets/accumulation_sheet.dart';
 import 'package:flutter_pecha/features/more/presentation/widgets/practice_days_sheet.dart';
 import 'package:flutter_pecha/features/more/presentation/widgets/streak_share_sheet.dart';
 
-class MeStatsSection extends StatelessWidget {
+class MeStatsSection extends ConsumerWidget {
   const MeStatsSection({super.key, required this.stats});
 
   final UserStats stats;
@@ -22,11 +24,13 @@ class MeStatsSection extends StatelessWidget {
   static const _borderRadius = 16.0;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final locale = intlFormatLocaleOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? AppColors.cardDark : AppColors.surfaceWhite;
+    void trackTap(MeItem item) =>
+        ref.read(meAnalyticsProvider).itemTapped(item);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -49,17 +53,22 @@ class MeStatsSection extends StatelessWidget {
           const SizedBox(height: 12),
           MeStreakCard(
             streak: stats.streak,
-            onTap: () => showStreakShareSheet(context, stats.streak),
+            onTap: () {
+              trackTap(MeItem.streak);
+              showStreakShareSheet(context, stats.streak);
+            },
           ),
           const SizedBox(height: _cardSpacing),
           _PracticeDaysCard(
             days: stats.totalPracticeDays,
             cardColor: cardColor,
-            onTap:
-                () => showPracticeDaysSheet(
-                  context,
-                  totalDays: stats.totalPracticeDays,
-                ),
+            onTap: () {
+              trackTap(MeItem.practiceDays);
+              showPracticeDaysSheet(
+                context,
+                totalDays: stats.totalPracticeDays,
+              );
+            },
           ),
           const SizedBox(height: _cardSpacing),
           Row(
@@ -75,14 +84,16 @@ class MeStatsSection extends StatelessWidget {
                   ),
                   value: _formatCompactCount(stats.totalAccumulated, locale),
                   cardColor: cardColor,
-                  onTap:
-                      () => showAccumulationSheet(
-                        context,
-                        formattedTotal: _formatCompactCount(
-                          stats.totalAccumulated,
-                          locale,
-                        ),
+                  onTap: () {
+                    trackTap(MeItem.accumulation);
+                    showAccumulationSheet(
+                      context,
+                      formattedTotal: _formatCompactCount(
+                        stats.totalAccumulated,
+                        locale,
                       ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: _cardSpacing),

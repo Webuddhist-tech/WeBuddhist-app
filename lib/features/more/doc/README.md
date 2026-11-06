@@ -41,6 +41,7 @@ more/
 | Delete account | `presentation/delete_account_screen.dart` |
 | Legal / about | `presentation/{legal,terms_of_service_screen,privacy_policy_screen,about_screen}.dart` |
 | Language picker | bottom sheet in `more_screen.dart` → `selectAppLanguage()` (`core/config/locale`) |
+| Analytics | `presentation/utils/me_analytics.dart` |
 
 ## State management
 
