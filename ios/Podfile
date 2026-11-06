@@ -48,6 +48,13 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
       config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+      # Without this, Permission.notification.status is always `denied` on iOS.
+      if target.name == 'permission_handler_apple'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = [
+          *Array(config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || '$(inherited)'),
+          'PERMISSION_NOTIFICATIONS=1',
+        ]
+      end
     end
   end
 end

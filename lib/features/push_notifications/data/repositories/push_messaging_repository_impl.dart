@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_pecha/core/error/exception_mapper.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/notifications/data/services/notification_permission_prompt.dart';
 import 'package:flutter_pecha/features/push_notifications/domain/entities/push_message.dart';
 import 'package:flutter_pecha/features/push_notifications/domain/repositories/push_messaging_repository.dart';
 import 'package:fpdart/fpdart.dart';
@@ -26,6 +27,7 @@ class PushMessagingRepositoryImpl implements PushMessagingRepository {
 
   @override
   Future<bool> requestPermission() async {
+    if (Platform.isAndroid) await markNotificationPromptAsked();
     final status = (await _messaging.requestPermission()).authorizationStatus;
     return status == AuthorizationStatus.authorized ||
         status == AuthorizationStatus.provisional;
@@ -33,11 +35,11 @@ class PushMessagingRepositoryImpl implements PushMessagingRepository {
 
   @override
   Future<bool> willPromptForPermission() async {
+    // Firebase reports a blocked Android user the same as one never asked.
+    if (Platform.isAndroid) return canShowNotificationPrompt();
     final status =
         (await _messaging.getNotificationSettings()).authorizationStatus;
-    return Platform.isAndroid
-        ? status != AuthorizationStatus.authorized
-        : status == AuthorizationStatus.notDetermined;
+    return status == AuthorizationStatus.notDetermined;
   }
 
   @override
