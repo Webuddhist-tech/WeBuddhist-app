@@ -885,7 +885,12 @@ class _GroupEventDetailScreenState
     });
     ref
         .read(groupEventAnalyticsProvider)
-        .eventLeft(eventId: event.id, groupId: event.groupId);
+        .eventLeft(
+          eventId: event.id,
+          groupId: event.groupId,
+          planId: event.planId,
+          seriesId: event.seriesId,
+        );
     _refreshEvent(event);
   }
 

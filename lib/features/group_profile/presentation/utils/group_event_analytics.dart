@@ -98,10 +98,19 @@ class GroupEventAnalytics {
     });
   }
 
-  void eventLeft({required String eventId, required String groupId}) {
+  /// [planId] and [seriesId] name the practice the event is tied to. Leaving
+  /// ends only the RSVP and chat room, so any enrollment in it stays.
+  void eventLeft({
+    required String eventId,
+    required String groupId,
+    String? planId,
+    String? seriesId,
+  }) {
     _analytics.trackInBackground(AnalyticsEvents.groupEventLeft, {
       AnalyticsProperties.eventId: eventId,
       AnalyticsProperties.groupId: groupId,
+      AnalyticsProperties.planId: planId,
+      AnalyticsProperties.seriesId: seriesId,
     });
   }
 
