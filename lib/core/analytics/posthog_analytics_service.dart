@@ -55,6 +55,8 @@ class PostHogAnalyticsService implements AnalyticsService {
     config.debug = Env.isDebug;
     config.personProfiles = PostHogPersonProfiles.identifiedOnly;
     config.beforeSend = [_redactPii];
+    // Our own push_notification_opened already counts every push tap.
+    config.capturePushNotificationOpened = false;
 
     if (kReleaseMode) {
       config.sessionReplay = true;
@@ -64,9 +66,10 @@ class PostHogAnalyticsService implements AnalyticsService {
     }
 
     await Posthog().setup(config);
-    await _registerDefaultSuperProperties();
 
+    // Before registering: setSuperProperties is a no-op until this is set.
     _isInitialized = true;
+    await _registerDefaultSuperProperties();
     _logger.info('PostHog initialized for ${Env.appFlavor}');
   }
 

@@ -89,6 +89,8 @@
 		</array>
 		<key>com.posthog.posthog.AUTO_INIT</key>
 		<false/>
+		<key>com.posthog.posthog.CAPTURE_PUSH_NOTIFICATION_OPENED</key>
+		<false/>
 		<key>AIRBRIDGE_APP_NAME</key>
 		<string>$(AIRBRIDGE_APP_NAME)</string>
 	<key>AIRBRIDGE_SDK_TOKEN</key>
