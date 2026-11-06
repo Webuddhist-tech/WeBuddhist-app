@@ -1158,6 +1158,23 @@ class AppLocalizationsHi extends AppLocalizations {
       'लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से प्रयास करें';
 
   @override
+  String get reader_not_translated => 'अनुवादित नहीं';
+
+  @override
+  String get error_offline_title => 'कनेक्शन नहीं है';
+
+  @override
+  String get error_server_title => 'अभी लोड नहीं हो सका';
+
+  @override
+  String get reader_error_server_message =>
+      'यह पाठ अभी लोड नहीं हो सकता। कृपया बाद में फिर से प्रयास करें।';
+
+  @override
+  String get chants_error_server_message =>
+      'जप अभी लोड नहीं हो सकते। कृपया बाद में फिर से प्रयास करें।';
+
+  @override
   String get somethingWrong =>
       'कुछ गलत हो गया। अपना कनेक्शन जाँचें और फिर से प्रयास करें';
 

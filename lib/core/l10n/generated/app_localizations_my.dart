@@ -1166,6 +1166,23 @@ class AppLocalizationsMy extends AppLocalizations {
       'ဖွင့်၍ မရပါ။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ';
 
   @override
+  String get reader_not_translated => 'ဘာသာမပြန်ရသေးပါ';
+
+  @override
+  String get error_offline_title => 'အင်တာနက် ချိတ်ဆက်မှု မရှိပါ';
+
+  @override
+  String get error_server_title => 'ယခု ဖွင့်၍ မရပါ';
+
+  @override
+  String get reader_error_server_message =>
+      'ဤစာကို ယခု ဖွင့်၍ မရပါ။ နောက်မှ ထပ်ကြိုးစားပါ။';
+
+  @override
+  String get chants_error_server_message =>
+      'ရွတ်ဆိုရန်စာများကို ယခု ဖွင့်၍ မရပါ။ နောက်မှ ထပ်ကြိုးစားပါ။';
+
+  @override
   String get somethingWrong =>
       'တစ်ခုခု မှားယွင်းသွားပါသည်။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ';
 

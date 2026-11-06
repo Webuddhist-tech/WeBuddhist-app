@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dar
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/error/load_error_kind.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
@@ -26,6 +27,9 @@ class PracticeRecitationsState {
   final bool isLoading;
   final bool isLoadingMore;
   final String? error;
+
+  /// Why [error] happened, for what the screen tells the person.
+  final LoadErrorKind? errorKind;
   final bool hasMore;
   final int skip;
   final int total;
@@ -36,6 +40,7 @@ class PracticeRecitationsState {
     this.isLoading = false,
     this.isLoadingMore = false,
     this.error,
+    this.errorKind,
     this.hasMore = true,
     this.skip = 0,
     this.total = 0,
@@ -49,6 +54,7 @@ class PracticeRecitationsState {
     bool? isLoading,
     bool? isLoadingMore,
     String? error,
+    LoadErrorKind? errorKind,
     bool? hasMore,
     int? skip,
     int? total,
@@ -59,6 +65,7 @@ class PracticeRecitationsState {
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       error: error,
+      errorKind: errorKind,
       hasMore: hasMore ?? this.hasMore,
       skip: skip ?? this.skip,
       total: total ?? this.total,
@@ -208,7 +215,11 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
         (failure) {
           _logger.error('Initial recitations load failed: ${failure.message}');
           if (state.isEmpty) {
-            state = state.copyWith(isLoading: false, error: failure.message);
+            state = state.copyWith(
+              isLoading: false,
+              error: failure.message,
+              errorKind: loadErrorKindOf(failure),
+            );
           }
         },
         (page) {
@@ -258,7 +269,11 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
     } catch (e) {
       _logger.error('Load more recitations failed', e);
       if (!mounted) return;
-      state = state.copyWith(isLoadingMore: false, error: e.toString());
+      state = state.copyWith(
+        isLoadingMore: false,
+        error: e.toString(),
+        errorKind: loadErrorKindOf(e),
+      );
     }
   }
 

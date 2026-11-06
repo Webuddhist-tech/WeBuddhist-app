@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/error/load_error_kind.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/localization/content_language_picker_sheet.dart';
 import 'package:flutter_pecha/core/localization/languages_providers.dart';
@@ -180,8 +181,25 @@ class _AllRecitationsScreenState extends ConsumerState<AllRecitationsScreen> {
     }
 
     if (state.error != null && state.isEmpty) {
+      final l10n = context.l10n;
+      // Says what went wrong: no connection, the server or the app's setup,
+      // or nothing there.
+      final (title, message) = switch (state.errorKind) {
+        LoadErrorKind.connection => (
+          l10n.error_offline_title,
+          l10n.unableToLoad,
+        ),
+        LoadErrorKind.server => (
+          l10n.error_server_title,
+          l10n.chants_error_server_message,
+        ),
+        LoadErrorKind.missing => (null, l10n.noContentAvailable),
+        null => (null, null),
+      };
       return ErrorStateWidget(
         error: state.error!,
+        customTitle: title,
+        customMessage: message,
         onRetry:
             () =>
                 ref

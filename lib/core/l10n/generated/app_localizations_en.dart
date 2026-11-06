@@ -1151,6 +1151,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to load. Check your connection and try again';
 
   @override
+  String get reader_not_translated => 'Not translated';
+
+  @override
+  String get error_offline_title => 'No connection';
+
+  @override
+  String get error_server_title => 'Can\'t load right now';
+
+  @override
+  String get reader_error_server_message =>
+      'This text can\'t be loaded right now. Please try again later.';
+
+  @override
+  String get chants_error_server_message =>
+      'Chants can\'t be loaded right now. Please try again later.';
+
+  @override
   String get somethingWrong =>
       'Something went wrong. Check your connection and try again';
 

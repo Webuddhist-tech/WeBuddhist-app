@@ -1169,6 +1169,23 @@ class AppLocalizationsNe extends AppLocalizations {
       'लोड गर्न सकिएन। आफ्नो जडान जाँच गरी फेरि प्रयास गर्नुहोस्';
 
   @override
+  String get reader_not_translated => 'अनुवाद गरिएको छैन';
+
+  @override
+  String get error_offline_title => 'जडान छैन';
+
+  @override
+  String get error_server_title => 'अहिले लोड गर्न सकिएन';
+
+  @override
+  String get reader_error_server_message =>
+      'यो पाठ अहिले लोड गर्न सकिएन। कृपया पछि फेरि प्रयास गर्नुहोस्।';
+
+  @override
+  String get chants_error_server_message =>
+      'जपहरू अहिले लोड गर्न सकिएन। कृपया पछि फेरि प्रयास गर्नुहोस्।';
+
+  @override
   String get somethingWrong =>
       'केही गडबड भयो। आफ्नो जडान जाँच गरी फेरि प्रयास गर्नुहोस्';
 
