@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_analytics.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_card.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
@@ -115,6 +116,10 @@ class GroupProfilePostsTab extends ConsumerWidget {
                       includeUnfollowed: true,
                       showGroupLink: false,
                       groupId: groupId,
+                      placement: ConnectPostPlacement(
+                        surface: ConnectPostSurface.space,
+                        position: index,
+                      ),
                       onEdit: canPost ? () => onEditPost(post) : null,
                       onDelete:
                           canPost

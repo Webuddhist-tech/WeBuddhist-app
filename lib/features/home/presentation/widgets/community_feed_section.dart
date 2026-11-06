@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_feed_item.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_unified_feed_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_analytics.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_item_view.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/home_community_feed_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/group_events_section_skeleton.dart';
@@ -26,6 +27,7 @@ class CommunityFeedSection extends ConsumerWidget {
       authProvider.select((auth) => auth.isLoggedIn && !auth.isGuest),
     );
     final feed = ref.watch(homeCommunityFeedProvider);
+    ref.watch(connectPostViewTrackerProvider(ConnectPostSurface.homePreview));
 
     // Both loads are idempotent; the member's own feed decides whether
     // Discover is needed at all.
@@ -110,6 +112,10 @@ class _CommunityFeedContent extends StatelessWidget {
           ConnectFeedItemView(
             item: items[i],
             includeUnfollowed: includeUnfollowed,
+            placement: ConnectPostPlacement(
+              surface: ConnectPostSurface.homePreview,
+              position: i,
+            ),
           ),
           if (i < items.length - 1)
             Divider(height: 1, thickness: 1, color: dividerColor),

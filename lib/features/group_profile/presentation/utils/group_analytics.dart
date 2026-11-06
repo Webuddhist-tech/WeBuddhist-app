@@ -5,6 +5,12 @@ import 'package:flutter_pecha/core/analytics/analytics_tracking.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Where a group page was opened from, carried as `source` on `group_viewed`.
+abstract final class GroupViewSource {
+  /// The Connect tab shows the member's space by itself; nobody picked it.
+  static const String connectTab = 'connect_tab';
+}
+
 /// Product analytics for groups and recitation collections: one method per
 /// tracked action, so the event names and their property keys live in one
 /// place. Every call fires and forgets; callers fire after the server
@@ -25,6 +31,15 @@ class GroupAnalytics {
       AnalyticsProperties.groupId: groupId,
       AnalyticsProperties.groupType: groupType.name,
       AnalyticsProperties.source: source,
+    });
+  }
+
+  /// A tab of the group page settled on screen; [tab] is `posts`, `events`,
+  /// `practices` or `members`.
+  void groupTabViewed({required String groupId, required String tab}) {
+    _analytics.trackInBackground(AnalyticsEvents.groupTabViewed, {
+      AnalyticsProperties.groupId: groupId,
+      AnalyticsProperties.tab: tab,
     });
   }
 

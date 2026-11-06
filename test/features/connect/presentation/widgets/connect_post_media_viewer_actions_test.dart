@@ -2,6 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
+import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
+import 'package:flutter_pecha/core/analytics/analytics_service.dart';
+import 'package:flutter_pecha/core/analytics/no_op_analytics_service.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
@@ -11,11 +16,17 @@ import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/connect/domain/repositories/connect_repository.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_analytics.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_card.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_link_card.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_media_viewer.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:visibility_detector/visibility_detector.dart';
+
+import '../../../../core/analytics/recording_analytics_service.dart';
 
 class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
   _SignedInAuth() : super(const AuthState(isLoggedIn: true));
@@ -86,10 +97,17 @@ void main() {
   });
 
   /// No key on the card, like the feed, so a new post reuses its state.
-  Future<void> pumpCard(WidgetTester tester) async {
+  Future<void> pumpCard(
+    WidgetTester tester, {
+    ConnectPostPlacement? placement,
+    AnalyticsService analytics = const NoOpAnalyticsService(),
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          analyticsServiceProvider.overrideWithValue(analytics),
+          // A link card would otherwise fetch its preview over the network.
+          chatLinkPreviewProvider.overrideWith((ref, url) async => null),
           authProvider.overrideWith((ref) => _SignedInAuth()),
           connectRepositoryProvider.overrideWithValue(repository),
         ],
@@ -97,15 +115,27 @@ void main() {
           locale: const Locale('en'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: ValueListenableBuilder<ConnectPost?>(
-                valueListenable: shownPost,
-                builder:
-                    (context, post, _) =>
-                        post == null
-                            ? const SizedBox.shrink()
-                            : ConnectPostCard(post: post),
+          home: Consumer(
+            builder: (context, ref, child) {
+              // A feed screen holds the tracker for as long as a visit lasts.
+              if (placement != null) {
+                ref.watch(connectPostViewTrackerProvider(placement.surface));
+              }
+              return child!;
+            },
+            child: Scaffold(
+              body: SingleChildScrollView(
+                child: ValueListenableBuilder<ConnectPost?>(
+                  valueListenable: shownPost,
+                  builder:
+                      (context, post, _) =>
+                          post == null
+                              ? const SizedBox.shrink()
+                              : ConnectPostCard(
+                                post: post,
+                                placement: placement,
+                              ),
+                ),
               ),
             ),
           ),
@@ -269,5 +299,135 @@ void main() {
 
     gate.complete(const Right(null));
     await tester.pumpAndSettle();
+  });
+
+  group('post tracking', () {
+    const placement = ConnectPostPlacement(
+      surface: ConnectPostSurface.communityFeed,
+      position: 3,
+    );
+    late RecordingAnalyticsService analytics;
+
+    setUp(() {
+      analytics = RecordingAnalyticsService();
+      VisibilityDetectorController.instance.updateInterval = Duration.zero;
+    });
+
+    tearDown(() {
+      VisibilityDetectorController.instance.updateInterval = const Duration(
+        milliseconds: 500,
+      );
+    });
+
+    testWidgets('a card on screen for a second counts once per visit', (
+      tester,
+    ) async {
+      await pumpCard(tester, placement: placement, analytics: analytics);
+      await tester.pump();
+
+      await tester.pump(const Duration(milliseconds: 900));
+      expect(analytics.eventNames, isEmpty);
+
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(analytics.eventNames, [AnalyticsEvents.postViewed]);
+      expect(analytics.events.single.properties, {
+        'post_id': 'a',
+        'group_id': 'group-1',
+        'has_media': true,
+        'link_type': null,
+        'position': 3,
+        'surface': 'community_feed',
+      });
+
+      // A list recycles its cards; coming back in the same visit is no new view.
+      shownPost.value = null;
+      await tester.pump();
+      shownPost.value = _post('a');
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+      expect(analytics.eventNames, [AnalyticsEvents.postViewed]);
+    });
+
+    testWidgets('a card gone within a second does not count', (tester) async {
+      await pumpCard(tester, placement: placement, analytics: analytics);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      shownPost.value = null;
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+
+      expect(analytics.eventNames, isEmpty);
+    });
+
+    testWidgets('a card with no placement is not tracked', (tester) async {
+      await pumpCard(tester, analytics: analytics);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+
+      expect(analytics.eventNames, isEmpty);
+    });
+
+    testWidgets('opening an image counts as opening the post', (tester) async {
+      await pumpCard(tester, placement: placement, analytics: analytics);
+      await openViewer(tester);
+
+      expect(analytics.eventNames, contains(AnalyticsEvents.postOpened));
+    });
+
+    group('a link', () {
+      const urlLauncher = MethodChannel('plugins.flutter.io/url_launcher');
+
+      Future<void> tapLink(WidgetTester tester) async {
+        shownPost.value = _post('a').copyWith(
+          links: const [
+            ConnectPostLink(
+              id: 'l1',
+              type: 'WEBSITE',
+              url: 'https://example.com/private-path',
+            ),
+          ],
+        );
+        await pumpCard(tester, placement: placement, analytics: analytics);
+        await tester.pump();
+        await tester.ensureVisible(find.byType(ConnectPostLinkCard));
+        await tester.tap(find.byType(ConnectPostLinkCard));
+        await tester.pump();
+      }
+
+      void answerLaunchesWith(WidgetTester tester, bool opened) {
+        final messenger = tester.binding.defaultBinaryMessenger;
+        messenger.setMockMethodCallHandler(urlLauncher, (_) async => opened);
+        addTearDown(
+          () => messenger.setMockMethodCallHandler(urlLauncher, null),
+        );
+      }
+
+      testWidgets('that opens is counted, without its URL', (tester) async {
+        answerLaunchesWith(tester, true);
+
+        await tapLink(tester);
+
+        final opened = analytics.events.singleWhere(
+          (event) => event.name == AnalyticsEvents.postLinkOpened,
+        );
+        expect(opened.properties['link_type'], 'website');
+        expect(
+          opened.properties.values,
+          isNot(contains('https://example.com/private-path')),
+        );
+      });
+
+      testWidgets('that fails to open is not counted', (tester) async {
+        answerLaunchesWith(tester, false);
+
+        await tapLink(tester);
+
+        expect(
+          analytics.eventNames,
+          isNot(contains(AnalyticsEvents.postLinkOpened)),
+        );
+      });
+    });
   });
 }

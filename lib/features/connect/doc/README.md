@@ -39,6 +39,7 @@ connect/
 | Search | `group_search_provider.dart`, `group_search_screen.dart` |
 | Post detail | `connect_post_detail_screen.dart` (`ConnectPostDetailPanel`), `connect_post_detail_drawer.dart` |
 | Optimistic UI | `pendingJoinedGroupsProvider`, `pendingUnjoinedGroupIdsProvider` |
+| Analytics | `presentation/utils/connect_analytics.dart`; `ConnectPostCard` tracks only when given a `ConnectPostPlacement`, and a surface must watch `connectPostViewTrackerProvider` for as long as one visit lasts |
 | Barrel | `connect.dart` (screen only) |
 
 ## State management
