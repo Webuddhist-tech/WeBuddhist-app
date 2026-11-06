@@ -17,6 +17,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class PoemPreviewCard extends ConsumerWidget {
   const PoemPreviewCard({super.key, required this.poem, required this.onTap});
 
+  /// Cover frame from the Figma home Poem / Card (`21711:2611`): 324 × 190.
+  static const coverWidth = 324.0;
+  static const coverHeight = 190.0;
+
   final Poem poem;
   final VoidCallback onTap;
 
@@ -42,7 +46,8 @@ class PoemPreviewCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
+          AspectRatio(
+            aspectRatio: coverWidth / coverHeight,
             child:
                 poem.imageUrl != null && poem.imageUrl!.isNotEmpty
                     ? CachedNetworkImageWidget(
@@ -59,71 +64,79 @@ class PoemPreviewCard extends ConsumerWidget {
                       ),
                     ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            child: Text(
-              poem.title,
-              textAlign: TextAlign.center,
-              style: AppFontConfig.applyTibetanMetrics(
-                languageCode,
-                TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: primaryColor,
-                  height: 1.3,
-                ),
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: _PoemPreviewExcerpt(
-              content: poem.content,
-              style:
-                  AppFontConfig.applyTibetanMetrics(
-                    languageCode,
-                    excerptStyle,
-                  ) ??
-                  excerptStyle,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 4, 4),
-            child: Row(
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                   child: Text(
-                    poem.authorName,
+                    poem.title,
+                    textAlign: TextAlign.center,
                     style: AppFontConfig.applyTibetanMetrics(
                       languageCode,
                       TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
                         color: primaryColor,
-                        height: 1.2,
+                        height: 1.3,
                       ),
-                      compact: true,
                     ),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                IconButton(
-                  onPressed: () => sharePoem(context, poem),
-                  icon: Icon(
-                    AppAssets.readerShare,
-                    size: 20,
-                    color: secondaryColor,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: _PoemPreviewExcerpt(
+                    content: poem.content,
+                    style:
+                        AppFontConfig.applyTibetanMetrics(
+                          languageCode,
+                          excerptStyle,
+                        ) ??
+                        excerptStyle,
                   ),
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
+                ),
+                const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 4, 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          poem.authorName,
+                          style: AppFontConfig.applyTibetanMetrics(
+                            languageCode,
+                            TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: primaryColor,
+                              height: 1.2,
+                            ),
+                            compact: true,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => sharePoem(context, poem),
+                        icon: Icon(
+                          AppAssets.readerShare,
+                          size: 20,
+                          color: secondaryColor,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                        tooltip: context.l10n.share,
+                      ),
+                    ],
                   ),
-                  tooltip: context.l10n.share,
                 ),
               ],
             ),
