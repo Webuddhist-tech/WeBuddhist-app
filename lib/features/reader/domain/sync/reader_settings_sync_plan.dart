@@ -18,6 +18,10 @@ class ReaderSyncBlocks {
   static const String listLanguageKey = 'chant_list_language';
   static const String schemaVersionKey = 'schema_version';
 
+  /// Key inside the chant block for the content language its picks were
+  /// made under. Picks mean nothing in another language.
+  static const String chantLanguageKey = 'language';
+
   /// The version of this structure. Bumped when its format changes.
   static const int schemaVersion = 1;
 
@@ -33,6 +37,32 @@ class ReaderSyncBlocks {
       listLanguage: _languageOf(preferences[listLanguageKey]),
     );
   }
+
+  /// The content language the chant picks were made under; null when the
+  /// block is empty or was saved before the language was recorded.
+  String? get chantLanguage => _languageOf(chant[chantLanguageKey]);
+
+  /// The chant picks without their language: what the device stores.
+  Map<String, dynamic> get chantPicks => {
+    for (final entry in chant.entries)
+      if (entry.key != chantLanguageKey) entry.key: entry.value,
+  };
+
+  /// These blocks with the chant picks marked as made under [language]. An
+  /// empty block has nothing to mark.
+  ReaderSyncBlocks withChantLanguage(String language) =>
+      chant.isEmpty
+          ? this
+          : ReaderSyncBlocks(
+            appearance: appearance,
+            chant: {...chant, chantLanguageKey: language},
+            listLanguage: listLanguage,
+          );
+
+  /// The language the chant picks in a server `reader` object were made
+  /// under, when it holds any and they say.
+  static String? chantLanguageOfReader(Map<String, dynamic> reader) =>
+      _languageOf(_mapOf(reader[chantKey])[chantLanguageKey]);
 
   /// Whether [preferences] holds anything this sync saved, even if empty now.
   static bool hasSettings(Map<String, dynamic> preferences) =>
@@ -143,9 +173,10 @@ class ReaderSyncPlan {
 /// - The device has never synced: an account with saved settings wins, and an
 ///   account with none receives the device's settings.
 ///
-/// Chant picks belong to one content language. When the device reads another
-/// language than the server ([languageMatches] is false) they are left alone,
-/// unless they belong to another account, in which case they are cleared.
+/// Chant picks belong to one content language. When the server's were made
+/// under another language than the device reads ([languageMatches] is false)
+/// they are left alone, unless they belong to another account, in which case
+/// they are cleared.
 ReaderSyncPlan planReaderSettingsSync({
   required String userId,
   required String? owner,

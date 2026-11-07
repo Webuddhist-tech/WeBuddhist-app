@@ -177,7 +177,7 @@ reads.
 | Key in `preferences` | Holds |
 | --- | --- |
 | `reader_appearance` | Display sheet: background, sizes, fonts, spacing, verse numbers. Shared by every reader. |
-| `reader.chant` | Languages sheet picks in the chant context (`ReaderContextLayoutPrefs.toWire`). |
+| `reader.chant` | Languages sheet picks in the chant context (`ReaderContextLayoutPrefs.toWire`), plus `language`: the content language they were made under. |
 | `chant_list_language` | The chant list's language picker. |
 | `schema_version` | The format of the above. A newer version turns the sync off rather than risk overwriting it. |
 
@@ -197,9 +197,13 @@ that was. When a session starts (`planReaderSettingsSync`):
 - **Never synced:** an account with saved settings wins; an account with none
   receives the device's.
 
-Chant picks belong to one content language: when the device's language differs
-from the server's they are left out of the restore. The content language itself
-does not sync.
+Chant picks belong to one content language, so the block records it
+(`reader.chant.language`). Picks made under another language are not restored,
+whatever language the account reads now, and a device reading another language
+never deletes them: it saves only picks of its own language, and clears the
+server's only when they are its language's. Picks saved before the language
+was recorded count as made under the account's language. The content language
+itself does not sync.
 
 ---
 

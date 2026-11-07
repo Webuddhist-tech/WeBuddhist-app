@@ -125,6 +125,29 @@ void main() {
         expect(decoded.sameBlock(block, blocks), isTrue, reason: block.name);
       }
     });
+
+    test('marks the chant picks with their language, an empty block not', () {
+      const picks = ReaderSyncBlocks(chant: {'translation_on': true});
+
+      final marked = picks.withChantLanguage('bo');
+
+      expect(marked.chant, {'translation_on': true, 'language': 'bo'});
+      expect(marked.chantLanguage, 'bo');
+      expect(marked.chantPicks, {'translation_on': true});
+      expect(picks.chantLanguage, isNull);
+      expect(const ReaderSyncBlocks().withChantLanguage('bo').chant, isEmpty);
+    });
+
+    test('reads the chant language out of a server reader object', () {
+      expect(
+        ReaderSyncBlocks.chantLanguageOfReader({
+          'chant': {'language': 'bo'},
+        }),
+        'bo',
+      );
+      expect(ReaderSyncBlocks.chantLanguageOfReader({'chant': {}}), isNull);
+      expect(ReaderSyncBlocks.chantLanguageOfReader({}), isNull);
+    });
   });
 
   group('ProviderReaderSyncStore', () {
@@ -194,7 +217,10 @@ void main() {
       expect(blocks.appearance, isEmpty);
       expect(blocks.chant, isEmpty);
       expect(blocks.listLanguage, isNull);
-      expect(storage.values.containsKey(StorageKeys.chantListLanguage), isFalse);
+      expect(
+        storage.values.containsKey(StorageKeys.chantListLanguage),
+        isFalse,
+      );
     });
 
     test('a font pick from the server survives the trip', () async {

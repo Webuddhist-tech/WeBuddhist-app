@@ -173,15 +173,18 @@ class ReaderSettingsSync {
       await _storage.get<String>(StorageKeys.readerSettingsSynced),
     );
     final server = ReaderSyncBlocks.fromPreferences(preferences);
+    final local = await _readLocal();
+    // Picks saved before they carried their language count as made under
+    // the account's language.
     final languageMatches = _languagesMatch(
-      await _local.contentLanguage(),
-      response.contentLanguage,
+      local.language,
+      server.chantLanguage ?? response.contentLanguage,
     );
     final plan = planReaderSettingsSync(
       userId: userId,
       owner: owner,
       synced: synced,
-      local: await _local.read(),
+      local: local.blocks,
       server: server,
       serverHasSettings: ReaderSyncBlocks.hasSettings(preferences),
       languageMatches: languageMatches,
@@ -191,7 +194,7 @@ class ReaderSettingsSync {
       await _local.applyAppearance(plan.target.appearance);
     }
     if (plan.apply.contains(ReaderSyncBlock.chant)) {
-      await _local.applyChant(plan.target.chant);
+      await _local.applyChant(plan.target.chantPicks);
     }
     if (plan.apply.contains(ReaderSyncBlock.listLanguage)) {
       await _local.applyListLanguage(plan.target.listLanguage);
@@ -205,7 +208,7 @@ class ReaderSettingsSync {
     final reader = preferences[ReaderSyncBlocks.readerKey];
     final session = _Session(
       userId: userId,
-      synced: (await _local.read()).withBlocksFrom(server, plan.upload),
+      synced: (await _readLocal()).blocks.withBlocksFrom(server, plan.upload),
       reader: reader is Map ? Map<String, dynamic>.from(reader) : const {},
       schemaVersion: preferences[ReaderSyncBlocks.schemaVersionKey],
     );
@@ -216,23 +219,54 @@ class ReaderSettingsSync {
   }
 
   Future<void> _push(_Session session) async {
-    final local = await _local.read();
+    final (:language, blocks: local) = await _readLocal();
     final changed = [
       for (final block in ReaderSyncBlock.values)
         if (!local.sameBlock(block, session.synced)) block,
     ];
     if (changed.isEmpty) return;
 
-    final response = await _remote.patchPreferences(
-      _changesFor(session, local, changed),
-    );
-
-    final reader = response.preferences[ReaderSyncBlocks.readerKey];
-    session
-      ..reader = reader is Map ? Map<String, dynamic>.from(reader) : const {}
-      ..schemaVersion = response.preferences[ReaderSyncBlocks.schemaVersionKey]
-      ..synced = session.synced.withBlocksFrom(local, changed);
+    // Dropping the chant picks deletes the server's, which is right only when
+    // they are this language's. Another language's are another device's and
+    // stay; this device simply has none there.
+    final sent = [
+      for (final block in changed)
+        if (block != ReaderSyncBlock.chant ||
+            local.chant.isNotEmpty ||
+            _ownsServerChant(session, language))
+          block,
+    ];
+    if (sent.isNotEmpty) {
+      final response = await _remote.patchPreferences(
+        _changesFor(session, local, sent),
+      );
+      final reader = response.preferences[ReaderSyncBlocks.readerKey];
+      session
+        ..reader = reader is Map ? Map<String, dynamic>.from(reader) : const {}
+        ..schemaVersion =
+            response.preferences[ReaderSyncBlocks.schemaVersionKey];
+    }
+    session.synced = session.synced.withBlocksFrom(local, changed);
     await _persist(session);
+  }
+
+  /// Whether the server's chant picks are this device's to delete: made
+  /// under [language], or before the language was recorded.
+  static bool _ownsServerChant(_Session session, String language) {
+    final serverLanguage = ReaderSyncBlocks.chantLanguageOfReader(
+      session.reader,
+    );
+    return serverLanguage == null || _languagesMatch(language, serverLanguage);
+  }
+
+  /// The device's content language and settings, the chant picks marked as
+  /// made under it.
+  Future<({String language, ReaderSyncBlocks blocks})> _readLocal() async {
+    final language = TransliterationService.normalizeLanguage(
+      await _local.contentLanguage(),
+    );
+    final blocks = (await _local.read()).withChantLanguage(language);
+    return (language: language, blocks: blocks);
   }
 
   /// Only the blocks that changed, each one whole. A block with nothing left
@@ -264,10 +298,7 @@ class ReaderSettingsSync {
       StorageKeys.readerSettingsSynced,
       session.synced.encode(),
     );
-    await _storage.set<String>(
-      StorageKeys.readerSettingsOwner,
-      session.userId,
-    );
+    await _storage.set<String>(StorageKeys.readerSettingsOwner, session.userId);
   }
 
   /// The API sends uppercase codes (`ZH-HANS`) and the app holds lowercase

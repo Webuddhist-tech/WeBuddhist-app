@@ -170,24 +170,33 @@ void main() {
       expect(server.patches, isEmpty);
     });
 
-    test('an account with nothing saved receives the device settings', () async {
-      local.blocks = const ReaderSyncBlocks(
-        appearance: gold,
-        chant: zhPick,
-        listLanguage: 'hi',
-      );
+    test(
+      'an account with nothing saved receives the device settings',
+      () async {
+        local.blocks = const ReaderSyncBlocks(
+          appearance: gold,
+          chant: zhPick,
+          listLanguage: 'hi',
+        );
 
-      await signIn();
+        await signIn();
 
-      expect(server.patches, hasLength(1));
-      expect(server.preferences, {
-        'schema_version': ReaderSyncBlocks.schemaVersion,
-        'reader_appearance': gold,
-        'chant_list_language': 'hi',
-        'reader': {'chant': zhPick},
-      });
-      expect(local.blocks.appearance, gold, reason: 'the device is unchanged');
-    });
+        expect(server.patches, hasLength(1));
+        expect(server.preferences, {
+          'schema_version': ReaderSyncBlocks.schemaVersion,
+          'reader_appearance': gold,
+          'chant_list_language': 'hi',
+          'reader': {
+            'chant': {...zhPick, 'language': 'en'},
+          },
+        });
+        expect(
+          local.blocks.appearance,
+          gold,
+          reason: 'the device is unchanged',
+        );
+      },
+    );
 
     test('a device left on the defaults uploads nothing', () async {
       await signIn();
@@ -241,7 +250,20 @@ void main() {
 
       expect(server.preferences['reader'], {
         'library': {'translation_on': true},
-        'chant': hiPick,
+        'chant': {...hiPick, 'language': 'en'},
+      });
+    });
+
+    test('says which language the chant picks were made under', () async {
+      const hiPick = {'translation_language': 'hi'};
+      // The device's language, not the account's.
+      server.contentLanguage = 'BO';
+
+      await edit(const ReaderSyncBlocks(appearance: sky, chant: hiPick));
+
+      expect((server.preferences['reader'] as Map)['chant'], {
+        ...hiPick,
+        'language': 'en',
       });
     });
 
@@ -252,10 +274,10 @@ void main() {
 
       await edit(const ReaderSyncBlocks(appearance: sky, chant: asWritten));
 
-      expect(
-        (server.preferences['reader'] as Map)['chant'],
-        asWritten,
-      );
+      expect((server.preferences['reader'] as Map)['chant'], {
+        ...asWritten,
+        'language': 'en',
+      });
       expect(
         (server.preferences['reader'] as Map)['chant'] as Map,
         containsPair('scripts', containsPair('bo', isNull)),
@@ -306,9 +328,7 @@ void main() {
 
     test('a failed save is retried on reconnect', () async {
       server.offline = true;
-      await edit(
-        const ReaderSyncBlocks(appearance: gold, listLanguage: 'hi'),
-      );
+      await edit(const ReaderSyncBlocks(appearance: gold, listLanguage: 'hi'));
       expect(server.preferences['reader_appearance'], sky);
 
       server.offline = false;
@@ -332,30 +352,36 @@ void main() {
       expect(local.blocks.appearance, gold, reason: 'the edit is kept');
     });
 
-    test('another device\'s change to another block still comes down', () async {
-      local.blocks = const ReaderSyncBlocks(
-        appearance: gold,
-        listLanguage: 'hi',
-      );
-      server.preferences['chant_list_language'] = 'zh';
-      relaunch();
+    test(
+      'another device\'s change to another block still comes down',
+      () async {
+        local.blocks = const ReaderSyncBlocks(
+          appearance: gold,
+          listLanguage: 'hi',
+        );
+        server.preferences['chant_list_language'] = 'zh';
+        relaunch();
 
-      await signIn();
+        await signIn();
 
-      expect(local.blocks.listLanguage, 'zh');
-      expect(server.preferences['reader_appearance'], gold);
-      expect(server.preferences['chant_list_language'], 'zh');
-    });
+        expect(local.blocks.listLanguage, 'zh');
+        expect(server.preferences['reader_appearance'], gold);
+        expect(server.preferences['chant_list_language'], 'zh');
+      },
+    );
 
-    test('another device\'s change comes down when nothing is pending', () async {
-      server.preferences['reader_appearance'] = gold;
-      relaunch();
+    test(
+      'another device\'s change comes down when nothing is pending',
+      () async {
+        server.preferences['reader_appearance'] = gold;
+        relaunch();
 
-      await signIn();
+        await signIn();
 
-      expect(local.blocks.appearance, gold);
-      expect(server.patches, isEmpty);
-    });
+        expect(local.blocks.appearance, gold);
+        expect(server.patches, isEmpty);
+      },
+    );
 
     test('a save still pending at sign-out goes out first', () async {
       local.blocks = const ReaderSyncBlocks(
@@ -388,14 +414,17 @@ void main() {
       expect(local.blocks.appearance, sky);
     });
 
-    test('does not save or claim the device before it knows the server', () async {
-      server.offline = true;
-      await signIn();
-      await edit(const ReaderSyncBlocks(appearance: gold));
+    test(
+      'does not save or claim the device before it knows the server',
+      () async {
+        server.offline = true;
+        await signIn();
+        await edit(const ReaderSyncBlocks(appearance: gold));
 
-      expect(server.patches, isEmpty);
-      expect(storage.values[StorageKeys.readerSettingsOwner], isNull);
-    });
+        expect(server.patches, isEmpty);
+        expect(storage.values[StorageKeys.readerSettingsOwner], isNull);
+      },
+    );
   });
 
   group('another account on this device', () {
@@ -497,6 +526,79 @@ void main() {
       expect(local.blocks.chant, hiPick);
       expect(server.patches, isEmpty);
       expect((server.preferences['reader'] as Map)['chant'], zhPick);
+    });
+
+    test('picks made under another language stay out, whatever the account '
+        'reads now', () async {
+      server
+        ..preferences = {
+          'reader': {
+            'chant': {...zhPick, 'language': 'bo'},
+          },
+        }
+        ..contentLanguage = 'EN';
+      local.language = 'en';
+
+      await signIn();
+
+      expect(local.blocks.chant, isEmpty);
+      expect(server.patches, isEmpty);
+    });
+
+    test('picks made under this language come back after the account moved '
+        'on', () async {
+      server
+        ..preferences = {
+          'reader': {
+            'chant': {...zhPick, 'language': 'en'},
+          },
+        }
+        ..contentLanguage = 'BO';
+      local.language = 'en';
+
+      await signIn();
+
+      expect(
+        local.blocks.chant,
+        zhPick,
+        reason: 'the language stays on the wire',
+      );
+      expect(server.patches, isEmpty);
+    });
+
+    test(
+      'dropping its own picks leaves another language\'s on the server',
+      () async {
+        const boPicks = {'translation_language': 'zh', 'language': 'bo'};
+        server.preferences = {
+          'reader': {'chant': boPicks},
+        };
+        local.blocks = const ReaderSyncBlocks(
+          chant: {'translation_language': 'hi'},
+        );
+
+        await signIn();
+        // What an app language change does to the local store.
+        await edit(const ReaderSyncBlocks());
+        relaunch();
+        await signIn();
+
+        expect(server.patches, isEmpty);
+        expect((server.preferences['reader'] as Map)['chant'], boPicks);
+      },
+    );
+
+    test('dropping its own picks removes them from the server', () async {
+      server.preferences = {
+        'reader': {
+          'chant': {...zhPick, 'language': 'en'},
+        },
+      };
+
+      await signIn();
+      await edit(const ReaderSyncBlocks());
+
+      expect(server.preferences['reader'], isEmpty);
     });
 
     test('language codes match whatever the case', () async {
