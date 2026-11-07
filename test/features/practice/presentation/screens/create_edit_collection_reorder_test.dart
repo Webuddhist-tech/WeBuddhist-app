@@ -180,7 +180,8 @@ void main() {
 
       expect(popped, isFalse, reason: 'must not report a successful save');
       expect(repository.patches, isEmpty);
-      expect(find.text('Failed to reorder chants'), findsOneWidget);
+      final l10n = lookupAppLocalizations(const Locale('en'));
+      expect(find.text(l10n.chant_collection_reorder_error), findsOneWidget);
 
       // Let the snackbar's timer run out before the test ends.
       await tester.pump(const Duration(seconds: 5));

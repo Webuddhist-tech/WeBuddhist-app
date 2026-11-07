@@ -410,7 +410,7 @@ abstract class AppLocalizations {
   /// No description provided for @mala_groups_section.
   ///
   /// In en, this message translates to:
-  /// **'Events'**
+  /// **'Groups'**
   String get mala_groups_section;
 
   /// No description provided for @mala_group_untitled.
