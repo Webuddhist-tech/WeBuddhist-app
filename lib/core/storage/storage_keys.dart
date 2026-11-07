@@ -95,6 +95,11 @@ class StorageKeys {
   /// Daily reminder enabled flag
   static const String dailyReminderEnabled = 'daily_reminder_enabled';
 
+  /// Set once this install has asked for the OS notification permission. Tells
+  /// a first ask from a blocked one on Android; analytics only.
+  static const String notificationPermissionAsked =
+      'notification_permission_asked';
+
   /// App-level master notification toggle. When false the app cancels all
   /// scheduled notifications without touching OS permission. Re-enabling
   /// re-schedules from the stored routine. Default: true.

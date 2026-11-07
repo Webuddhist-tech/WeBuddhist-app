@@ -29,11 +29,15 @@ class GroupProfileScreen extends ConsumerStatefulWidget {
   /// Replaces the back arrow, e.g. the Connect tab's spaces menu.
   final Widget? leading;
 
+  /// Carried as `source` on `group_viewed`; see [GroupViewSource].
+  final String? analyticsSource;
+
   const GroupProfileScreen({
     super.key,
     required this.groupId,
     this.openPrayerRequests = false,
     this.leading,
+    this.analyticsSource,
   });
 
   @override
@@ -113,7 +117,11 @@ class _GroupProfileScreenState extends ConsumerState<GroupProfileScreen> {
       onFirstValue:
           (profile) => ref
               .read(groupAnalyticsProvider)
-              .groupViewed(groupId: groupId, groupType: profile.groupType),
+              .groupViewed(
+                groupId: groupId,
+                groupType: profile.groupType,
+                source: widget.analyticsSource,
+              ),
       child: scaffold,
     );
   }

@@ -22,6 +22,14 @@ class HomeAnalytics {
       AnalyticsProperties.isGuest: isGuest,
     });
   }
+
+  /// The selected bottom tab changed; [tab] is `home`, `practice`, `connect`
+  /// or `me`. The tab shown at launch is not a change, so it is not tracked.
+  void tabViewed({required String tab}) {
+    _analytics.trackInBackground(AnalyticsEvents.tabViewed, {
+      AnalyticsProperties.tab: tab,
+    });
+  }
 }
 
 final homeAnalyticsProvider = Provider<HomeAnalytics>((ref) {

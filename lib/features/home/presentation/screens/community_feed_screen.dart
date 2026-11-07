@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_unified_feed_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_analytics.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_item_view.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_paginated_list_view.dart';
@@ -22,6 +23,12 @@ class CommunityFeedScreen extends ConsumerWidget {
       authProvider.select((auth) => auth.isLoggedIn && !auth.isGuest),
     );
     final feed = ref.watch(homeCommunityFeedProvider);
+    ref.watch(
+      connectPostViewTrackerProvider((
+        surface: ConnectPostSurface.communityFeed,
+        visitId: null,
+      )),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!context.mounted) return;
@@ -99,6 +106,10 @@ class CommunityFeedScreen extends ConsumerWidget {
               (context, index) => ConnectFeedItemView(
                 item: items[index],
                 includeUnfollowed: feed.includeUnfollowed,
+                placement: ConnectPostPlacement(
+                  surface: ConnectPostSurface.communityFeed,
+                  position: index,
+                ),
               ),
         ),
       ),

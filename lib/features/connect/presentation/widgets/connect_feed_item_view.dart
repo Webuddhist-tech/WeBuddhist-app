@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_feed_item.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_analytics.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_event_card.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_card.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_practice_card.dart';
@@ -10,6 +11,7 @@ class ConnectFeedItemView extends StatelessWidget {
     super.key,
     required this.item,
     required this.includeUnfollowed,
+    required this.placement,
   });
 
   final ConnectFeedItem item;
@@ -17,11 +19,18 @@ class ConnectFeedItemView extends StatelessWidget {
   /// Which feed the item came from, so likes update that list.
   final bool includeUnfollowed;
 
+  /// Where this row sits, for tracking a post card.
+  final ConnectPostPlacement placement;
+
   @override
   Widget build(BuildContext context) {
     final post = item.post;
     if (item.type == ConnectFeedItemType.post && post != null) {
-      return ConnectPostCard(post: post, includeUnfollowed: includeUnfollowed);
+      return ConnectPostCard(
+        post: post,
+        includeUnfollowed: includeUnfollowed,
+        placement: placement,
+      );
     }
 
     final event = item.event;

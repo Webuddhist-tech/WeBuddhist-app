@@ -9,6 +9,7 @@ import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/notifications/data/channels/notification_channels.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:flutter_pecha/features/notifications/data/models/notification_nav.dart';
+import 'package:flutter_pecha/features/notifications/data/services/notification_permission_prompt.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:go_router/go_router.dart';
@@ -327,14 +328,22 @@ class NotificationService {
                 AndroidFlutterLocalNotificationsPlugin
               >();
 
+      // Only a request the OS actually shows counts as a prompt.
+      final prompting = await canShowNotificationPrompt();
+      await markNotificationPromptAsked();
+      if (prompting) {
+        analytics?.notificationPermissionPrompted(os: NotificationOs.android);
+      }
+
       // Request notification permission
-      analytics?.notificationPermissionPrompted(os: NotificationOs.android);
       final bool? granted =
           await androidImplementation?.requestNotificationsPermission();
-      analytics?.notificationPermissionAnswered(
-        granted: granted ?? false,
-        os: NotificationOs.android,
-      );
+      if (prompting) {
+        analytics?.notificationPermissionAnswered(
+          granted: granted ?? false,
+          os: NotificationOs.android,
+        );
+      }
 
       // For Android 12+, also request exact alarm permission
       if (granted == true) {
@@ -349,8 +358,7 @@ class NotificationService {
                 IOSFlutterLocalNotificationsPlugin
               >();
       // iOS asks once; a request after a refusal returns with no dialog.
-      final prompting =
-          !Platform.isIOS || !await Permission.notification.isPermanentlyDenied;
+      final prompting = await canShowNotificationPrompt();
       if (prompting) {
         analytics?.notificationPermissionPrompted(os: NotificationOs.ios);
       }

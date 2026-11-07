@@ -15,6 +15,7 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_pecha/shared/widgets/main_tab_app_bar.dart';
 import 'package:flutter_pecha/features/more/presentation/providers/use_case_providers.dart';
 import 'package:flutter_pecha/features/more/presentation/providers/user_stats_provider.dart';
+import 'package:flutter_pecha/features/more/presentation/utils/me_analytics.dart';
 import 'package:flutter_pecha/features/more/presentation/widgets/me_prayer_requests_row.dart';
 import 'package:flutter_pecha/features/more/presentation/widgets/me_profile_header.dart';
 import 'package:flutter_pecha/features/more/presentation/widgets/me_stats_section.dart';
@@ -61,7 +62,10 @@ class MeScreen extends ConsumerWidget {
               size: 24,
               color: Theme.of(context).iconTheme.color,
             ),
-            onPressed: () => context.push('/home/settings'),
+            onPressed: () {
+              ref.read(meAnalyticsProvider).itemTapped(MeItem.settings);
+              context.push('/home/settings');
+            },
           ),
         ],
       ),
@@ -144,7 +148,12 @@ class _LoggedInProfileState extends ConsumerState<_LoggedInProfile>
                   else
                     MeStatsSection(stats: stats),
                   MePrayerRequestsRow(
-                    onTap: () => context.push(AppRoutes.myPrayerRequests),
+                    onTap: () {
+                      ref
+                          .read(meAnalyticsProvider)
+                          .itemTapped(MeItem.prayerRequests);
+                      context.push(AppRoutes.myPrayerRequests);
+                    },
                   ),
                   const SizedBox(height: 32),
                 ],

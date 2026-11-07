@@ -71,7 +71,7 @@ void main() {
   });
 
   test('leave and link open fire their own events', () {
-    analytics.eventLeft(eventId: 'e1', groupId: 'g1');
+    analytics.eventLeft(eventId: 'e1', groupId: 'g1', planId: 'p1');
     analytics.eventLinkOpened(
       eventId: 'e1',
       groupId: 'g1',
@@ -82,6 +82,12 @@ void main() {
       AnalyticsEvents.groupEventLeft,
       AnalyticsEvents.groupEventLinkOpened,
     ]);
+    expect(service.events.first.properties, {
+      'event_id': 'e1',
+      'group_id': 'g1',
+      'plan_id': 'p1',
+      'series_id': null,
+    });
     expect(service.events.last.properties, {
       'event_id': 'e1',
       'group_id': 'g1',

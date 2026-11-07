@@ -39,7 +39,7 @@ notifications/
 | Connect (backend) toggles | `presentation/providers/notification_preferences_provider.dart`, `data/datasource/notification_preferences_remote_datasource.dart`, `data/repositories/notification_preferences_repository_impl.dart` |
 | Notification IDs / channels | `data/notification_id_scheme.dart`, `data/channels/notification_channels.dart` |
 | Settings UI | `presentation/notification_settings_screen.dart`, `presentation/widgets/notification_switch_row.dart` |
-| Analytics | `presentation/utils/notification_settings_analytics.dart` |
+| Analytics | `presentation/utils/notification_settings_analytics.dart`; `data/services/notification_permission_prompt.dart` decides when a permission request counts as a real prompt, for this feature and for push |
 | Barrel | `notifications.dart` |
 
 ## State management

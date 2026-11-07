@@ -20,4 +20,12 @@ void main() {
       'is_guest': false,
     });
   });
+
+  test('tabViewed names the tab', () {
+    final service = RecordingAnalyticsService();
+    HomeAnalytics(service).tabViewed(tab: 'connect');
+
+    expect(service.eventNames, [AnalyticsEvents.tabViewed]);
+    expect(service.events.single.properties, {'tab': 'connect'});
+  });
 }

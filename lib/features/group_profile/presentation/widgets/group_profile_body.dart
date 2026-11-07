@@ -17,6 +17,7 @@ import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart'
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_analytics.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_practice_card.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
@@ -34,6 +35,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_about_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_composer_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_post_composer_screen.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_analytics.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_request_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_requests_row.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_reports_row.dart';
@@ -79,6 +81,16 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     with TickerProviderStateMixin {
   TabController? _tabController;
   List<_GroupProfileTab> _visibleTabs = const [];
+
+  /// Last tab reported, so settling twice or rebuilding the controller when
+  /// the tab set changes does not report the same tab again.
+  _GroupProfileTab? _trackedTab;
+
+  static int _nextVisit = 0;
+
+  /// This page's own posts-viewed list, so the same group open twice (the
+  /// Connect tab's space and a page pushed on top) counts each separately.
+  final String _postViewVisitId = 'group-${_nextVisit++}';
   final GlobalKey _profileTitleKey = GlobalKey();
   String? _enrollingSeriesId;
   String? _joiningAccumulatorId;
@@ -204,6 +216,8 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     if (controller == null || controller.indexIsChanging) return;
     if (!mounted) return;
 
+    _trackTabViewed(controller.index);
+
     final groupId = widget.profile.id;
     final isMembersTab =
         controller.index < _visibleTabs.length &&
@@ -218,6 +232,16 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         ref.read(groupMembersProvider(groupId).notifier).loadInitial();
       }
     }
+  }
+
+  void _trackTabViewed(int index) {
+    if (index >= _visibleTabs.length) return;
+    final tab = _visibleTabs[index];
+    if (tab == _trackedTab) return;
+    _trackedTab = tab;
+    ref
+        .read(groupAnalyticsProvider)
+        .groupTabViewed(groupId: widget.profile.id, tab: tab.name);
   }
 
   bool _onTabScrollLoadMore(
@@ -314,6 +338,13 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
   @override
   Widget build(BuildContext context) {
+    // A visit spans the whole page, not each return to its Posts tab.
+    ref.watch(
+      connectPostViewTrackerProvider((
+        surface: ConnectPostSurface.space,
+        visitId: _postViewVisitId,
+      )),
+    );
     final followKey = GroupFollowKey(
       groupId: widget.profile.id,
       groupType: widget.profile.groupType,
@@ -766,6 +797,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         lineHeight: lineHeight,
         pageStorageKey: pageStorageKey,
         canPost: canPost,
+        postViewVisitId: _postViewVisitId,
         onCreatePost: () => _onCreatePost(profile),
         onEditPost: (post) => _onEditPost(profile, post),
       ),

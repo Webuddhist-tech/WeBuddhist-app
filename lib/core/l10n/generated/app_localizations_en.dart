@@ -185,7 +185,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mala_group_accumulations => 'Add recitation to';
 
   @override
-  String get mala_groups_section => 'Events';
+  String get mala_groups_section => 'Groups';
 
   @override
   String get mala_group_untitled => 'Untitled space';

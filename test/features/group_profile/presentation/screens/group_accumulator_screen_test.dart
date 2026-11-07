@@ -64,8 +64,7 @@ class _FakeProfileRepository extends Fake
   }) => null;
 
   @override
-  GroupMembersPage? readStoredGroupMembers(String groupId) =>
-      null;
+  GroupMembersPage? readStoredGroupMembers(String groupId) => null;
 
   @override
   GroupEventParticipantsPage? readStoredGroupEventParticipants(
@@ -73,13 +72,10 @@ class _FakeProfileRepository extends Fake
   ) => null;
 
   @override
-  GroupJoinRequestsPage? readStoredGroupJoinRequests(
-    String groupId,
-  ) => null;
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(String groupId) => null;
 
   @override
-  GroupReportsPage? readStoredGroupReports(String groupId) =>
-      null;
+  GroupReportsPage? readStoredGroupReports(String groupId) => null;
 }
 
 const _detail = GroupAccumulatorDetail(
@@ -92,15 +88,19 @@ const _detail = GroupAccumulatorDetail(
 
 Future<void> _pump(
   WidgetTester tester,
-  RecordingAnalyticsService service,
-) async {
+  RecordingAnalyticsService service, {
+  bool loading = false,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         analyticsServiceProvider.overrideWithValue(service),
         authProvider.overrideWith((ref) => _GuestAuth()),
         groupAccumulatorDetailProvider.overrideWith(
-          () => GroupAccumulatorDetailNotifier.fixed(const Right(_detail)),
+          () =>
+              loading
+                  ? GroupAccumulatorDetailNotifier.pending()
+                  : GroupAccumulatorDetailNotifier.fixed(const Right(_detail)),
         ),
         groupProfileProvider.overrideWith(
           () => GroupProfileNotifier.fixed(const Left(NetworkFailure('test'))),
@@ -131,11 +131,6 @@ void main() {
   ) async {
     final service = RecordingAnalyticsService();
     await _pump(tester, service);
-
-    // Still loading: nothing reported yet.
-    expect(service.events, isEmpty);
-
-    await tester.pump();
     await tester.pump();
 
     expect(find.text('Green Tara'), findsOneWidget);
@@ -151,5 +146,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(service.eventNames, [AnalyticsEvents.groupAccumulatorViewed]);
+  });
+
+  testWidgets('viewed is not reported while the detail is loading', (
+    tester,
+  ) async {
+    final service = RecordingAnalyticsService();
+    await _pump(tester, service, loading: true);
+    await tester.pump();
+
+    expect(find.text('Green Tara'), findsNothing);
+    expect(service.events, isEmpty);
   });
 }

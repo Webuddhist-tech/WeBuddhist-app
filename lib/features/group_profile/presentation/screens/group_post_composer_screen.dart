@@ -11,6 +11,7 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_analytics.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_link_card.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_post_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
@@ -322,6 +323,11 @@ class _GroupPostComposerScreenState
             : l10n.group_post_update_error,
       );
       return;
+    }
+    if (post == null) {
+      ref
+          .read(connectAnalyticsProvider)
+          .groupPostCreated(post: saved, groupId: widget.profile.id);
     }
     Navigator.of(context).pop(GroupPostComposerResult(saved, saved: true));
   }

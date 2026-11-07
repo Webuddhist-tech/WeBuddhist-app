@@ -25,6 +25,26 @@ void main() {
     });
   });
 
+  test('the Connect tab marks the group it opened by itself', () {
+    analytics.groupViewed(
+      groupId: 'g1',
+      groupType: GroupType.community,
+      source: GroupViewSource.connectTab,
+    );
+
+    expect(service.events.single.properties['source'], 'connect_tab');
+  });
+
+  test('groupTabViewed names the group and the tab', () {
+    analytics.groupTabViewed(groupId: 'g1', tab: 'events');
+
+    expect(service.eventNames, [AnalyticsEvents.groupTabViewed]);
+    expect(service.events.single.properties, {
+      'group_id': 'g1',
+      'tab': 'events',
+    });
+  });
+
   test('follow and unfollow carry the group and its type', () {
     analytics.groupFollowed(groupId: 'g1', groupType: GroupType.community);
     analytics.groupUnfollowed(groupId: 'g1', groupType: GroupType.community);

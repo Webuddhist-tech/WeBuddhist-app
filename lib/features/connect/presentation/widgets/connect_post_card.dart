@@ -1,13 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/constants/app_config.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
+import 'package:flutter_pecha/core/utils/url_opener.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_like_actions.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_analytics.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_post_share.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_action_menu.dart';
@@ -20,6 +24,7 @@ import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_media_grid.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_media_viewer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 bool _containsTibetan(String value) {
   return RegExp(r'[\u0F00-\u0FFF]').hasMatch(value);
@@ -34,6 +39,7 @@ class ConnectPostCard extends ConsumerStatefulWidget {
     this.groupId,
     this.onEdit,
     this.onDelete,
+    this.placement,
   });
 
   final ConnectPost post;
@@ -49,15 +55,21 @@ class ConnectPostCard extends ConsumerStatefulWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
+  /// Where this card sits in a feed; the card is only tracked when set.
+  final ConnectPostPlacement? placement;
+
   @override
   ConsumerState<ConnectPostCard> createState() => _ConnectPostCardState();
 }
 
 class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
   static const _collapsedCaptionLines = 2;
+  static const _viewedVisibleFraction = 0.5;
+  static const _viewedAfter = Duration(seconds: 1);
 
   final ConnectOptimisticLikeState _likeState = ConnectOptimisticLikeState();
   bool _captionExpanded = false;
+  Timer? _viewTimer;
 
   bool get _isLiked => _likeState.isLiked(widget.post.likedByMe);
 
@@ -70,11 +82,86 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
   void didUpdateWidget(ConnectPostCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Feed cards have no keys, so a reorder can hand this state another post.
-    if (widget.post.id != oldWidget.post.id) _captionExpanded = false;
+    if (widget.post.id != oldWidget.post.id) {
+      _captionExpanded = false;
+      _cancelViewTimer();
+    }
+  }
+
+  @override
+  void dispose() {
+    _cancelViewTimer();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final placement = widget.placement;
+    if (placement == null) return _buildCard(context);
+    return VisibilityDetector(
+      key: ValueKey(
+        'connect-post-${placement.surface.key}-${placement.visitId}-'
+        '${widget.post.id}',
+      ),
+      onVisibilityChanged: _onVisibilityChanged,
+      child: _buildCard(context),
+    );
+  }
+
+  /// A card taller than twice the screen can never be half visible, so filling
+  /// half the screen counts too.
+  void _onVisibilityChanged(VisibilityInfo info) {
+    // The detector can report once more after this card has gone.
+    if (!mounted) return;
+    final isViewable =
+        info.visibleFraction >= _viewedVisibleFraction ||
+        info.visibleBounds.height >=
+            MediaQuery.sizeOf(context).height * _viewedVisibleFraction;
+    if (isViewable) {
+      _viewTimer ??= Timer(_viewedAfter, _reportViewed);
+    } else {
+      _cancelViewTimer();
+    }
+  }
+
+  void _cancelViewTimer() {
+    _viewTimer?.cancel();
+    _viewTimer = null;
+  }
+
+  void _reportViewed() {
+    _viewTimer = null;
+    final placement = widget.placement;
+    if (!mounted || placement == null) return;
+    final isFirstView = ref
+        .read(connectPostViewTrackerProvider(placement.viewScope))
+        .markViewed(widget.post.id);
+    if (!isFirstView) return;
+    ref
+        .read(connectAnalyticsProvider)
+        .postViewed(post: widget.post, placement: placement);
+  }
+
+  void _trackOpened() {
+    final placement = widget.placement;
+    if (placement == null) return;
+    ref
+        .read(connectAnalyticsProvider)
+        .postOpened(post: widget.post, placement: placement);
+  }
+
+  /// Reads everything first: a first-party link can navigate away from here.
+  Future<void> _openPostLink(ConnectPostLink link) async {
+    final analytics = ref.read(connectAnalyticsProvider);
+    final post = widget.post;
+    final placement = widget.placement;
+    final opened = await openLink(link.url);
+    if (opened && placement != null) {
+      analytics.postLinkOpened(post: post, placement: placement, link: link);
+    }
+  }
+
+  Widget _buildCard(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final post = widget.post;
@@ -161,6 +248,7 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
                     ConnectPostLinkCard(
                       url: links[i].url,
                       label: links[i].label,
+                      onTap: () => _openPostLink(links[i]),
                     ),
                   ],
                 ],
@@ -218,6 +306,7 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
   }
 
   void _openDetail() {
+    _trackOpened();
     ConnectPostDetailDrawer.show(
       context,
       postId: widget.post.id,
@@ -228,6 +317,7 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
   }
 
   void _openMediaViewer(List<ConnectPostMedia> media, int index) {
+    _trackOpened();
     ConnectPostMediaViewer.show(
       context,
       media: media,

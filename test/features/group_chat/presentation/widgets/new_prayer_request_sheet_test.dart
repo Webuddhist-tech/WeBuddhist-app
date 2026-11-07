@@ -14,7 +14,10 @@ import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dar
 import '../../../../helpers/fake_screen_cache_store.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
-const _defaultHint = 'How can we pray for you today?';
+/// Read from the English strings so a copy change in Tolgee doesn't break it.
+final _en = lookupAppLocalizations(const Locale('en'));
+final _defaultHint = _en.event_prayer_hint;
+String _intentionHint(String topics) => _en.event_prayer_hint_intention(topics);
 
 const _calm = ChatPrayerIntentionDTO(
   slug: 'calm',
@@ -90,11 +93,11 @@ void main() {
 
     await tester.tap(find.text('Calm'));
     await tester.pump();
-    expect(_hint(tester), 'Share a prayer about Illness · Conflict · Stress');
+    expect(_hint(tester), _intentionHint('Illness · Conflict · Stress'));
 
     await tester.tap(find.text('Overcome'));
     await tester.pump();
-    expect(_hint(tester), 'Share a prayer about Danger · Harm · Enemies');
+    expect(_hint(tester), _intentionHint('Danger · Harm · Enemies'));
   });
 
   testWidgets('an edited request takes its description from the catalog', (
@@ -118,7 +121,7 @@ void main() {
 
     catalog.complete([_calm, _overcome]);
     await tester.pumpAndSettle();
-    expect(_hint(tester), 'Share a prayer about Illness · Conflict · Stress');
+    expect(_hint(tester), _intentionHint('Illness · Conflict · Stress'));
   });
 
   testWidgets('an intention without a description keeps the default hint', (
