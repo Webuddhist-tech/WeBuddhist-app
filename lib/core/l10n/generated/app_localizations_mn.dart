@@ -1162,6 +1162,23 @@ class AppLocalizationsMn extends AppLocalizations {
       'Ачаалах боломжгүй. Холболтоо шалгаад дахин оролдоно уу';
 
   @override
+  String get reader_not_translated => 'Орчуулаагүй';
+
+  @override
+  String get error_offline_title => 'Холболт алга';
+
+  @override
+  String get error_server_title => 'Одоогоор ачаалах боломжгүй';
+
+  @override
+  String get reader_error_server_message =>
+      'Энэ эхийг одоогоор ачаалах боломжгүй. Дараа дахин оролдоно уу.';
+
+  @override
+  String get chants_error_server_message =>
+      'Магтаалуудыг одоогоор ачаалах боломжгүй. Дараа дахин оролдоно уу.';
+
+  @override
   String get somethingWrong =>
       'Алдаа гарлаа. Холболтоо шалгаад дахин оролдоно уу';
 

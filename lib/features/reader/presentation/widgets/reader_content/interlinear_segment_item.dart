@@ -14,11 +14,19 @@ import 'package:flutter_pecha/features/texts/presentation/segment_html_widget.da
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// An original line with its translation under it ends at its letters, not
+/// at the bottom of its line box; the translation starts at its own. Most
+/// of the room inside a pair was that empty line box (Tibetan's 1.9 above
+/// all), so trimming it is what pulls the pair together.
+const _trimUnder = TextHeightBehavior(applyHeightToLastDescent: false);
+const _trimOver = TextHeightBehavior(applyHeightToFirstAscent: false);
+
 /// Which lines a verse draws in the dual layout. "Translation only"
 /// ([showOriginal] false) still draws the original when the translation
 /// could not be loaded, so the page never turns into a column of
-/// placeholders; a verse the translation has no line for is left out before
-/// this (see `SecondaryReaderState.lacks`). While the verse's translation is
+/// placeholders; a verse the translation has no line for says "Not
+/// translated" instead ([InterlinearSegmentItem.untranslated], from
+/// `SecondaryReaderState.lacks`). While the verse's translation is
 /// still on its way ([translationPending]) it draws the loading line instead,
 /// so the original does not flash in before it.
 ({bool original, bool translation}) interlinearLayers({
@@ -59,6 +67,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
     this.isGreyedOut = false,
     this.isLive = false,
     this.followingLive = false,
+    this.untranslated = false,
     this.onTap,
   });
 
@@ -93,6 +102,11 @@ class InterlinearSegmentItem extends ConsumerWidget {
 
   /// A live room is being followed: verses other than [isLive]'s are muted.
   final bool followingLive;
+
+  /// "Translation only", and the translation has no line for this verse: a
+  /// muted "Not translated" stands in its place, with its number, so no
+  /// verse goes missing without a word.
+  final bool untranslated;
   final VoidCallback? onTap;
 
   @override
@@ -104,12 +118,21 @@ class InterlinearSegmentItem extends ConsumerWidget {
       language: primaryLanguage,
       scope: scope,
     );
-    final secondary = _resolveSecondaryContent(context);
-    final layers = interlinearLayers(
-      showOriginal: showPrimary,
-      hasTranslation: !secondary.isPlaceholder,
-      translationPending: secondary.isPending,
-    );
+    final secondary =
+        untranslated
+            ? _SecondaryResolved(
+              text: context.l10n.reader_not_translated,
+              isPlaceholder: true,
+            )
+            : _resolveSecondaryContent(context);
+    final layers =
+        untranslated
+            ? (original: false, translation: true)
+            : interlinearLayers(
+              showOriginal: showPrimary,
+              hasTranslation: !secondary.isPlaceholder,
+              translationPending: secondary.isPending,
+            );
     // The aligned line is the same kind of segment, so it shares the style.
     final typeStyle = SegmentTypeStyle.of(segment.type);
 
@@ -134,27 +157,54 @@ class InterlinearSegmentItem extends ConsumerWidget {
       translationRole,
       translationScript,
     );
+    // Each line asks its font for the file of the weight it is set in.
+    final originalWeight = typeStyle.fontWeight ?? originalMetrics.fontWeight;
+    final translationWeight =
+        typeStyle.fontWeight ?? translationMetrics.fontWeight;
     final translationFamily = style.type.family(
       secondarySlot.languageCode,
       role: translationRole,
       script: translationScript,
+      weight: translationWeight ?? FontWeight.w400,
     );
 
-    // Gaps follow the step of the topmost line shown.
+    // Gaps follow the larger of the lines shown; the number, the line it
+    // sits under.
     final settings = style.type.settings;
     final gaps = style.type.gaps(
-      layers.original ? settings.originalStep : settings.translationStep,
+      style.type.pairGapStep(
+        original: layers.original,
+        translation: layers.translation,
+      ),
     );
+    final numberStep =
+        layers.translation ? settings.translationStep : settings.originalStep;
     final colors = readerVerseColors(
       style.palette,
       isLive: isLive,
       followingLive: followingLive,
-      translationUnderOriginal: layers.original,
+      // "Not translated" is in the muted colour, as under an original.
+      translationUnderOriginal: layers.original || untranslated,
     );
     final lines = pairLines(
       layers.original ? primary.html : null,
       layers.translation && !secondary.isPlaceholder ? secondary.text : null,
     );
+
+    // A script whose fonts sit the letters high in their own box (Myanmar)
+    // takes a fixed box instead, which needs no trimming.
+    final originalStrut = ReaderTypography.lineStrut(
+      originalScript,
+      originalMetrics,
+    );
+    final translationStrut = ReaderTypography.lineStrut(
+      translationScript,
+      translationMetrics,
+    );
+    final trimUnder =
+        layers.translation && originalStrut == null ? _trimUnder : null;
+    final trimOver =
+        layers.original && translationStrut == null ? _trimOver : null;
 
     Widget original(String html) => SegmentHtmlWidget(
       htmlContent: html,
@@ -164,12 +214,15 @@ class InterlinearSegmentItem extends ConsumerWidget {
       language: primary.fontLanguage,
       textColor: colors.original,
       fontStyle: typeStyle.fontStyle ?? originalMetrics.fontStyle,
-      fontWeight: typeStyle.fontWeight ?? originalMetrics.fontWeight,
+      fontWeight: originalWeight,
       fontFamily: style.type.family(
         primary.fontLanguage,
         role: originalRole,
         script: originalScript,
+        weight: originalWeight ?? FontWeight.w400,
       ),
+      textHeightBehavior: trimUnder,
+      strutStyle: originalStrut,
     );
     Widget translation(String html) => SegmentHtmlWidget(
       htmlContent: html,
@@ -179,8 +232,10 @@ class InterlinearSegmentItem extends ConsumerWidget {
       language: secondarySlot.languageCode,
       textColor: colors.translation,
       fontStyle: typeStyle.fontStyle ?? translationMetrics.fontStyle,
-      fontWeight: typeStyle.fontWeight ?? translationMetrics.fontWeight,
+      fontWeight: translationWeight,
       fontFamily: translationFamily,
+      textHeightBehavior: trimOver,
+      strutStyle: translationStrut,
     );
 
     Widget translationBlock() =>
@@ -190,6 +245,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
               fontFamily: translationFamily,
               metrics: translationMetrics,
               color: colors.translation,
+              textHeightBehavior: trimOver,
             )
             : lines.translation.isEmpty
             ? const SizedBox.shrink()
@@ -216,14 +272,15 @@ class InterlinearSegmentItem extends ConsumerWidget {
           else ...[
             if (lines.original.isNotEmpty) original(lines.original.single),
             if (lines.original.isNotEmpty && layers.translation)
-              SizedBox(height: gaps.pair),
+              SizedBox(height: gaps.inPair),
             if (layers.translation) translationBlock(),
           ],
           Padding(
-            padding: EdgeInsets.only(top: gaps.inPair),
+            padding: EdgeInsets.only(top: gaps.number),
             child: SegmentNumber(
               label: segment.displayNumber,
               language: secondarySlot.languageCode,
+              step: numberStep,
             ),
           ),
         ],
@@ -274,6 +331,7 @@ class _SecondaryPlaceholder extends StatelessWidget {
     required this.fontFamily,
     required this.metrics,
     required this.color,
+    this.textHeightBehavior,
   });
 
   final String text;
@@ -283,17 +341,20 @@ class _SecondaryPlaceholder extends StatelessWidget {
   final ReaderTextMetrics metrics;
   final Color? color;
 
+  /// As the translation line's, so the verse keeps its height when it lands.
+  final TextHeightBehavior? textHeightBehavior;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: Text(
         text,
+        textHeightBehavior: textHeightBehavior,
         style: TextStyle(
           fontSize: metrics.fontSize,
           fontFamily: fontFamily,
           fontWeight: FontWeight.w400,
-          fontStyle: FontStyle.italic,
           color: color,
           height: metrics.height,
         ),

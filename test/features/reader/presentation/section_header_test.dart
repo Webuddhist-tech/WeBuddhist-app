@@ -160,4 +160,66 @@ void main() {
       'SECTION ༡ / ༤ · ROUND ༡ / ༣',
     );
   });
+
+  testWidgets('a text\'s title carries the translation\'s once under it', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        SectionHeader(
+          section: _section(title: title),
+          depth: 0,
+          language: language,
+          translation: 'Praise',
+          translationLanguage: 'en',
+        ),
+      ),
+    );
+    expect(find.text(title), findsOneWidget);
+    expect(find.text('Praise'), findsOneWidget);
+    // Under the title.
+    expect(
+      tester.getTopLeft(find.text('Praise')).dy,
+      greaterThan(tester.getBottomLeft(find.text(title)).dy),
+    );
+  });
+
+  group('a heading wider than the page', () {
+    testWidgets('a word too wide for the page sets the heading smaller', (
+      tester,
+    ) async {
+      const style = TextStyle(fontSize: 38);
+      const heading = 'Jangchubsempéchöpa la jukpéngöwéle\'u';
+      final size = readerHeadingFitSize(heading, style, 300);
+      expect(size, lessThan(38));
+      // Its widest word now fits.
+      final painter = TextPainter(
+        text: TextSpan(
+          text: 'Jangchubsempéchöpa',
+          style: style.copyWith(fontSize: size),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      expect(painter.width, lessThanOrEqualTo(300));
+      painter.dispose();
+    });
+
+    testWidgets('short words keep the heading\'s size', (tester) async {
+      expect(
+        readerHeadingFitSize(
+          'The chapter on dedication',
+          const TextStyle(fontSize: 22),
+          300,
+        ),
+        22,
+      );
+    });
+
+    test('Tibetan and Chinese break inside words, so they are not fitted', () {
+      expect(ReaderScript.tibetan.breaksAtSpaces, isFalse);
+      expect(ReaderScript.chinese.breaksAtSpaces, isFalse);
+      expect(ReaderScript.latin.breaksAtSpaces, isTrue);
+      expect(ReaderScript.devanagari.breaksAtSpaces, isTrue);
+    });
+  });
 }

@@ -1158,6 +1158,23 @@ class AppLocalizationsVi extends AppLocalizations {
   String get unableToLoad => 'Không thể tải. Hãy kiểm tra kết nối và thử lại';
 
   @override
+  String get reader_not_translated => 'Chưa được dịch';
+
+  @override
+  String get error_offline_title => 'Không có kết nối';
+
+  @override
+  String get error_server_title => 'Hiện không tải được';
+
+  @override
+  String get reader_error_server_message =>
+      'Hiện không thể tải bản văn này. Vui lòng thử lại sau.';
+
+  @override
+  String get chants_error_server_message =>
+      'Hiện không thể tải các bài tụng. Vui lòng thử lại sau.';
+
+  @override
   String get somethingWrong => 'Đã xảy ra lỗi. Hãy kiểm tra kết nối và thử lại';
 
   @override

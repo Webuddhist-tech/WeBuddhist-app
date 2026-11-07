@@ -313,4 +313,93 @@ void main() {
       );
     });
   });
+
+  group('the same title twice', () {
+    test('a Tibetan title page and its first chapter are one title', () {
+      // "Aspiration Prayer from the Bodhicharyāvatāra": the title page and
+      // the heading under it, as the library holds them.
+      expect(
+        readerSameTitle(
+          '༄༅། །བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ་ལས་བྱུང་བའི་བསྔོ་བའི་ལེའུ་བཞུགས་སོ།།',
+          'བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ་ལས་བྱུང་བའི་བསྔོ་བའི་ལེའུ།',
+        ),
+        isTrue,
+      );
+    });
+
+    test('case, spacing and a closing full stop do not tell titles apart', () {
+      expect(
+        readerSameTitle(
+          'The chapter on dedication.',
+          '  the chapter  on dedication',
+        ),
+        isTrue,
+      );
+    });
+
+    test('different titles, and empty ones, are not the same', () {
+      expect(readerSameTitle('Refuge', 'Bodhichitta'), isFalse);
+      expect(readerSameTitle('', ''), isFalse);
+      expect(readerSameTitle('། །', '།'), isFalse);
+    });
+  });
+
+  group('a text\'s title on its page', () {
+    const roman = (title: 'Könchok Jedrenpé Do', language: 'bo');
+    const english = (
+      title: 'The Sutra Remembering the Three Jewels',
+      language: 'en',
+    );
+
+    test('both lines: the original\'s title, the translation\'s under it', () {
+      expect(
+        readerTitlePair(
+          original: roman,
+          translation: english,
+          showOriginal: true,
+        ),
+        (
+          title: 'Könchok Jedrenpé Do',
+          language: 'bo',
+          translation: 'The Sutra Remembering the Three Jewels',
+          translationLanguage: 'en',
+        ),
+      );
+    });
+
+    test('no translation: the original\'s title alone', () {
+      final pair = readerTitlePair(original: roman, showOriginal: true);
+      expect((pair.title, pair.translation), ('Könchok Jedrenpé Do', null));
+    });
+
+    test('the original hidden: the translation\'s title alone', () {
+      final pair = readerTitlePair(
+        original: roman,
+        translation: english,
+        showOriginal: false,
+      );
+      expect(
+        (pair.title, pair.language, pair.translation),
+        ('The Sutra Remembering the Three Jewels', 'en', null),
+      );
+    });
+
+    test('the original hidden, the translation untitled: the original\'s', () {
+      final pair = readerTitlePair(
+        original: roman,
+        translation: (title: ' ', language: 'mn'),
+        showOriginal: false,
+      );
+      expect((pair.title, pair.language), ('Könchok Jedrenpé Do', 'bo'));
+    });
+
+    test('a translation titled like the original is not repeated', () {
+      final pair = readerTitlePair(
+        original: (title: 'Jangchubsempéchöpa la jukpa', language: 'bo'),
+        translation: (title: 'Jangchubsempéchöpa la jukpa.', language: 'en'),
+        showOriginal: true,
+      );
+      expect(pair.translation, isNull);
+    });
+  });
 }

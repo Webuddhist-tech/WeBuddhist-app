@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
+import 'package:flutter_pecha/core/error/load_error_kind.dart';
 import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/core/widgets/slide_away_header.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
@@ -730,11 +731,26 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     // user is never trapped on a dead-end screen. Technical exception text is
     // never surfaced; we show a friendly, localized message instead.
     if (state.isError || state.textDetail == null) {
+      // Says what went wrong: no connection, the server, or no such text.
+      final (title, message) = switch (state.isError ? state.errorKind : null) {
+        LoadErrorKind.connection => (
+          localizations.error_offline_title,
+          localizations.unableToLoad,
+        ),
+        LoadErrorKind.server => (
+          localizations.error_server_title,
+          localizations.reader_error_server_message,
+        ),
+        LoadErrorKind.missing || null => (
+          localizations.no_content,
+          localizations.noContentAvailable,
+        ),
+      };
       return _buildStatusView(
         context,
         child: _ReaderErrorView(
-          title: localizations.no_content,
-          message: localizations.noContentAvailable,
+          title: title,
+          message: message,
           retryLabel: localizations.retry,
           backLabel: localizations.back,
           onRetry:

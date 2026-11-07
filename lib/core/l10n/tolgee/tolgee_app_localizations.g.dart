@@ -2244,6 +2244,41 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get reader_not_translated => TolgeeBridge.get(
+    localeName,
+    'reader_not_translated',
+    () => _fallback.reader_not_translated,
+  );
+
+  @override
+  String get error_offline_title => TolgeeBridge.get(
+    localeName,
+    'error_offline_title',
+    () => _fallback.error_offline_title,
+  );
+
+  @override
+  String get error_server_title => TolgeeBridge.get(
+    localeName,
+    'error_server_title',
+    () => _fallback.error_server_title,
+  );
+
+  @override
+  String get reader_error_server_message => TolgeeBridge.get(
+    localeName,
+    'reader_error_server_message',
+    () => _fallback.reader_error_server_message,
+  );
+
+  @override
+  String get chants_error_server_message => TolgeeBridge.get(
+    localeName,
+    'chants_error_server_message',
+    () => _fallback.chants_error_server_message,
+  );
+
+  @override
   String get somethingWrong => TolgeeBridge.get(
     localeName,
     'somethingWrong',

@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/error/load_error_kind.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
@@ -57,6 +58,9 @@ class ReaderState {
   final bool isLoadingPrevious;
   final String? errorMessage;
 
+  /// Why the text did not load, for what the page tells the person.
+  final LoadErrorKind? errorKind;
+
   // Pagination info
   final int currentSegmentPosition;
   final int totalSegments;
@@ -83,6 +87,7 @@ class ReaderState {
     this.isLoadingNext = false,
     this.isLoadingPrevious = false,
     this.errorMessage,
+    this.errorKind,
     this.currentSegmentPosition = 1,
     this.totalSegments = 0,
     this.hasNextPage = false,
@@ -162,6 +167,7 @@ class ReaderState {
     bool? isLoadingNext,
     bool? isLoadingPrevious,
     String? errorMessage,
+    LoadErrorKind? errorKind,
     int? currentSegmentPosition,
     int? totalSegments,
     bool? hasNextPage,
@@ -210,6 +216,7 @@ class ReaderState {
       isLoadingPrevious: isLoadingPrevious ?? this.isLoadingPrevious,
       errorMessage:
           clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      errorKind: clearErrorMessage ? null : (errorKind ?? this.errorKind),
       currentSegmentPosition:
           currentSegmentPosition ?? this.currentSegmentPosition,
       totalSegments: totalSegments ?? this.totalSegments,

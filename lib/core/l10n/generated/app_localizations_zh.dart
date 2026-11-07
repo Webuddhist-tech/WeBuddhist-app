@@ -1114,6 +1114,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unableToLoad => '無法載入，請再試一次';
 
   @override
+  String get reader_not_translated => '未翻譯';
+
+  @override
+  String get error_offline_title => '沒有網路連線';
+
+  @override
+  String get error_server_title => '目前無法載入';
+
+  @override
+  String get reader_error_server_message => '目前無法載入此經文，請稍後再試。';
+
+  @override
+  String get chants_error_server_message => '目前無法載入持誦，請稍後再試。';
+
+  @override
   String get somethingWrong => '出了點問題，請檢查您的連接並重試';
 
   @override
@@ -5035,6 +5050,21 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get unableToLoad => '无法加载，请再试一次';
+
+  @override
+  String get reader_not_translated => '未翻译';
+
+  @override
+  String get error_offline_title => '没有网络连接';
+
+  @override
+  String get error_server_title => '目前无法加载';
+
+  @override
+  String get reader_error_server_message => '目前无法加载此经文，请稍后再试。';
+
+  @override
+  String get chants_error_server_message => '目前无法加载持诵，请稍后再试。';
 
   @override
   String get somethingWrong => '出了点问题，请检查您的连接并重试';

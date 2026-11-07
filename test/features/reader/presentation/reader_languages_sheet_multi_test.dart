@@ -12,6 +12,7 @@ import 'package:flutter_pecha/features/reader/domain/layout/reader_layout_contex
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_languages_sheet.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_sheet.dart';
 import 'package:flutter_pecha/shared/widgets/app_toggle_switch.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -247,5 +248,19 @@ void main() {
     await _settle(tester);
     expect(settings().secondaryEnabled, isTrue);
     expect(settings().originalVisible, isFalse);
+  });
+
+  testWidgets('no header; the original named by its language and, '
+      'when transliterated, its script', (tester) async {
+    await _pump(tester, others: const []);
+    final sheet = tester.widget<ReaderSheet>(find.byType(ReaderSheet));
+    expect(sheet.title, isNull);
+    expect(sheet.semanticLabel, 'Languages');
+    expect(find.byTooltip('Close'), findsNothing);
+    expect(find.text('Original · Tibetan'), findsOneWidget);
+
+    await tester.tap(find.text('Roman'));
+    await _settle(tester);
+    expect(find.text('Original · Tibetan (Roman)'), findsOneWidget);
   });
 }

@@ -33,6 +33,15 @@ class SegmentHtmlWidget extends ConsumerStatefulWidget {
   /// The font family; null uses [language]'s content font.
   final String? fontFamily;
 
+  /// Trims the line box over the first line or under the last, so a verse
+  /// sits close to the line it pairs with. Verses drawn by flutter_html
+  /// (footnotes, markup) keep their whole line box.
+  final TextHeightBehavior? textHeightBehavior;
+
+  /// A fixed line box for every line, for fonts whose own box sits the
+  /// letters badly. Like [textHeightBehavior], plain verses only.
+  final StrutStyle? strutStyle;
+
   const SegmentHtmlWidget({
     super.key,
     required this.htmlContent,
@@ -45,6 +54,8 @@ class SegmentHtmlWidget extends ConsumerStatefulWidget {
     this.fontStyle,
     this.fontWeight,
     this.fontFamily,
+    this.textHeightBehavior,
+    this.strutStyle,
   });
 
   @override
@@ -110,6 +121,8 @@ class _SegmentHtmlWidgetState extends ConsumerState<SegmentHtmlWidget> {
               TextSpan(text: run.text, style: run.yigchung ? yigchung : null),
           ],
         ),
+        textHeightBehavior: widget.textHeightBehavior,
+        strutStyle: widget.strutStyle,
       ),
     );
     // flutter_html's root line around its body block: the same spacing, and

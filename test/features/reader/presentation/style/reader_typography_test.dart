@@ -46,13 +46,13 @@ void main() {
 
     test('original with a translation under it', () {
       expect(roleRow(ReaderTextRole.originalWithTranslation), [
-        '18/25', '22/42', '18/29', '18/29', '18/25', //
+        '18/25', '24/46', '18/29', '18/29', '18/25', //
       ]);
     });
 
     test('translation under an original', () {
       expect(roleRow(ReaderTextRole.translationUnder), [
-        '16/22', '19/36', '17/27', '17/27', '16/22', //
+        '16/22', '19/36', '16/26', '17/27', '16/22', //
       ]);
     });
 
@@ -85,16 +85,16 @@ void main() {
     test('Latin original', () {
       expect(
         _row((t) => t.line(ReaderTextRole.originalAlone, ReaderScript.latin)),
-        ['14/20', '16/23', '18/25', '21/29', '23/33', '27/38', '32/44'],
+        ['15/21', '16/23', '18/25', '21/29', '23/33', '27/35', '32/41'],
       );
     });
 
-    test('translation under it', () {
+    test('translation under it, never below 14', () {
       expect(
         _row(
           (t) => t.line(ReaderTextRole.translationUnder, ReaderScript.latin),
         ),
-        ['13/18', '14/20', '16/22', '18/26', '21/29', '24/34', '28/39'],
+        ['14/19', '14/20', '16/22', '18/26', '21/29', '24/31', '28/36'],
       );
     });
 
@@ -103,7 +103,7 @@ void main() {
         _row(
           (t) => t.line(ReaderTextRole.originalAlone, ReaderScript.tibetan),
         ),
-        ['22/41', '24/46', '27/51', '31/59', '35/67', '41/77', '47/90'],
+        ['23/44', '24/46', '27/51', '31/59', '35/67', '41/73', '47/85'],
       );
     });
 
@@ -112,13 +112,13 @@ void main() {
         _row(
           (t) => t.line(ReaderTextRole.originalAlone, ReaderScript.chinese),
         ),
-        ['15/24', '17/27', '19/30', '22/35', '25/40', '29/46', '33/53'],
+        ['16/26', '17/27', '19/30', '22/35', '25/40', '29/43', '33/50'],
       );
     });
 
-    test('Latin heading', () {
+    test('Latin heading, growing at half the rate above step 3', () {
       expect(_row((t) => t.heading(0, ReaderScript.latin)), [
-        '17/24', '19/27', '22/30', '25/35', '28/39', '32/45', '38/53', //
+        '18/26', '19/27', '22/30', '23/33', '25/35', '27/35', '30/39', //
       ]);
     });
 
@@ -131,7 +131,7 @@ void main() {
 
     test('gaps between verses and between line pairs', () {
       final gaps = [for (var step = 1; step <= 7; step++) _at(3).gaps(step)];
-      expect(gaps.map((g) => g.verse), [19, 22, 24, 28, 31, 36, 42]);
+      expect(gaps.map((g) => g.verse), [20, 22, 24, 28, 31, 36, 42]);
       expect(gaps.map((g) => g.pair), [10, 11, 12, 14, 16, 18, 21]);
     });
   });
@@ -157,45 +157,73 @@ void main() {
     });
 
     test('gaps at the default step', () {
-      ({double verse, double pair, double inPair}) gaps(ReaderSpacing s) =>
+      ReaderGaps gaps(ReaderSpacing s) =>
           _at(3, spacing: s).gaps(3);
-      expect(gaps(ReaderSpacing.compact), (verse: 16, pair: 8, inPair: 0));
-      expect(gaps(ReaderSpacing.normal), (verse: 24, pair: 12, inPair: 2));
-      expect(gaps(ReaderSpacing.relaxed), (verse: 32, pair: 16, inPair: 6));
+      expect(gaps(ReaderSpacing.compact), (
+        verse: 16,
+        pair: 8,
+        inPair: 0,
+        number: 0,
+      ));
+      expect(gaps(ReaderSpacing.normal), (
+        verse: 24,
+        pair: 12,
+        inPair: 0,
+        number: 2,
+      ));
+      expect(gaps(ReaderSpacing.relaxed), (
+        verse: 32,
+        pair: 16,
+        inPair: 3,
+        number: 6,
+      ));
     });
   });
 
   group('weights and styles', () {
     final type = _at(3);
 
-    test('a Latin original is SemiBold, other scripts regular', () {
-      expect(
-        type.line(ReaderTextRole.originalAlone, ReaderScript.latin).fontWeight,
-        FontWeight.w600,
-      );
-      expect(
-        type.line(ReaderTextRole.originalAlone, ReaderScript.tibetan)
-            .fontWeight,
-        isNull,
-      );
-    });
-
-    test('a Latin or Cyrillic translation under an original is italic', () {
+    test('a Latin or Cyrillic original is Medium, other scripts regular', () {
       for (final script in [ReaderScript.latin, ReaderScript.cyrillic]) {
+        for (final role in [
+          ReaderTextRole.originalAlone,
+          ReaderTextRole.originalWithTranslation,
+        ]) {
+          expect(
+            type.line(role, script).fontWeight,
+            FontWeight.w500,
+            reason: '$role $script',
+          );
+        }
+      }
+      for (final script in [
+        ReaderScript.tibetan,
+        ReaderScript.chinese,
+        ReaderScript.devanagari,
+      ]) {
         expect(
-          type.line(ReaderTextRole.translationUnder, script).fontStyle,
-          FontStyle.italic,
-        );
-        expect(
-          type.line(ReaderTextRole.translationAlone, script).fontStyle,
+          type.line(ReaderTextRole.originalAlone, script).fontWeight,
           isNull,
+          reason: '$script',
         );
       }
-      expect(
-        type.line(ReaderTextRole.translationUnder, ReaderScript.chinese)
-            .fontStyle,
-        isNull,
-      );
+    });
+
+    test('translations are upright and regular in every script', () {
+      for (final role in [
+        ReaderTextRole.translationUnder,
+        ReaderTextRole.translationAlone,
+      ]) {
+        for (final script in ReaderScript.values) {
+          final line = type.line(role, script);
+          expect(line.fontStyle, isNull, reason: '$role $script');
+          expect(line.fontWeight, isNull, reason: '$role $script');
+        }
+      }
+    });
+
+    test('instruction lines keep their italic', () {
+      expect(type.instruction(ReaderScript.latin).fontStyle, FontStyle.italic);
     });
 
     test('headings are SemiBold', () {
@@ -222,11 +250,12 @@ void main() {
   group('interface text', () {
     test('script factors: Tibetan 1.5, Chinese 1.05, the others 1', () {
       expect({for (final s in ReaderScript.values) s: s.interfaceScale}, {
-        ReaderScript.latin: 1.0,
-        ReaderScript.tibetan: 1.5,
-        ReaderScript.chinese: 1.05,
-        ReaderScript.devanagari: 1.0,
-        ReaderScript.cyrillic: 1.0,
+        for (final s in ReaderScript.values)
+          s: switch (s) {
+            ReaderScript.tibetan => 1.5,
+            ReaderScript.chinese => 1.05,
+            _ => 1.0,
+          },
       });
     });
 
@@ -261,11 +290,108 @@ void main() {
       type
           .line(ReaderTextRole.originalWithTranslation, ReaderScript.latin)
           .fontSize,
-      14,
+      15,
     );
     expect(
       type.line(ReaderTextRole.translationUnder, ReaderScript.latin).fontSize,
       28,
     );
+  });
+
+  group('two lines at different steps', () {
+    const smallOriginal = ReaderTypography(
+      settings: ReaderTextSize(originalStep: 1, translationStep: 7),
+    );
+    const bigOriginal = ReaderTypography(
+      settings: ReaderTextSize(originalStep: 7, translationStep: 1),
+    );
+
+    test('a verse\'s gaps follow the larger of its lines', () {
+      for (final type in [smallOriginal, bigOriginal]) {
+        expect(type.pairGapStep(original: true, translation: true), 7);
+      }
+      // One line shown: its own step.
+      expect(
+        smallOriginal.pairGapStep(original: true, translation: false),
+        1,
+      );
+      expect(
+        smallOriginal.pairGapStep(original: false, translation: true),
+        7,
+      );
+    });
+
+    test('a verse number is sized by the line it sits under', () {
+      expect(smallOriginal.verseNumberSize(ReaderScript.latin, 7), 19);
+      expect(bigOriginal.verseNumberSize(ReaderScript.latin, 1), 10);
+      // With no line named, the original's.
+      expect(bigOriginal.verseNumberSize(), 19);
+    });
+  });
+
+  group('Myanmar', () {
+    test('takes Latin\'s sizes: its letters fill about as much', () {
+      const type = ReaderTypography();
+      for (final role in ReaderTextRole.values) {
+        expect(
+          type.line(role, ReaderScript.myanmar).fontSize,
+          type.line(role, ReaderScript.latin).fontSize,
+          reason: '$role',
+        );
+      }
+    });
+
+    // A testWidgets: the strut names a Google font, whose download is
+    // stubbed out in tests and must not outlive the test.
+    testWidgets('lines sit in a fixed box of their own height', (_) async {
+      final metrics = _at(3).line(
+        ReaderTextRole.originalWithTranslation,
+        ReaderScript.myanmar,
+      );
+      final strut = ReaderTypography.lineStrut(ReaderScript.myanmar, metrics)!;
+      expect(strut.forceStrutHeight, isTrue);
+      expect(strut.fontSize, metrics.fontSize);
+      expect(strut.height, metrics.height);
+    });
+
+    test('other scripts keep their font\'s own box', () {
+      for (final script in ReaderScript.values) {
+        if (script == ReaderScript.myanmar) continue;
+        expect(
+          ReaderTypography.lineStrut(
+            script,
+            _at(3).line(ReaderTextRole.originalAlone, script),
+          ),
+          isNull,
+          reason: '$script',
+        );
+      }
+    });
+  });
+
+  group('line height at the largest steps', () {
+    test('steps 6 and 7 take 0.1 off each script\'s ratio', () {
+      for (final script in ReaderScript.values) {
+        for (var step = 1; step <= 7; step++) {
+          expect(
+            ReaderTypography.lineHeightRatio(script, step),
+            closeTo(script.lineHeightRatio - (step >= 6 ? 0.1 : 0), 1e-9),
+            reason: '$script step $step',
+          );
+        }
+      }
+    });
+
+    test('lines still grow from step to step', () {
+      for (final script in ReaderScript.values) {
+        final heights = [
+          for (var step = 1; step <= 7; step++)
+            _at(step).line(ReaderTextRole.originalAlone, script).lineHeight,
+        ];
+        for (var i = 1; i < heights.length; i++) {
+          expect(heights[i], greaterThan(heights[i - 1]), reason: '$script');
+        }
+      }
+    });
   });
 }

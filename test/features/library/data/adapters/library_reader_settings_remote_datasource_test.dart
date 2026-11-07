@@ -117,6 +117,159 @@ void main() {
     expect(versions.availableVersions.map((v) => v.parentId), ['E2', 'E2']);
   });
 
+  group('a translation covering little of the original', () {
+    // The root (E-root) has three verses. English is aligned to all of
+    // them, Mongolian to the first only (a homage line), Chinese has no
+    // alignment but numbers all three, Hindi numbers only the first.
+    LibraryTestServer coverageServer() => LibraryTestServer({
+      '/v2/editions/E-root': (_) => jsonBody({'id': 'E-root', 'text_id': 'R'}),
+      '/v2/texts/R':
+          (_) => jsonBody(
+            textJson(
+              'R',
+              editions: ['E-root'],
+              translations: ['EN', 'MN', 'ZH', 'HI'],
+            ),
+          ),
+      '/v2/texts/EN':
+          (_) => jsonBody(
+            textJson('EN', language: 'en', translationOf: 'R', editions: ['E-en']),
+          ),
+      '/v2/texts/MN':
+          (_) => jsonBody(
+            textJson('MN', language: 'mn', translationOf: 'R', editions: ['E-mn']),
+          ),
+      '/v2/texts/ZH':
+          (_) => jsonBody(
+            textJson('ZH', language: 'zh', translationOf: 'R', editions: ['E-zh']),
+          ),
+      '/v2/texts/HI':
+          (_) => jsonBody(
+            textJson('HI', language: 'hi', translationOf: 'R', editions: ['E-hi']),
+          ),
+      '/v2/editions/E-root/segmentation/segments':
+          (_) => jsonBody(pageJson(threeVerses('r'))),
+      '/v2/editions/E-zh/segmentation/segments':
+          (_) => jsonBody(pageJson(threeVerses('z'))),
+      '/v2/editions/E-hi/segmentation/segments':
+          (_) => jsonBody(
+            pageJson([
+              segmentJson('h1', '1', [
+                [0, 3],
+              ]),
+            ]),
+          ),
+      '/v2/editions/E-root/alignments/E-en':
+          (_) => jsonBody(
+            pageJson([
+              alignmentJson('r1', 'e1'),
+              alignmentJson('r2', 'e2'),
+              alignmentJson('r3', 'e3'),
+            ]),
+          ),
+      '/v2/editions/E-root/alignments/E-mn':
+          (_) => jsonBody(pageJson([alignmentJson('r1', 'm1')])),
+      '/v2/editions/E-root/alignments/E-zh': (_) => jsonBody(pageJson([])),
+      '/v2/editions/E-zh/alignments/E-root': (_) => jsonBody(pageJson([])),
+      '/v2/editions/E-root/alignments/E-hi': (_) => jsonBody(pageJson([])),
+      '/v2/editions/E-hi/alignments/E-root': (_) => jsonBody(pageJson([])),
+    });
+
+    test('is not counted as a translation language', () async {
+      final languages = await _datasource(
+        coverageServer(),
+      ).fetchLanguages(textId: 'E-root');
+      final counts = {
+        for (final l in languages.availableLanguages) l.code: l.translationCount,
+      };
+      // By the alignment: English all, Mongolian one verse of three. By
+      // verse number: Chinese all, Hindi one.
+      expect(counts, {'bo': 0, 'en': 1, 'hi': 0, 'mn': 0, 'zh': 1});
+    });
+
+    test('is not offered as a version, so the reader never opens it', () async {
+      final ds = _datasource(coverageServer());
+      expect(
+        (await ds.fetchVersions(textId: 'E-root', language: 'mn'))
+            .availableVersions,
+        isEmpty,
+      );
+      expect(
+        (await ds.fetchVersions(
+          textId: 'E-root',
+          language: 'en',
+        )).availableVersions.map((v) => v.id),
+        ['E-en'],
+      );
+    });
+
+    test('opened on its own, it is still its own first version', () async {
+      final server = coverageServer();
+      server.routes['/v2/editions/E-mn'] =
+          (_) => jsonBody({'id': 'E-mn', 'text_id': 'MN'});
+      final versions = await _datasource(
+        server,
+      ).fetchVersions(textId: 'E-mn', language: 'mn');
+      expect(versions.availableVersions.map((v) => v.id), ['E-mn']);
+    });
+
+    test('a language stops at its first edition that covers', () async {
+      final server = coverageServer();
+      server.routes['/v2/texts/EN'] =
+          (_) => jsonBody(
+            textJson(
+              'EN',
+              language: 'en',
+              translationOf: 'R',
+              editions: ['E-en', 'E-en2'],
+            ),
+          );
+      final languages = await _datasource(
+        server,
+      ).fetchLanguages(textId: 'E-root');
+
+      expect(
+        languages.availableLanguages
+            .firstWhere((l) => l.code == 'en')
+            .translationCount,
+        greaterThan(0),
+      );
+      expect(server.count('/v2/editions/E-root/alignments/E-en2'), 0);
+    });
+
+    test('is measured once, and keeps the text being read in memory', () async {
+      final server = coverageServer();
+      // Room for one edition's verses: the one being read.
+      final library = server.repository(segmentCacheSize: 1);
+      await library.getEditionSegments('E-root');
+      final ds = LibraryReaderSettingsRemoteDatasource(library: library);
+
+      await ds.fetchLanguages(textId: 'E-root');
+      await ds.fetchLanguages(textId: 'E-root');
+      await library.getEditionSegments('E-root');
+
+      const root = '/v2/editions/E-root/segmentation/segments';
+      const chinese = '/v2/editions/E-zh/segmentation/segments';
+      expect(server.count(root), 1, reason: 'never pushed out of the cache');
+      expect(server.count(chinese), 1, reason: 'measured once a session');
+    });
+
+    test('one that cannot be measured is offered, not hidden', () async {
+      final server = coverageServer()
+        ..routes.remove('/v2/editions/E-root/alignments/E-mn');
+      server.routes.remove('/v2/editions/E-root/segmentation/segments');
+      final languages = await _datasource(
+        server,
+      ).fetchLanguages(textId: 'E-root');
+      expect(
+        languages.availableLanguages
+            .firstWhere((l) => l.code == 'mn')
+            .translationCount,
+        1,
+      );
+    });
+  });
+
   test('scripts are empty and version info carries the source', () async {
     final ds = _datasource(_server());
 

@@ -33,7 +33,42 @@ void main() {
         'lxgw-wenkai-tc',
         'noto-sans-tc',
       ]);
-      expect(ids(ReaderScript.devanagari), ['noto-serif-devanagari']);
+      expect(ids(ReaderScript.devanagari), ['mukta', 'noto-serif-devanagari']);
+    });
+
+    test('a transliteration script offers only Noto fonts that carry it', () {
+      const names = {
+        ReaderScript.bengali: 'Bengali',
+        ReaderScript.gurmukhi: 'Gurmukhi',
+        ReaderScript.gujarati: 'Gujarati',
+        ReaderScript.telugu: 'Telugu',
+        ReaderScript.kannada: 'Kannada',
+        ReaderScript.malayalam: 'Malayalam',
+        ReaderScript.sinhala: 'Sinhala',
+        ReaderScript.thai: 'Thai',
+        ReaderScript.myanmar: 'Myanmar',
+        ReaderScript.khmer: 'Khmer',
+      };
+      for (final MapEntry(key: script, value: name) in names.entries) {
+        expect(
+          ReaderFonts.forScript(script).map((f) => f.name),
+          ['Noto Serif $name', 'Noto Sans $name'],
+          reason: '$script',
+        );
+      }
+    });
+
+    test('every role has a size for every script', () {
+      const type = ReaderTypography();
+      for (final role in ReaderTextRole.values) {
+        for (final script in ReaderScript.values) {
+          expect(
+            type.line(role, script).fontSize,
+            greaterThan(0),
+            reason: '$role $script',
+          );
+        }
+      }
     });
 
     test('Tibetan fonts are bundled, the others downloaded', () {
@@ -68,11 +103,31 @@ void main() {
       expect(type.family('bo'), 'WBTibetanContent');
     });
 
-    _familyTest('Devanagari lines are in Noto Serif Devanagari', () {
+    _familyTest('Devanagari lines are in Mukta, Noto Serif Devanagari on '
+        'pick', () {
       expect(
         const ReaderTypography().family('hi'),
+        ReaderFonts.mukta.family(),
+      );
+      final picked = _with(
+        const ReaderFontChoices().pick(
+          _translation,
+          ReaderScript.devanagari,
+          ReaderFonts.notoSerifDevanagari,
+        ),
+      );
+      expect(
+        picked.family('hi', role: ReaderTextRole.translationUnder),
         ReaderFonts.notoSerifDevanagari.family(),
       );
+    });
+
+    _familyTest('a line\'s weight picks that weight\'s file, not a '
+        'thickened regular', () {
+      const type = ReaderTypography();
+      final medium = type.family('en', weight: ReaderFonts.originalWeight);
+      expect(medium, ReaderFonts.sourceSerif4.family(weight: FontWeight.w500));
+      expect(medium, isNot(type.family('en')));
     });
 
     _familyTest('the line\'s script picks the list, not only its language', () {

@@ -2147,6 +2147,36 @@ abstract class AppLocalizations {
   /// **'Unable to load. Check your connection and try again'**
   String get unableToLoad;
 
+  /// No description provided for @reader_not_translated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not translated'**
+  String get reader_not_translated;
+
+  /// No description provided for @error_offline_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection'**
+  String get error_offline_title;
+
+  /// No description provided for @error_server_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t load right now'**
+  String get error_server_title;
+
+  /// No description provided for @reader_error_server_message.
+  ///
+  /// In en, this message translates to:
+  /// **'This text can\'t be loaded right now. Please try again later.'**
+  String get reader_error_server_message;
+
+  /// No description provided for @chants_error_server_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Chants can\'t be loaded right now. Please try again later.'**
+  String get chants_error_server_message;
+
   /// No description provided for @somethingWrong.
   ///
   /// In en, this message translates to:

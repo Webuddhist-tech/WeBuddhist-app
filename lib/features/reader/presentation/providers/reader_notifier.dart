@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/core/error/load_error_kind.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
@@ -248,6 +249,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       state = state.copyWith(
         status: ReaderStatus.error,
         errorMessage: e.toString(),
+        errorKind: loadErrorKindOf(e),
       );
     }
   }

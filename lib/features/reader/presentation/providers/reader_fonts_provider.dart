@@ -64,10 +64,14 @@ final readerFontPreloadProvider = FutureProvider.autoDispose
           for (final font in ReaderFonts.forScript(script))
             if (font.isDownloaded && ids.contains(font.id)) font,
       ];
+      final latin = ReaderFonts.forScript(ReaderScript.latin);
       for (final font in {...fonts}) {
-        // The page's lines name the regular file and let weight and style
-        // follow it; asking for its family starts the download.
+        // Asking for a file's family starts its download: the regular
+        // file, and for a Latin font the Medium its originals are set in.
         font.family();
+        if (latin.contains(font)) {
+          font.family(weight: ReaderFonts.originalWeight);
+        }
       }
       try {
         await GoogleFonts.pendingFonts().timeout(readerFontPreloadTimeout);

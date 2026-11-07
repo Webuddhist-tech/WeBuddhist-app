@@ -1165,6 +1165,23 @@ class AppLocalizationsBo extends AppLocalizations {
       'སྟོན་ཐུབ་མ་སོང་། ཁྱེད་ཀྱིས་རང་གི་དྲ་རྒྱར་བསྐྱར་ཞིབ་བྱས་ཏེ་བསྐྱར་དུ་ཚོད་ལྟ་བྱོས།';
 
   @override
+  String get reader_not_translated => 'ཡིག་སྒྱུར་མ་བྱས།';
+
+  @override
+  String get error_offline_title => 'དྲ་རྒྱ་མཐུད་མེད།';
+
+  @override
+  String get error_server_title => 'ད་ལྟ་སྟོན་ཐུབ་མ་སོང་།';
+
+  @override
+  String get reader_error_server_message =>
+      'དཔེ་ཆ་འདི་ད་ལྟ་སྟོན་ཐུབ་མ་སོང་། རྗེས་སུ་བསྐྱར་དུ་ཚོད་ལྟ་བྱོས།';
+
+  @override
+  String get chants_error_server_message =>
+      'ཞལ་འདོན་ད་ལྟ་སྟོན་ཐུབ་མ་སོང་། རྗེས་སུ་བསྐྱར་དུ་ཚོད་ལྟ་བྱོས།';
+
+  @override
   String get somethingWrong =>
       'ཅིག་འགྲིག་མ་སོང་། རང་གི་དྲ་རྒྱར་བསྐྱར་ཞིབ་བྱས་ཏེ་བསྐྱར་དུ་ཚོད་ལྟ་བྱོས།';
 

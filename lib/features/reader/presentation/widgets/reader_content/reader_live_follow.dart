@@ -1,6 +1,7 @@
 /// Where the live verse is held in the text area, as a fraction of its
-/// height from the top: the verse's middle sits here.
-const double liveHoldFraction = 2 / 3;
+/// height from the top: the verse's middle sits here, a third of the way
+/// down, so the lower two thirds show the verses coming next.
+const double liveHoldFraction = 1 / 3;
 
 /// How long a page opened following live waits for the live verse before
 /// it shows as it is.

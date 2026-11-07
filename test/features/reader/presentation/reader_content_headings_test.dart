@@ -8,6 +8,7 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_content_part.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/section_header.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
@@ -27,6 +28,7 @@ import '../fakes/fake_reader_settings_datasource.dart';
 /// own; A-en and B-zh are translations without one.
 const _rootTitleA = 'ཀ';
 const _rootTitleB = 'བ';
+const _chapterTitleA = 'ཀ་བཞུགས་སོ།།';
 const _translatedHeading = '譯本標題';
 
 TextDetail _detail(String id, String title, String language) => TextDetail(
@@ -49,6 +51,8 @@ ReaderResponse _page(TextDetailsParams params) {
   final language = isTranslation ? versionId.split('-').last : 'bo';
   final segments = [
     for (var n = 1; n <= 2; n++)
+      // A-mn translates verse 1 only.
+      if (versionId != 'A-mn' || n == 1)
       Segment(
         segmentId: isTranslation ? '$versionId-$n' : '$textId-$n',
         segmentNumber: n,
@@ -65,13 +69,24 @@ ReaderResponse _page(TextDetailsParams params) {
   ];
   final Section section;
   if (!isTranslation && textId == 'A') {
+    // A title page whose one chapter carries its name again, as the
+    // library's texts often do.
     section = Section(
       id: 'A-root',
       title: _rootTitleA,
       titles: const {'bo': _rootTitleA, 'en': 'Alpha'},
       sectionNumber: 1,
-      segments: segments,
-      sections: const [],
+      segments: const [],
+      sections: [
+        Section(
+          id: 'A-chapter',
+          title: _chapterTitleA,
+          titles: const {'bo': _chapterTitleA},
+          sectionNumber: 1,
+          segments: segments,
+          sections: const [],
+        ),
+      ],
     );
   } else if (versionId == 'A-zh') {
     section = Section(
@@ -197,37 +212,99 @@ void main() {
     expect(find.text(_rootTitleB), findsOneWidget);
   });
 
-  testWidgets('a translation with a table of contents heads the text', (
+  testWidgets('a first chapter named like the text is not drawn again', (
     tester,
   ) async {
+    await _pump(tester);
+
+    expect(
+      find.descendant(
+        of: find.byType(SectionHeader),
+        matching: find.text(_rootTitleA),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(SectionHeader),
+        matching: find.text(_chapterTitleA),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('a translation with a table of contents titles the text under '
+      'the original\'s title', (tester) async {
     final ref = await _pump(tester);
 
     await _showTranslation(tester, ref, 0, versionId: 'A-zh', label: 'A Chinese');
+
+    expect(find.text(_rootTitleA), findsOneWidget);
+    // On the page under the title (the pill names the section too).
+    final under = find.descendant(
+      of: find.byType(ReaderHeadingTitle),
+      matching: find.text(_translatedHeading),
+    );
+    expect(under, findsOneWidget);
+    expect(
+      tester.getTopLeft(under).dy,
+      greaterThan(tester.getTopLeft(find.text(_rootTitleA)).dy),
+    );
+  });
+
+  testWidgets('with the original hidden the translation\'s title heads the '
+      'text alone', (tester) async {
+    final ref = await _pump(tester);
+
+    await _showTranslation(tester, ref, 0, versionId: 'A-zh', label: 'A Chinese');
+    ref
+        .read(readerDualSettingsProvider(_sources[0].settingsScope).notifier)
+        .setOriginalVisible(false);
+    await _settle(tester);
 
     expect(find.text(_translatedHeading), findsWidgets);
     expect(find.text(_rootTitleA), findsNothing);
   });
 
   testWidgets(
-    "a translation without one shows the text's headings in its language",
+    "a translation without one titles the text in its language, under the "
+    "original's",
     (tester) async {
       final ref = await _pump(tester);
 
       await _showTranslation(tester, ref, 0, versionId: 'A-en', label: 'A English');
 
+      expect(find.text(_rootTitleA), findsOneWidget);
       expect(find.text('Alpha'), findsWidgets);
-      expect(find.text(_rootTitleA), findsNothing);
     },
   );
 
-  testWidgets("a text without headings is titled by its translation", (
-    tester,
-  ) async {
+  testWidgets("a text without headings has its translation's title under "
+      "its own", (tester) async {
     final ref = await _pump(tester);
 
     await _showTranslation(tester, ref, 1, versionId: 'B-zh', label: 'B Chinese');
 
+    expect(find.text(_rootTitleB), findsOneWidget);
     expect(find.text('B Chinese'), findsOneWidget);
-    expect(find.text(_rootTitleB), findsNothing);
+  });
+
+  testWidgets('with the original hidden, a verse the translation lacks says '
+      '"Not translated"', (tester) async {
+    final ref = await _pump(tester);
+
+    await _showTranslation(tester, ref, 0, versionId: 'A-mn', label: 'A Mongolian');
+    ref
+        .read(readerDualSettingsProvider(_sources[0].settingsScope).notifier)
+        .setOriginalVisible(false);
+    await _settle(tester);
+
+    expect(find.textContaining('line 1 of A-mn', findRichText: true), findsWidgets);
+    expect(find.text('Not translated'), findsOneWidget);
+    // The original is not drawn in its place.
+    expect(
+      find.textContaining('verse 2 of A', findRichText: true),
+      findsNothing,
+    );
   });
 }

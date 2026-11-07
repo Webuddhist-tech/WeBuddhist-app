@@ -51,6 +51,9 @@ class LibraryRepository {
   final Map<String, Future<List<LibraryTocSection>>> _tocs = {};
   final Map<String, Future<List<LibraryLineSpan>>> _yigchungs = {};
   final Map<String, Future<Map<String, List<String>>>> _alignments = {};
+
+  /// Coverage by `original>translation`: a number each, so not capped.
+  final Map<String, Future<double>> _coverages = {};
   Future<Map<String, String>>? _languageNames;
 
   Future<LibraryTextPage> fetchChants({
@@ -133,17 +136,24 @@ class LibraryRepository {
 
   /// Every segment of [editionId] that has lines, in reading order.
   Future<List<LibrarySegment>> getEditionSegments(String editionId) {
-    return _memo(_segments, editionId, capacity: segmentCacheSize, () async {
-      final all = await _fetchAllPages(
-        (offset) => _datasource.fetchEditionSegments(
-          editionId,
-          limit: segmentPageSize,
-          offset: offset,
-        ),
-        (s) => s.id,
-      );
-      return all.where((s) => s.lines.isNotEmpty).toList(growable: false);
-    });
+    return _memo(
+      _segments,
+      editionId,
+      capacity: segmentCacheSize,
+      () => _fetchEditionSegments(editionId),
+    );
+  }
+
+  Future<List<LibrarySegment>> _fetchEditionSegments(String editionId) async {
+    final all = await _fetchAllPages(
+      (offset) => _datasource.fetchEditionSegments(
+        editionId,
+        limit: segmentPageSize,
+        offset: offset,
+      ),
+      (s) => s.id,
+    );
+    return all.where((s) => s.lines.isNotEmpty).toList(growable: false);
   }
 
   /// Headings of [editionId]'s table of contents; empty when it has none.
@@ -220,29 +230,38 @@ class LibraryRepository {
     String sourceEditionId,
     String targetEditionId,
   ) {
-    final key = '$sourceEditionId>$targetEditionId';
-    return _memo(_alignments, key, capacity: segmentCacheSize, () async {
-      final List<LibraryAlignment> pairs;
-      try {
-        pairs = await _fetchAllPages(
-          (offset) => _datasource.fetchAlignments(
-            sourceEditionId,
-            targetEditionId,
-            limit: segmentPageSize,
-            offset: offset,
-          ),
-          (pair) => '${pair.source.id}>${pair.target.id}',
-        );
-      } catch (e) {
-        if (_isNotFound(e)) return const {};
-        rethrow;
-      }
-      final targets = <String, List<String>>{};
-      for (final pair in pairs) {
-        targets.putIfAbsent(pair.source.id, () => []).add(pair.target.id);
-      }
-      return targets;
-    });
+    return _memo(
+      _alignments,
+      '$sourceEditionId>$targetEditionId',
+      capacity: segmentCacheSize,
+      () => _fetchAlignment(sourceEditionId, targetEditionId),
+    );
+  }
+
+  Future<Map<String, List<String>>> _fetchAlignment(
+    String sourceEditionId,
+    String targetEditionId,
+  ) async {
+    final List<LibraryAlignment> pairs;
+    try {
+      pairs = await _fetchAllPages(
+        (offset) => _datasource.fetchAlignments(
+          sourceEditionId,
+          targetEditionId,
+          limit: segmentPageSize,
+          offset: offset,
+        ),
+        (pair) => '${pair.source.id}>${pair.target.id}',
+      );
+    } catch (e) {
+      if (_isNotFound(e)) return const {};
+      rethrow;
+    }
+    final targets = <String, List<String>>{};
+    for (final pair in pairs) {
+      targets.putIfAbsent(pair.source.id, () => []).add(pair.target.id);
+    }
+    return targets;
   }
 
   /// [editionId]'s marks, or null when they fail; never throws.
@@ -538,16 +557,66 @@ class LibraryRepository {
     return -1;
   }
 
+  /// The share of [originalEditionId]'s verses that [translationEditionId]
+  /// has a counterpart for: by the library's alignment between them, else
+  /// by verse number. A translation of one homage line covers a few percent
+  /// of a sutra; a full translation nearly all of it.
+  ///
+  /// Measured once per pair a session. The translation's alignment and
+  /// verses are read from the reader's caches when already there but not
+  /// put in them: measuring a family's many translations would push out the
+  /// text being read, which would then load again.
+  Future<double> editionCoverage(
+    String originalEditionId,
+    String translationEditionId,
+  ) {
+    return _memo(
+      _coverages,
+      '$originalEditionId>$translationEditionId',
+      () async {
+        final original = await getEditionSegments(originalEditionId);
+        if (original.isEmpty) return 1;
+        final aligned = await _alignedIds(
+          originalEditionId,
+          translationEditionId,
+          cache: false,
+        );
+        final int covered;
+        if (aligned.isNotEmpty) {
+          covered =
+              original
+                  .where((s) => (aligned[s.id] ?? const <String>[]).isNotEmpty)
+                  .length;
+        } else {
+          final translation =
+              _segments[translationEditionId] ??
+              _fetchEditionSegments(translationEditionId);
+          final numbers = segmentNumbers(await translation).toSet();
+          covered = segmentNumbers(original).where(numbers.contains).length;
+        }
+        return covered / original.length;
+      },
+    );
+  }
+
   /// Ids in [targetId] aligned to each segment of [sourceId]. The library
   /// stores a pair one way round, so the reverse is read when that is it.
+  ///
+  /// [cache] false reads an alignment already cached but fetches a missing
+  /// one without keeping it.
   Future<Map<String, List<String>>> _alignedIds(
     String sourceId,
-    String targetId,
-  ) async {
-    final forward = await getAlignment(sourceId, targetId);
+    String targetId, {
+    bool cache = true,
+  }) async {
+    Future<Map<String, List<String>>> alignment(String from, String to) =>
+        cache
+            ? getAlignment(from, to)
+            : _alignments['$from>$to'] ?? _fetchAlignment(from, to);
+    final forward = await alignment(sourceId, targetId);
     if (forward.isNotEmpty) return forward;
     final inverted = <String, List<String>>{};
-    for (final entry in (await getAlignment(targetId, sourceId)).entries) {
+    for (final entry in (await alignment(targetId, sourceId)).entries) {
       for (final id in entry.value) {
         inverted.putIfAbsent(id, () => []).add(entry.key);
       }

@@ -54,6 +54,7 @@ class SegmentItem extends ConsumerWidget {
       language: primary.fontLanguage,
     );
     final metrics = style.type.line(ReaderTextRole.originalAlone, script);
+    final weight = typeStyle.fontWeight ?? metrics.fontWeight;
     final gaps = style.type.gaps(style.type.settings.originalStep);
     final colors = readerVerseColors(
       style.palette,
@@ -81,11 +82,19 @@ class SegmentItem extends ConsumerWidget {
             language: primary.fontLanguage,
             textColor: colors.original,
             fontStyle: typeStyle.fontStyle ?? metrics.fontStyle,
-            fontWeight: typeStyle.fontWeight ?? metrics.fontWeight,
-            fontFamily: style.type.family(primary.fontLanguage, script: script),
+            fontWeight: weight,
+            // The file of the weight the line is set in.
+            fontFamily: style.type.family(
+              primary.fontLanguage,
+              script: script,
+              weight: weight ?? FontWeight.w400,
+            ),
+            // Myanmar takes a fixed line box here too, as under a
+            // translation (`ReaderTypography.lineStrut`).
+            strutStyle: ReaderTypography.lineStrut(script, metrics),
           ),
           Padding(
-            padding: EdgeInsets.only(top: gaps.inPair),
+            padding: EdgeInsets.only(top: gaps.number),
             // Numerals follow the script the line is shown in.
             child: SegmentNumber(
               label: segment.displayNumber,

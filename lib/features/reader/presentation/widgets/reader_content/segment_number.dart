@@ -10,13 +10,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// [language] (see [readerNumeralScript]); nothing is drawn while verse
 /// numbers are turned off.
 class SegmentNumber extends ConsumerWidget {
-  const SegmentNumber({super.key, required this.label, required this.language});
+  const SegmentNumber({
+    super.key,
+    required this.label,
+    required this.language,
+    this.step,
+  });
 
   /// The edition's reference (e.g. `1-12`) or the segment number.
   final String label;
 
   /// The language the page's numbers are written in.
   final String language;
+
+  /// The size step of the line the number sits under; the original's when
+  /// null.
+  final int? step;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,7 +36,7 @@ class SegmentNumber extends ConsumerWidget {
       readerVerseLabel(label, script),
       textAlign: TextAlign.end,
       style: TextStyle(
-        fontSize: style.type.verseNumberSize(script),
+        fontSize: style.type.verseNumberSize(script, step),
         fontWeight: FontWeight.w500,
         fontFamily: style.type.family(language, script: script),
         color: style.palette.verseNumber,

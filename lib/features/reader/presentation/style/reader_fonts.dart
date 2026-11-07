@@ -110,25 +110,145 @@ class ReaderFonts {
     label: 'Noto Sans TC',
   );
 
+  /// The brand's Hindi reading font: sturdier strokes than Noto Serif
+  /// Devanagari, so a Hindi translation reads as strongly as English.
+  static const mukta = ReaderFont.google('mukta', 'Mukta', label: 'Mukta');
   static const notoSerifDevanagari = ReaderFont.google(
     'noto-serif-devanagari',
     'Noto Serif Devanagari',
     label: 'Noto Serif Devanagari',
   );
 
+  // The scripts a Tibetan or Pali original can be transliterated into:
+  // Noto Serif and Noto Sans, the only fonts here that carry their letters.
+  static const notoSerifBengali = ReaderFont.google(
+    'noto-serif-bengali',
+    'Noto Serif Bengali',
+    label: 'Noto Serif Bengali',
+  );
+  static const notoSansBengali = ReaderFont.google(
+    'noto-sans-bengali',
+    'Noto Sans Bengali',
+    label: 'Noto Sans Bengali',
+  );
+  static const notoSerifGurmukhi = ReaderFont.google(
+    'noto-serif-gurmukhi',
+    'Noto Serif Gurmukhi',
+    label: 'Noto Serif Gurmukhi',
+  );
+  static const notoSansGurmukhi = ReaderFont.google(
+    'noto-sans-gurmukhi',
+    'Noto Sans Gurmukhi',
+    label: 'Noto Sans Gurmukhi',
+  );
+  static const notoSerifGujarati = ReaderFont.google(
+    'noto-serif-gujarati',
+    'Noto Serif Gujarati',
+    label: 'Noto Serif Gujarati',
+  );
+  static const notoSansGujarati = ReaderFont.google(
+    'noto-sans-gujarati',
+    'Noto Sans Gujarati',
+    label: 'Noto Sans Gujarati',
+  );
+  static const notoSerifTelugu = ReaderFont.google(
+    'noto-serif-telugu',
+    'Noto Serif Telugu',
+    label: 'Noto Serif Telugu',
+  );
+  static const notoSansTelugu = ReaderFont.google(
+    'noto-sans-telugu',
+    'Noto Sans Telugu',
+    label: 'Noto Sans Telugu',
+  );
+  static const notoSerifKannada = ReaderFont.google(
+    'noto-serif-kannada',
+    'Noto Serif Kannada',
+    label: 'Noto Serif Kannada',
+  );
+  static const notoSansKannada = ReaderFont.google(
+    'noto-sans-kannada',
+    'Noto Sans Kannada',
+    label: 'Noto Sans Kannada',
+  );
+  static const notoSerifMalayalam = ReaderFont.google(
+    'noto-serif-malayalam',
+    'Noto Serif Malayalam',
+    label: 'Noto Serif Malayalam',
+  );
+  static const notoSansMalayalam = ReaderFont.google(
+    'noto-sans-malayalam',
+    'Noto Sans Malayalam',
+    label: 'Noto Sans Malayalam',
+  );
+  static const notoSerifSinhala = ReaderFont.google(
+    'noto-serif-sinhala',
+    'Noto Serif Sinhala',
+    label: 'Noto Serif Sinhala',
+  );
+  static const notoSansSinhala = ReaderFont.google(
+    'noto-sans-sinhala',
+    'Noto Sans Sinhala',
+    label: 'Noto Sans Sinhala',
+  );
+  static const notoSerifThai = ReaderFont.google(
+    'noto-serif-thai',
+    'Noto Serif Thai',
+    label: 'Noto Serif Thai',
+  );
+  static const notoSansThai = ReaderFont.google(
+    'noto-sans-thai',
+    'Noto Sans Thai',
+    label: 'Noto Sans Thai',
+  );
+  static const notoSerifMyanmar = ReaderFont.google(
+    'noto-serif-myanmar',
+    'Noto Serif Myanmar',
+    label: 'Noto Serif Myanmar',
+  );
+  static const notoSansMyanmar = ReaderFont.google(
+    'noto-sans-myanmar',
+    'Noto Sans Myanmar',
+    label: 'Noto Sans Myanmar',
+  );
+  static const notoSerifKhmer = ReaderFont.google(
+    'noto-serif-khmer',
+    'Noto Serif Khmer',
+    label: 'Noto Serif Khmer',
+  );
+  static const notoSansKhmer = ReaderFont.google(
+    'noto-sans-khmer',
+    'Noto Sans Khmer',
+    label: 'Noto Sans Khmer',
+  );
+
   /// Latin section headings, whatever font their lines are in.
   static const latinHeading = literata;
   static const FontWeight headingWeight = FontWeight.w600;
 
+  /// A Latin or Cyrillic original's weight: Medium, one step over its
+  /// Regular translation.
+  static const FontWeight originalWeight = FontWeight.w500;
+
   /// The fonts for [script], its default first. The original and the
-  /// translation share a list; a translation's italic comes from its role.
+  /// translation share a list, and both are upright.
   static List<ReaderFont> forScript(ReaderScript script) => switch (script) {
     // All three cover Cyrillic as well.
     ReaderScript.latin ||
     ReaderScript.cyrillic => const [sourceSerif4, literata, inter],
     ReaderScript.tibetan => const [babelStone, notoSerifTibetan, jomolhari],
     ReaderScript.chinese => const [notoSerifTc, lxgwWenKaiTc, notoSansTc],
-    ReaderScript.devanagari => const [notoSerifDevanagari],
+    ReaderScript.devanagari => const [mukta, notoSerifDevanagari],
+    ReaderScript.bengali => const [notoSerifBengali, notoSansBengali],
+    ReaderScript.gurmukhi => const [notoSerifGurmukhi, notoSansGurmukhi],
+    ReaderScript.gujarati => const [notoSerifGujarati, notoSansGujarati],
+    ReaderScript.telugu => const [notoSerifTelugu, notoSansTelugu],
+    ReaderScript.kannada => const [notoSerifKannada, notoSansKannada],
+    ReaderScript.malayalam => const [notoSerifMalayalam, notoSansMalayalam],
+    ReaderScript.sinhala => const [notoSerifSinhala, notoSansSinhala],
+    ReaderScript.thai => const [notoSerifThai, notoSansThai],
+    ReaderScript.myanmar => const [notoSerifMyanmar, notoSansMyanmar],
+    ReaderScript.khmer => const [notoSerifKhmer, notoSansKhmer],
   };
 
   static ReaderFont defaultFor(ReaderScript script) => forScript(script).first;

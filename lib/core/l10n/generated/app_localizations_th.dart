@@ -1147,6 +1147,23 @@ class AppLocalizationsTh extends AppLocalizations {
       'ไม่สามารถโหลดได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง';
 
   @override
+  String get reader_not_translated => 'ไม่ได้แปล';
+
+  @override
+  String get error_offline_title => 'ไม่มีการเชื่อมต่อ';
+
+  @override
+  String get error_server_title => 'โหลดไม่ได้ในขณะนี้';
+
+  @override
+  String get reader_error_server_message =>
+      'ไม่สามารถโหลดบทนี้ได้ในขณะนี้ โปรดลองอีกครั้งภายหลัง';
+
+  @override
+  String get chants_error_server_message =>
+      'ไม่สามารถโหลดบทสวดได้ในขณะนี้ โปรดลองอีกครั้งภายหลัง';
+
+  @override
   String get somethingWrong =>
       'เกิดข้อผิดพลาด ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง';
 

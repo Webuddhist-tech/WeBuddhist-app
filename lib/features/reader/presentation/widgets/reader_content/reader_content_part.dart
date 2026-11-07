@@ -20,6 +20,8 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_noti
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_text_size_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_verse_numbers_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/collapsed_reader_items.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_initial_layout_applier.dart';
@@ -822,6 +824,106 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return _inScript(view, (title.title, title.language));
   }
 
+  /// A heading's title in the original's language, in the script the
+  /// original is shown in.
+  ({String title, String language}) _originalHeading(
+    _SourceView view,
+    Map<String, String> titles,
+    String fallback,
+  ) {
+    final title = readerSectionTitle(
+      titles: titles,
+      originalLanguage: view.outline?.language ?? view.language,
+      textTitle: fallback,
+      textLanguage: view.language,
+    );
+    final (text, language) = _inScript(view, (title.title, title.language));
+    return (title: text, language: language);
+  }
+
+  /// A heading's title in the shown translation's language, or null when
+  /// no translation shows or it has no title for the heading.
+  ({String title, String language})? _translatedHeading(
+    _SourceView view,
+    String sectionId,
+    Map<String, String> titles,
+  ) {
+    if (!view.secondaryActive) return null;
+    final language = view.dualSettings.secondary.languageCode;
+    final title = readerSectionTitle(
+      titles: titles,
+      originalLanguage: language,
+      translationTitle: view.translationTitles[sectionId],
+      translationLanguage: language,
+      textTitle: '',
+      textLanguage: language,
+    );
+    final same =
+        TransliterationService.normalizeLanguage(title.language) ==
+        TransliterationService.normalizeLanguage(language);
+    return same && title.title.isNotEmpty ? title : null;
+  }
+
+  /// The text's title in the original, as its page heads it: its opening
+  /// heading's, else its own.
+  ({String title, String language}) _originalTextTitle(_SourceView view) {
+    final outline = view.outline;
+    final opening =
+        outline?.sections
+            .where((s) => s.titleFor(outline.language) != null)
+            .firstOrNull;
+    if (opening != null && opening.opensText && opening.depth == 0) {
+      return _originalHeading(
+        view,
+        opening.titles,
+        view.state.openedText?.title ?? '',
+      );
+    }
+    final title = readerTextTitle(
+      ref.read(transliterationServiceProvider),
+      title: view.state.openedText?.title ?? '',
+      language: view.language,
+      scriptId: view.originalScriptId,
+    );
+    return (title: title.title, language: title.language);
+  }
+
+  /// The translation's title for the text: the shown edition's name.
+  ({String title, String language})? _translatedTextTitle(_SourceView view) {
+    if (!view.secondaryActive) return null;
+    final translation = view.dualSettings.secondary;
+    final label = translation.versionLabel;
+    return label == null || label.isEmpty
+        ? null
+        : (title: label, language: translation.languageCode);
+  }
+
+  /// Whether the original line shows, for a title's pairing.
+  bool _showsOriginal(_SourceView view) =>
+      !view.secondaryActive || view.showOriginal;
+
+  /// Whether [section] is the heading that names its source's text.
+  bool _namesText(_SourceView view, String sectionId) =>
+      _layout?.texts.any(
+        (t) => t.source == view.index && t.titleSectionId == sectionId,
+      ) ??
+      false;
+
+  /// Whether [section] repeats the heading right above it ([previous]), in
+  /// the original's language or the translation's: a text's title page and
+  /// its first chapter often carry the same name.
+  bool _repeatsHeading(_SourceView view, Section previous, Section section) {
+    List<String> names(Section s) => [
+      ...s.titles.values,
+      if (s.title != null) s.title!,
+      if (view.translationTitles[s.id] case final translated?) translated,
+    ];
+    final above = names(previous);
+    return names(section).any(
+      (name) => above.any((other) => readerSameTitle(name, other)),
+    );
+  }
+
   /// A section of the whole table of contents as the navigator lists it.
   (String, String) _outlineTitle(_SourceView view, TextOutlineSection section) {
     final (textTitle, textLanguage) = _titleOf(view);
@@ -1457,6 +1559,90 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         if (jump == _keptTopJumps) _keptTop = null;
       });
     });
+  }
+
+  /// The rows on screen when a setting changed the text's height, each with
+  /// how far down its top sat: the first of them still on the page is
+  /// drawn back there ([_restartAtHeldPlace]).
+  List<({Object? key, double alignment})>? _heldPlace;
+
+  /// The row last kept by [_holdPlace], until the person touches the list:
+  /// several changes in a row keep the same verse, not whichever is second
+  /// on screen after each.
+  ({Object? key, double alignment})? _readPlace;
+
+  /// Notes the reader's place before a setting that changes the text's
+  /// height (size, font, spacing, verse numbers, lines shown, script) lays
+  /// it out again. The list keeps the row it last jumped to fixed, not the
+  /// one on screen, so every row between them would push the verse being
+  /// read away. While following live the live verse is put back instead.
+  void _holdPlace() {
+    final entries = _layout?.entries;
+    if (entries == null ||
+        !_pageShown ||
+        _liveHold ||
+        _isFollowingLive ||
+        _isUserScrolling ||
+        _isProgrammaticScroll ||
+        _pendingAppJumps > 0 ||
+        !_itemScrollController.isAttached) {
+      return;
+    }
+    final onScreen =
+        _itemPositionsListener.itemPositions.value
+            .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1)
+            .where((p) => p.index < entries.length)
+            .toList()
+          ..sort((a, b) => a.index.compareTo(b.index));
+    if (onScreen.isEmpty) return;
+    // The second row whose top shows is the one read: the first is often
+    // half read and scrolled past. Then the first, then the rest; a row
+    // reaching above the screen only when no top shows (one verse filling
+    // it).
+    final tops = [
+      for (final position in onScreen)
+        if (position.itemLeadingEdge >= 0) position,
+    ];
+    final rows =
+        tops.isEmpty
+            ? onScreen
+            : [if (tops.length > 1) tops[1], tops[0], ...tops.skip(2)];
+    // The row kept last time, while it is still where it was left: any
+    // other move of the list (a jump, live) makes a new place.
+    final read = _readPlace;
+    final stillThere =
+        read != null &&
+        onScreen.any(
+          (p) =>
+              _entryKey(entries[p.index]) == read.key &&
+              (p.itemLeadingEdge - read.alignment).abs() < 0.02,
+        );
+    _heldPlace = [
+      if (stillThere) read,
+      for (final position in rows)
+        (
+          key: _entryKey(entries[position.index]),
+          alignment: position.itemLeadingEdge,
+        ),
+    ];
+    setState(() {});
+  }
+
+  /// Draws the list afresh with the held place's first row still on the
+  /// page where it was ([_holdPlace]); false when none was held.
+  bool _restartAtHeldPlace(_PageLayout layout) {
+    final held = _heldPlace;
+    _heldPlace = null;
+    if (held == null) return false;
+    for (final row in held) {
+      final index = layout.entries.indexWhere((e) => _entryKey(e) == row.key);
+      if (index < 0) continue;
+      _keptTop = null;
+      _readPlace = row;
+      _restartListAt((index: index, alignment: row.alignment));
+      return true;
+    }
+    return false;
   }
 
   /// Jumps the list as the app's own move: the scroll it reports
@@ -2122,7 +2308,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// Scrolls to the rendered line [segmentId] of [source], read in [round];
   /// false when it is not on this page (a verse outside the task's).
   ///
-  /// The verse is held ⅔ down the text area (see [liveScrollTarget]). When
+  /// The verse is held ⅓ down the text area (see [liveScrollTarget]). When
   /// the room moved to another section or round, that section's heading
   /// goes to the top instead. [instant] jumps rather than scrolls, for a
   /// verse the page moved rather than the room. [heading] puts that heading
@@ -2346,7 +2532,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   }
 
   /// The list's first frame, drawn at the live verse by its top, has laid
-  /// out: the verse is measured, put in its place ⅔ down, and the page
+  /// out: the verse is measured, put in its place ⅓ down, and the page
   /// shown, all before its next frame.
   void _finishReveal() {
     if (!_revealing || !_revealFontsIn || !mounted) return;
@@ -2843,6 +3029,26 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final first = views.first;
     _scheduleInitialScroll(first.state);
 
+    // Settings that make the text taller or shorter keep the reader's place.
+    ref.listen(readerTextSizeProvider, (_, __) => _holdPlace());
+    ref.listen(readerFontsProvider, (_, __) => _holdPlace());
+    ref.listen(readerVerseNumbersProvider, (_, __) => _holdPlace());
+    for (final view in views) {
+      final scope = view.params.settingsScope;
+      ref.listen(
+        readerDualSettingsProvider(scope).select(
+          (s) => (s.originalVisible, s.secondaryEnabled, s.secondary.versionId),
+        ),
+        (_, __) => _holdPlace(),
+      );
+      ref.listen(
+        readerOriginalScriptProvider(
+          ReaderScriptScope(scope: scope, language: view.language),
+        ),
+        (_, __) => _holdPlace(),
+      );
+    }
+
     // First live evaluation once content is on screen: lands a late joiner
     // on the live line, or pauses if they opened a different text. Opening
     // on a live verse, it does not wait for the first text, which may not
@@ -2901,7 +3107,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         );
       }
     }
-    _keepTopEntry(_layout, layout);
+    if (!_restartAtHeldPlace(layout)) _keepTopEntry(_layout, layout);
     _layout = layout;
     final entries = layout.entries;
     final liveSegmentId = _resolveLiveHighlight(views, livePosition, liveMode);
@@ -2997,6 +3203,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             onPointerDown: (_) {
               _isUserScrolling = true;
               _lastUserPointerAt = DateTime.now();
+              // A new place to keep from here on.
+              _readPlace = null;
             },
             onPointerMove: (_) => _lastUserPointerAt = DateTime.now(),
             onPointerUp: (_) {
@@ -3072,7 +3280,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   }
 
   /// Where the list first draws on a page opened following live: the live
-  /// verse, by its top ⅔ down until it is measured. Null while the verse is
+  /// verse, by its top ⅓ down until it is measured. Null while the verse is
   /// not in yet, or its translation line is still on its way; once the wait
   /// has run out, the verse is shown without it.
   LiveScrollTarget? _liveHoldStart(
@@ -3148,8 +3356,18 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       case _EntryKind.divider:
         return const _SourceDivider();
       case _EntryKind.title:
-        final (title, language) = _titleOf(views[entry.source]);
-        return _SourceTitle(title: title, language: language);
+        final view = views[entry.source];
+        final pair = readerTitlePair(
+          original: _originalTextTitle(view),
+          translation: _translatedTextTitle(view),
+          showOriginal: _showsOriginal(view),
+        );
+        return _SourceTitle(
+          title: pair.title,
+          language: pair.language,
+          translation: pair.translation,
+          translationLanguage: pair.translationLanguage,
+        );
       case _EntryKind.error:
         return _SourceErrorRow(
           onRetry:
@@ -3191,8 +3409,38 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return item.when(
       header: (section, depth) {
         if (view.translationHeadings) return const SizedBox.shrink();
-        final (title, headingLanguage) = _headingText(view, section);
+        // A heading right under one of the same name is not drawn again.
+        final above =
+            (previousItem?.isHeader ?? false) ? previousItem!.section : null;
+        if (above != null && _repeatsHeading(view, above, section)) {
+          return const SizedBox.shrink();
+        }
         final place = _sectionPlaces[(view.index, section.id)];
+        // The text's title: the original's, in its script, with the
+        // translation's once under it.
+        final String title;
+        final String headingLanguage;
+        String? translation;
+        String? translationLanguage;
+        if (_namesText(view, section.id)) {
+          final pair = readerTitlePair(
+            original: _originalHeading(
+              view,
+              section.titles,
+              section.title ?? '',
+            ),
+            translation:
+                _translatedHeading(view, section.id, section.titles) ??
+                _translatedTextTitle(view),
+            showOriginal: _showsOriginal(view),
+          );
+          title = pair.title;
+          headingLanguage = pair.language;
+          translation = pair.translation;
+          translationLanguage = pair.translationLanguage;
+        } else {
+          (title, headingLanguage) = _headingText(view, section);
+        }
         return SectionHeader(
           section:
               title == section.title ? section : section.copyWith(title: title),
@@ -3202,6 +3450,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           place: place,
           numeralLanguage: _numeralLanguage(view),
           overlineTrailing: _liveRoundFor(view.index, section.id, place),
+          translation: translation,
+          translationLanguage: translationLanguage,
         );
       },
       segment: (segment, depth, sectionId) {
@@ -3212,36 +3462,34 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             liveSegmentId != null && liveSegmentId == segment.segmentId;
 
         if (view.secondaryActive) {
-          // Translation only: a verse the translation has no line for is
-          // left out, unless the reader is being pointed at it.
-          final hidden =
+          // Translation only: a verse the translation has no line for says
+          // "Not translated", unless the reader is being pointed at it,
+          // which shows its original.
+          final untranslated =
               !view.showOriginal &&
               !isLive &&
               !isSelected &&
               !isHighlighted &&
               (secondaryState?.lacks(segment.segmentNumber) ?? false);
-          final Widget verse =
-              hidden
-                  ? const SizedBox.shrink()
-                  : InterlinearSegmentItem(
-                    segment: segment,
-                    depth: depth,
-                    primaryLanguage: language,
-                    scope: view.params.settingsScope,
-                    showPrimary: view.showOriginal,
-                    secondarySlot: secondarySlot,
-                    secondaryContentBySegmentNumber:
-                        secondaryState?.contentBySegmentNumber,
-                    secondaryIsLoading:
-                        secondaryState?.isPending(segment.segmentNumber) ??
-                        false,
-                    isSelected: isSelected,
-                    isHighlighted: isHighlighted,
-                    highlightSource: state.highlightSource,
-                    isLive: isLive,
-                    followingLive: _followingLive,
-                    onTap: () => _onSegmentTap(view.index, segment),
-                  );
+          final Widget verse = InterlinearSegmentItem(
+            segment: segment,
+            depth: depth,
+            primaryLanguage: language,
+            scope: view.params.settingsScope,
+            showPrimary: view.showOriginal,
+            secondarySlot: secondarySlot,
+            secondaryContentBySegmentNumber:
+                secondaryState?.contentBySegmentNumber,
+            secondaryIsLoading:
+                secondaryState?.isPending(segment.segmentNumber) ?? false,
+            isSelected: isSelected,
+            isHighlighted: isHighlighted,
+            highlightSource: state.highlightSource,
+            isLive: isLive,
+            followingLive: _followingLive,
+            untranslated: untranslated,
+            onTap: () => _onSegmentTap(view.index, segment),
+          );
           if (headings.isEmpty) return verse;
           final firstVerse =
               previousItem == null ||
@@ -3255,24 +3503,59 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                       ? _sectionPlacesByVerse[(view.index, segment.segmentId)]
                       : null),
           ];
+          // The heading over the text's first verse names the text: the
+          // original's title, in its script, with this one once under it.
+          final textTitle =
+              segment.segmentId == state.content?.firstSegmentId &&
+                      headings.first.depth == 0
+                  ? readerTitlePair(
+                    original: _originalTextTitle(view),
+                    translation:
+                        headings.first.section.title?.isNotEmpty ?? false
+                            ? (
+                              title: headings.first.section.title!,
+                              language: secondarySlot.languageCode,
+                            )
+                            : _translatedTextTitle(view),
+                    showOriginal: _showsOriginal(view),
+                  )
+                  : null;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (var i = 0; i < headings.length; i++)
-                SectionHeader(
-                  section: headings[i].section,
-                  depth: headings[i].depth,
-                  language: secondarySlot.languageCode,
-                  // Like the original's: a nested heading after lines.
-                  showDivider: i == 0 && headings[i].depth > 0 && !firstVerse,
-                  place: places[i],
-                  numeralLanguage: _numeralLanguage(view),
-                  overlineTrailing: _liveRoundFor(
-                    view.index,
-                    headings[i].section.id,
-                    places[i],
+                // A heading right under one of the same name is left out.
+                if (i == 0 ||
+                    !readerSameTitle(
+                      headings[i].section.title ?? '',
+                      headings[i - 1].section.title ?? '',
+                    ))
+                  SectionHeader(
+                    section:
+                        i == 0 && textTitle != null
+                            ? headings[i].section.copyWith(
+                              title: textTitle.title,
+                            )
+                            : headings[i].section,
+                    depth: headings[i].depth,
+                    language:
+                        i == 0 && textTitle != null
+                            ? textTitle.language
+                            : secondarySlot.languageCode,
+                    // Like the original's: a nested heading after lines.
+                    showDivider:
+                        i == 0 && headings[i].depth > 0 && !firstVerse,
+                    place: places[i],
+                    numeralLanguage: _numeralLanguage(view),
+                    overlineTrailing: _liveRoundFor(
+                      view.index,
+                      headings[i].section.id,
+                      places[i],
+                    ),
+                    translation: i == 0 ? textTitle?.translation : null,
+                    translationLanguage:
+                        i == 0 ? textTitle?.translationLanguage : null,
                   ),
-                ),
               verse,
             ],
           );
@@ -3482,20 +3765,23 @@ class _SourceDivider extends ConsumerWidget {
 }
 
 /// A source text's title, styled like a top-level heading, when its own
-/// headings carry none.
-class _SourceTitle extends ConsumerWidget {
+/// headings carry none; the translation's once under it.
+class _SourceTitle extends StatelessWidget {
   final String title;
   final String language;
+  final String? translation;
+  final String? translationLanguage;
 
-  const _SourceTitle({required this.title, required this.language});
+  const _SourceTitle({
+    required this.title,
+    required this.language,
+    this.translation,
+    this.translationLanguage,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (title.isEmpty) return const SizedBox.shrink();
-    final style = ReaderStyle.of(context, ref);
-    // A top-level heading's size and font.
-    final script = ReaderScript.of(title, language: language);
-    final metrics = style.type.heading(0, script);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         ReaderConstants.segmentHorizontalPadding,
@@ -3503,15 +3789,11 @@ class _SourceTitle extends ConsumerWidget {
         ReaderConstants.segmentHorizontalPadding,
         12,
       ),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: metrics.fontSize,
-          fontWeight: metrics.fontWeight,
-          fontFamily: style.type.headingFamily(language, script),
-          color: style.palette.heading,
-          height: metrics.height,
-        ),
+      child: ReaderHeadingTitle(
+        title: title,
+        language: language,
+        translation: translation,
+        translationLanguage: translationLanguage,
       ),
     );
   }
