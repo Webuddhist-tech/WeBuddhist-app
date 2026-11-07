@@ -46,6 +46,7 @@ import 'package:flutter_pecha/features/plans/presentation/providers/use_case_pro
 import 'package:flutter_pecha/features/practice/data/datasource/routine_local_storage.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_context_layout_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_sync_provider.dart';
 import 'package:flutter_pecha/features/timer/data/datasource/timers_local_datasource.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -466,6 +467,8 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     // Clears user-scoped HTTP cache and invalidates profile/plan providers
     // when auth transitions between accounts.
     ref.watch(userSessionBootstrapProvider);
+    // Keeps the chant reader's settings on the server across devices.
+    ref.watch(readerSettingsSyncProvider);
     // Home background sync — flushes pending local-first writes when
     // connectivity returns.
     ref.watch(homeSyncBootstrapProvider);

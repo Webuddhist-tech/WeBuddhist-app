@@ -127,9 +127,9 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
    (`translationVersions`, the 50 most recent texts), which
    `autoSelectSecondaryVersion` prefers whenever the language offers it
    (then the edition the reader was opened with, then the first). The picks
-   are kept on the device only (SharedPreferences, `reader_layout_<context>`);
-   the API has no reader-settings endpoint, so they do not follow the person
-   to another device.
+   are kept on the device (SharedPreferences, `reader_layout_<context>`); the
+   chant context's also sync to the server (see "Settings sync" below), while
+   event and plan picks stay on the device.
 4. Every fill uses the same order,
    `ReaderDualSettingsNotifier.preferredTranslationLanguages`: remembered pick
    → the opened edition's language → this visit's default → content language
@@ -163,6 +163,47 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
    remembered language never replaces the picked edition. When the original
    cannot be loaded, the edition opens as the text itself.
 
+
+---
+
+## Settings sync
+
+`ReaderSettingsSync` (`application/`, run by `readerSettingsSyncProvider` from
+`MyApp`) keeps the chant reader's settings in `preferences` on
+`/users/me/settings`, so they survive a reinstall or a new device. Signed-in
+accounts only; guests stay on the device. Local storage remains what the reader
+reads.
+
+| Key in `preferences` | Holds |
+| --- | --- |
+| `reader_appearance` | Display sheet: background, sizes, fonts, spacing, verse numbers. Shared by every reader. |
+| `reader.chant` | Languages sheet picks in the chant context (`ReaderContextLayoutPrefs.toWire`), plus `language`: the content language they were made under. |
+| `chant_list_language` | The chant list's language picker. |
+| `schema_version` | The format of the above. A newer version turns the sync off rather than risk overwriting it. |
+
+Only what differs from the default is sent, and each save sends only the blocks
+that changed, each one whole. `reader` goes back with any contexts the server
+holds, because a partial `reader` deletes the rest.
+
+`reader_settings_synced` stores the last values known to be on the server;
+anything local that differs has not been saved yet, so failed saves retry on the
+next change, reconnect or launch. `reader_settings_owner` stores which account
+that was. When a session starts (`planReaderSettingsSync`):
+
+- **Same account:** a block changed since the last sync goes up; the others take
+  the server's value.
+- **Another account:** everything takes the server's value, or the defaults if
+  it has none. Nothing crosses between accounts.
+- **Never synced:** an account with saved settings wins; an account with none
+  receives the device's.
+
+Chant picks belong to one content language, so the block records it
+(`reader.chant.language`). Picks made under another language are not restored,
+whatever language the account reads now, and a device reading another language
+never deletes them: it saves only picks of its own language, and clears the
+server's only when they are its language's. Picks saved before the language
+was recorded count as made under the account's language. The content language
+itself does not sync.
 
 ---
 

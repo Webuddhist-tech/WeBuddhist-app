@@ -31,6 +31,7 @@ import 'package:flutter_pecha/features/mala/presentation/providers/mala_provider
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/providers/onboarding_datasource_providers.dart';
 import 'package:flutter_pecha/features/push_notifications/presentation/providers/push_notification_providers.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_sync_provider.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
@@ -564,6 +565,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // the FCM token, and it must first let this unregister use the stored id
     // while the JWT is still valid. Awaited below, before credentials go.
     final pushUnregister = _unregisterPushDevice();
+    // Same reason: it needs the session that the flip below ends.
+    final readerSettingsFlush = _flushReaderSettings();
     _invalidateAuthSession();
     ref.read(cacheInterceptorProvider).clearUserScoped();
 
@@ -578,6 +581,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // Prayers tapped just before their sheet closed may still be going out.
     await ref.read(pendingPrayerSendsProvider).settle();
     await pushUnregister;
+    await readerSettingsFlush;
 
     final logoutResult = await _localLogoutUseCase(const NoParams());
     logoutResult.fold(
@@ -702,6 +706,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       _logger.warning('Push unregister on logout skipped: $e');
       return Future.value();
+    }
+  }
+
+  /// Best-effort save of reader settings changed moments before sign-out.
+  Future<void> _flushReaderSettings() async {
+    try {
+      await ref.read(readerSettingsSyncProvider).flushBeforeSignOut();
+    } catch (e) {
+      _logger.warning('Reader settings flush on logout failed (ignored): $e');
     }
   }
 
