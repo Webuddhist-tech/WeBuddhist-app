@@ -213,6 +213,47 @@ void main() {
       expect(versions.availableVersions.map((v) => v.id), ['E-mn']);
     });
 
+    test('a language stops at its first edition that covers', () async {
+      final server = coverageServer();
+      server.routes['/v2/texts/EN'] =
+          (_) => jsonBody(
+            textJson(
+              'EN',
+              language: 'en',
+              translationOf: 'R',
+              editions: ['E-en', 'E-en2'],
+            ),
+          );
+      final languages = await _datasource(
+        server,
+      ).fetchLanguages(textId: 'E-root');
+
+      expect(
+        languages.availableLanguages
+            .firstWhere((l) => l.code == 'en')
+            .translationCount,
+        greaterThan(0),
+      );
+      expect(server.count('/v2/editions/E-root/alignments/E-en2'), 0);
+    });
+
+    test('is measured once, and keeps the text being read in memory', () async {
+      final server = coverageServer();
+      // Room for one edition's verses: the one being read.
+      final library = server.repository(segmentCacheSize: 1);
+      await library.getEditionSegments('E-root');
+      final ds = LibraryReaderSettingsRemoteDatasource(library: library);
+
+      await ds.fetchLanguages(textId: 'E-root');
+      await ds.fetchLanguages(textId: 'E-root');
+      await library.getEditionSegments('E-root');
+
+      const root = '/v2/editions/E-root/segmentation/segments';
+      const chinese = '/v2/editions/E-zh/segmentation/segments';
+      expect(server.count(root), 1, reason: 'never pushed out of the cache');
+      expect(server.count(chinese), 1, reason: 'measured once a session');
+    });
+
     test('one that cannot be measured is offered, not hidden', () async {
       final server = coverageServer()
         ..routes.remove('/v2/editions/E-root/alignments/E-mn');

@@ -63,6 +63,7 @@ class LibraryTestServer {
     int segmentPageSize = 500,
     int relatedPageSize = 20,
     int maxPages = 1000,
+    int segmentCacheSize = 6,
     Duration yigchungTimeout = const Duration(seconds: 5),
   }) {
     return LibraryRepository(
@@ -70,6 +71,7 @@ class LibraryTestServer {
       segmentPageSize: segmentPageSize,
       relatedPageSize: relatedPageSize,
       maxPages: maxPages,
+      segmentCacheSize: segmentCacheSize,
       yigchungTimeout: yigchungTimeout,
     );
   }

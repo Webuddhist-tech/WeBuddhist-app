@@ -89,6 +89,9 @@ class SegmentItem extends ConsumerWidget {
               script: script,
               weight: weight ?? FontWeight.w400,
             ),
+            // Myanmar takes a fixed line box here too, as under a
+            // translation (`ReaderTypography.lineStrut`).
+            strutStyle: ReaderTypography.lineStrut(script, metrics),
           ),
           Padding(
             padding: EdgeInsets.only(top: gaps.number),

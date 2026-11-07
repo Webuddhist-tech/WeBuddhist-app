@@ -4,7 +4,9 @@ class ReaderLanguageOption {
   final int versionCount;
 
   /// Versions that can be picked as a translation: [versionCount] less the
-  /// root texts, which are only ever the original.
+  /// root texts, which are only ever the original. 0 when none of them
+  /// covers enough of the original to be offered; only whether it is 0 is
+  /// read.
   final int translationCount;
 
   const ReaderLanguageOption({

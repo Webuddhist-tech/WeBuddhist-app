@@ -10,10 +10,15 @@ import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.
 /// many languages) would only lead to a near-empty page.
 const double readerTranslationCoverage = 0.8;
 
+/// How many translation languages are measured against the original at
+/// once ([readerTranslationCoverage]).
+const int readerCoverageChecksAtOnce = 3;
+
 /// Reader languages and versions from the library. The reader's text id is an
 /// edition id; versions are the editions of the root text and its translations.
 /// A translation edition that covers too little of the original
-/// ([readerTranslationCoverage]) is neither counted nor offered.
+/// ([readerTranslationCoverage]) is not offered as a version, and a
+/// language with none that covers it is not offered as a translation.
 class LibraryReaderSettingsRemoteDatasource
     implements ReaderSettingsRemoteDatasource {
   LibraryReaderSettingsRemoteDatasource({required LibraryRepository library})
@@ -43,17 +48,28 @@ class LibraryReaderSettingsRemoteDatasource
       counts[member.language] =
           (counts[member.language] ?? 0) + member.editions.length;
     }
-    // Only translation editions covering the original count as one.
-    await Future.wait([
-      for (final member in family)
-        if (!_isRoot(member))
-          for (final editionId in member.editions)
-            _covers(measuredAgainst, editionId).then((covers) {
-              if (!covers) return;
-              translationCounts[member.language] =
-                  (translationCounts[member.language] ?? 0) + 1;
-            }),
-    ]);
+    // A language counts as a translation when one of its editions covers
+    // the original. The reader only asks whether a language has one, so
+    // each language stops at its first, and a few are measured at a time:
+    // a family can hold dozens of translations, each a download.
+    final translations = <String, List<String>>{};
+    for (final member in family) {
+      if (_isRoot(member)) continue;
+      translations
+          .putIfAbsent(member.language, () => [])
+          .addAll(member.editions);
+    }
+    await _forEachLimited(translations.entries, readerCoverageChecksAtOnce, (
+      entry,
+    ) async {
+      for (final editionId in entry.value) {
+        if (editionId == edition.id ||
+            await _covers(measuredAgainst, editionId)) {
+          translationCounts[entry.key] = entry.value.length;
+          return;
+        }
+      }
+    });
     final codes = counts.keys.toList()..sort();
     // The original's language leads: the text a translation was made from.
     final original = _byId(family)[text.translationOf] ?? text;
@@ -164,6 +180,22 @@ class LibraryReaderSettingsRemoteDatasource
     } catch (_) {
       return true;
     }
+  }
+
+  /// Runs [run] on each of [items], at most [limit] at once.
+  static Future<void> _forEachLimited<T>(
+    Iterable<T> items,
+    int limit,
+    Future<void> Function(T item) run,
+  ) async {
+    final queue = items.iterator;
+    Future<void> worker() async {
+      while (queue.moveNext()) {
+        await run(queue.current);
+      }
+    }
+
+    await Future.wait([for (var i = 0; i < limit; i++) worker()]);
   }
 
   static Map<String, LibraryText> _byId(List<LibraryText> texts) => {
