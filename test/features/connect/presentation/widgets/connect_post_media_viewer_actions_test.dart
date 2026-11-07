@@ -119,7 +119,7 @@ void main() {
             builder: (context, ref, child) {
               // A feed screen holds the tracker for as long as a visit lasts.
               if (placement != null) {
-                ref.watch(connectPostViewTrackerProvider(placement.surface));
+                ref.watch(connectPostViewTrackerProvider(placement.viewScope));
               }
               return child!;
             },

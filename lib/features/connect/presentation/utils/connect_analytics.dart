@@ -18,12 +18,26 @@ enum ConnectPostSurface {
   };
 }
 
+/// Which posts-viewed list a card reports to: one per surface, and per page
+/// when [visitId] is set.
+typedef ConnectPostViewScope = ({ConnectPostSurface surface, String? visitId});
+
 /// Where a post card sits: its list and its index in that list.
 class ConnectPostPlacement {
-  const ConnectPostPlacement({required this.surface, required this.position});
+  const ConnectPostPlacement({
+    required this.surface,
+    required this.position,
+    this.visitId,
+  });
 
   final ConnectPostSurface surface;
   final int position;
+
+  /// Tells apart two pages of the same surface open at once, e.g. the Connect
+  /// tab's space and a group page pushed on top of it. Never sent.
+  final String? visitId;
+
+  ConnectPostViewScope get viewScope => (surface: surface, visitId: visitId);
 }
 
 /// Product analytics for the Connect tab and its posts: one method per tracked
@@ -129,6 +143,6 @@ class ConnectPostViewTracker {
 /// One visit lasts while the surface watches this: leaving the screen disposes
 /// it, and coming back starts a new visit.
 final connectPostViewTrackerProvider = Provider.autoDispose
-    .family<ConnectPostViewTracker, ConnectPostSurface>(
-      (ref, surface) => ConnectPostViewTracker(),
+    .family<ConnectPostViewTracker, ConnectPostViewScope>(
+      (ref, scope) => ConnectPostViewTracker(),
     );

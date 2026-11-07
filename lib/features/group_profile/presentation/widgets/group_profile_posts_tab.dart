@@ -23,6 +23,9 @@ class GroupProfilePostsTab extends ConsumerWidget {
   final VoidCallback onCreatePost;
   final ValueChanged<ConnectPost> onEditPost;
 
+  /// The page's own posts-viewed list; see [ConnectPostPlacement.visitId].
+  final String postViewVisitId;
+
   const GroupProfilePostsTab({
     super.key,
     required this.groupId,
@@ -31,6 +34,7 @@ class GroupProfilePostsTab extends ConsumerWidget {
     required this.canPost,
     required this.onCreatePost,
     required this.onEditPost,
+    required this.postViewVisitId,
     this.lineHeight,
   });
 
@@ -119,6 +123,7 @@ class GroupProfilePostsTab extends ConsumerWidget {
                       placement: ConnectPostPlacement(
                         surface: ConnectPostSurface.space,
                         position: index,
+                        visitId: postViewVisitId,
                       ),
                       onEdit: canPost ? () => onEditPost(post) : null,
                       onDelete:

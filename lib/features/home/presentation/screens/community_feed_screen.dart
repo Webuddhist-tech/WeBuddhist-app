@@ -23,7 +23,12 @@ class CommunityFeedScreen extends ConsumerWidget {
       authProvider.select((auth) => auth.isLoggedIn && !auth.isGuest),
     );
     final feed = ref.watch(homeCommunityFeedProvider);
-    ref.watch(connectPostViewTrackerProvider(ConnectPostSurface.communityFeed));
+    ref.watch(
+      connectPostViewTrackerProvider((
+        surface: ConnectPostSurface.communityFeed,
+        visitId: null,
+      )),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!context.mounted) return;

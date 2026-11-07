@@ -85,6 +85,12 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
   /// Last tab reported, so settling twice or rebuilding the controller when
   /// the tab set changes does not report the same tab again.
   _GroupProfileTab? _trackedTab;
+
+  static int _nextVisit = 0;
+
+  /// This page's own posts-viewed list, so the same group open twice (the
+  /// Connect tab's space and a page pushed on top) counts each separately.
+  final String _postViewVisitId = 'group-${_nextVisit++}';
   final GlobalKey _profileTitleKey = GlobalKey();
   String? _enrollingSeriesId;
   String? _joiningAccumulatorId;
@@ -333,7 +339,12 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
   @override
   Widget build(BuildContext context) {
     // A visit spans the whole page, not each return to its Posts tab.
-    ref.watch(connectPostViewTrackerProvider(ConnectPostSurface.space));
+    ref.watch(
+      connectPostViewTrackerProvider((
+        surface: ConnectPostSurface.space,
+        visitId: _postViewVisitId,
+      )),
+    );
     final followKey = GroupFollowKey(
       groupId: widget.profile.id,
       groupType: widget.profile.groupType,
@@ -786,6 +797,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         lineHeight: lineHeight,
         pageStorageKey: pageStorageKey,
         canPost: canPost,
+        postViewVisitId: _postViewVisitId,
         onCreatePost: () => _onCreatePost(profile),
         onEditPost: (post) => _onEditPost(profile, post),
       ),

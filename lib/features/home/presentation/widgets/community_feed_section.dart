@@ -27,7 +27,12 @@ class CommunityFeedSection extends ConsumerWidget {
       authProvider.select((auth) => auth.isLoggedIn && !auth.isGuest),
     );
     final feed = ref.watch(homeCommunityFeedProvider);
-    ref.watch(connectPostViewTrackerProvider(ConnectPostSurface.homePreview));
+    ref.watch(
+      connectPostViewTrackerProvider((
+        surface: ConnectPostSurface.homePreview,
+        visitId: null,
+      )),
+    );
 
     // Both loads are idempotent; the member's own feed decides whether
     // Discover is needed at all.

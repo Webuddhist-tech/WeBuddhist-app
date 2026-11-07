@@ -1,6 +1,7 @@
 import 'package:flutter_pecha/core/analytics/analytics_events.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_analytics.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../core/analytics/recording_analytics_service.dart';
@@ -122,6 +123,30 @@ void main() {
       expect(tracker.markViewed('p1'), isFalse);
       expect(tracker.markViewed('p2'), isTrue);
       expect(ConnectPostViewTracker().markViewed('p1'), isTrue);
+    });
+
+    test('two pages of the same surface keep separate view lists', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      const connectTabSpace = ConnectPostPlacement(
+        surface: ConnectPostSurface.space,
+        position: 0,
+        visitId: 'group-1',
+      );
+      const pushedSpace = ConnectPostPlacement(
+        surface: ConnectPostSurface.space,
+        position: 0,
+        visitId: 'group-2',
+      );
+      ConnectPostViewTracker trackerFor(ConnectPostPlacement placement) {
+        final provider = connectPostViewTrackerProvider(placement.viewScope);
+        container.listen(provider, (_, _) {});
+        return container.read(provider);
+      }
+
+      expect(trackerFor(connectTabSpace).markViewed('p1'), isTrue);
+      expect(trackerFor(pushedSpace).markViewed('p1'), isTrue);
+      expect(trackerFor(connectTabSpace).markViewed('p1'), isFalse);
     });
 
     test('every surface has a snake_case key', () {

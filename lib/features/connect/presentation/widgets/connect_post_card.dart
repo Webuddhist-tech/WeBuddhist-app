@@ -100,7 +100,8 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
     if (placement == null) return _buildCard(context);
     return VisibilityDetector(
       key: ValueKey(
-        'connect-post-${placement.surface.key}-${widget.post.id}',
+        'connect-post-${placement.surface.key}-${placement.visitId}-'
+        '${widget.post.id}',
       ),
       onVisibilityChanged: _onVisibilityChanged,
       child: _buildCard(context),
@@ -133,7 +134,7 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
     final placement = widget.placement;
     if (!mounted || placement == null) return;
     final isFirstView = ref
-        .read(connectPostViewTrackerProvider(placement.surface))
+        .read(connectPostViewTrackerProvider(placement.viewScope))
         .markViewed(widget.post.id);
     if (!isFirstView) return;
     ref
