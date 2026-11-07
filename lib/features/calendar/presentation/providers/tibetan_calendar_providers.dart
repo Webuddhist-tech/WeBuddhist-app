@@ -11,6 +11,8 @@ import 'package:flutter_pecha/features/calendar/domain/repositories/calendar_rep
 import 'package:flutter_pecha/features/calendar/domain/tibetan_calendar_service.dart';
 import 'package:flutter_pecha/features/calendar/domain/usecases/get_calendar_month_usecase.dart';
 import 'package:flutter_pecha/features/calendar/domain/usecases/get_today_calendar_usecase.dart';
+import 'package:flutter_pecha/features/calendar/presentation/calendar_l10n_utils.dart';
+import 'package:flutter_pecha/features/calendar/presentation/providers/calendar_event_sources_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:fpdart/fpdart.dart';
@@ -59,6 +61,22 @@ final focusedCalendarMonthProvider = StateProvider<DateTime>((ref) {
   final now = DateTime.now();
   return DateTime(now.year, now.month, 1);
 });
+
+/// True once a day was tapped: its events replace the upcoming list until
+/// Today is pressed.
+final hasPickedCalendarDayProvider = StateProvider<bool>((ref) => false);
+
+/// Back to the opening view: today selected, its month shown, upcoming events.
+void showCalendarToday(WidgetRef ref) {
+  final today = dateOnly(DateTime.now());
+  ref.read(hasPickedCalendarDayProvider.notifier).state = false;
+  ref.read(selectedCalendarDayProvider.notifier).state = today;
+  ref.read(focusedCalendarMonthProvider.notifier).state = DateTime(
+    today.year,
+    today.month,
+    1,
+  );
+}
 
 // ============ Hybrid day resolution (backend-primary, engine fallback) ============
 
@@ -208,23 +226,26 @@ final todayCalendarDayProvider = AsyncNotifierProvider<
   });
 });
 
-// ============ Events (moon phases only, derived from resolved days) ============
+// ============ Events (lunar, personal and space, per month and per day) ============
 
 /// Lunar days that mark new moon, first quarter, and full moon.
 const _phaseDays = <int>{1, 8, 15, 30};
 
-/// Moon-phase events within the Gregorian [month], derived from the resolved
-/// days so they always match what the grid shows. (Festival/custom events will
-/// be added here when a backend events endpoint exists.)
+/// Every event in the Gregorian [month]: moon phases derived from the resolved
+/// days (so they always match what the grid shows, even offline or as a guest),
+/// then personal and joined-space events from the server's feed. Ordered by
+/// date, then kind.
 final monthEventsProvider = Provider.family<List<CalendarEvent>, DateTime>((
   ref,
   month,
 ) {
   final days = ref.watch(resolvedMonthDaysProvider(month));
-  final lastDay = DateTime(month.year, month.month + 1, 0).day;
+  final feed = ref.watch(calendarFeedProvider(month)).valueOrNull ?? const [];
+  final viewer = ref.watch(calendarViewerProvider);
+  final lastDay = DateTime(month.year, month.month + 1, 0);
 
   final events = <CalendarEvent>[];
-  for (var d = 1; d <= lastDay; d++) {
+  for (var d = 1; d <= lastDay.day; d++) {
     final date = DateTime(month.year, month.month, d);
     final day = days[dateOnly(date)];
     if (day == null || !_phaseDays.contains(day.lunarDay)) continue;
@@ -238,6 +259,66 @@ final monthEventsProvider = Provider.family<List<CalendarEvent>, DateTime>((
       ),
     );
   }
-  events.sort((a, b) => a.date.compareTo(b.date));
+  for (final event in feed) {
+    // Personal rows come without a source; credit them to the viewer.
+    final needsViewer =
+        event.kind == CalendarEventKind.personal && event.sourceName == null;
+    events.add(
+      needsViewer
+          ? CalendarEvent(
+            date: event.date,
+            lunarDay: event.lunarDay,
+            title: event.title,
+            kind: event.kind,
+            eventId: event.eventId,
+            sourceName: viewer.name,
+            sourceAvatarUrl: viewer.avatarUrl,
+            allDay: event.allDay,
+            startsAt: event.startsAt,
+            repeat: event.repeat,
+            repeatDay: event.repeatDay,
+          )
+          : event,
+    );
+  }
+  events.sort((a, b) {
+    final byDate = a.date.compareTo(b.date);
+    if (byDate != 0) return byDate;
+    final byKind = a.kind.index.compareTo(b.kind.index);
+    return byKind != 0 ? byKind : a.title.compareTo(b.title);
+  });
   return events;
 });
+
+/// The events listed under [date] when it is tapped.
+final dayEventsProvider = Provider.family<List<CalendarEvent>, DateTime>((
+  ref,
+  date,
+) {
+  final month = DateTime(date.year, date.month, 1);
+  final day = dateOnly(date);
+  return ref
+      .watch(monthEventsProvider(month))
+      .where(showsInUpcomingEvents)
+      .where((event) => dateOnly(event.date) == day)
+      .toList();
+});
+
+/// The upcoming list for one month: events from [today] on. A space or
+/// personal event that spans or repeats over many days appears once, on its
+/// next date. Tapping a day still lists every event on it.
+List<CalendarEvent> upcomingEventsFrom(
+  List<CalendarEvent> events,
+  DateTime today,
+) {
+  final seen = <(CalendarEventKind, String)>{};
+  return events
+      .where(showsInUpcomingEvents)
+      .where((event) => !dateOnly(event.date).isBefore(today))
+      .where((event) {
+        final id = event.eventId;
+        // Lunar events have no id, and each one is its own date.
+        return id == null || seen.add((event.kind, id));
+      })
+      .toList();
+}
